@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+
+# Build outputs (built on demand; npm publish uses `files: ["dist"]`)
+dist/
+*.tsbuildinfo
+
+# Nested lockfiles (workspace uses the root lockfile only)
+packages/*/pnpm-lock.yaml
+packages/*/package-lock.json
+packages/*/yarn.lock
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Logs and coverage
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+coverage/
+.nyc_output/
+
+# Test / tooling caches
+.cache/
+.turbo/
+.vitest/
+*.local
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Scratch
+scratchpad/
+tmp/
+temp/

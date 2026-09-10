@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ContextRocket embed widget — local smoke</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 2rem;
+        line-height: 1.5;
+      }
+      code {
+        background: #f3f4f6;
+        padding: 0.1rem 0.35rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>ContextRocket embed widget smoke page</h1>
+    <p>
+      This static page loads the built bundle from
+      <code>/embed/widget.js</code>. Serve the frontend public folder (or run
+      <code>pnpm run dev</code>) and open this file via the dev server.
+    </p>
+    <p>
+      Set real credentials via query params or edit the script tag below:
+      <code>?apiKey=crk_...&amp;apiBase=http://127.0.0.1:8000</code>
+    </p>
+
+    <script>
+      (function () {
+        const params = new URLSearchParams(window.location.search);
+        const apiKey = params.get("apiKey") ?? "crk_demo_replace_me";
+        const apiBase = params.get("apiBase") ?? "http://127.0.0.1:8000";
+        const org = params.get("org") ?? "demo-org";
+        const script = document.createElement("script");
+        script.src = "/embed/widget.js";
+        script.async = true;
+        script.setAttribute("data-contextrocket-api-key", apiKey);
+        script.setAttribute("data-contextrocket-api-base", apiBase);
+        script.setAttribute("data-contextrocket-org", org);
+        script.setAttribute(
+          "data-contextrocket-greeting",
+          "Hi — ask anything about this brand.",
+        );
+        script.setAttribute("data-contextrocket-accent", "#ff2b67");
+        document.body.appendChild(script);
+      })();
+    </script>
+  </body>
+</html>
