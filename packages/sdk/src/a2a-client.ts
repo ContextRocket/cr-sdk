@@ -1,13 +1,21 @@
 /**
  * A2A (Agent-to-Agent) protocol client for ContextRocket.
  *
- * Implements the A2A JSON-RPC 2.0 protocol as defined in the CR backend:
- * - POST /api/agent/a2a with method tasks/send (sync) or tasks/sendSubscribe (SSE)
+ * Implements the A2A JSON-RPC 2.0 protocol (A2A-Version: 1.0) as defined in
+ * the CR backend:
+ * - POST /api/agent/a2a with method SendMessage (sync) or SendStreamingMessage (SSE)
  * - GET /.well-known/agent-card.json for discovery
  *
  * Wire format derived from:
- *   backend/app/modules/agent/a2a/types.py
- *   backend/app/modules/agent/a2a/tasks.py
+ *   backend/app/modules/agent/a2a/current_contract.py
+ *   backend/app/modules/agent/a2a/task_lifecycle.py
+ *
+ * Requests use the current wire: `ROLE_USER` roles, typeless one-of parts
+ * (`{text}`), and the `A2A-Version: 1.0` header. Responses arrive as
+ * `statusUpdate` / `artifactUpdate` envelopes with `TASK_STATE_*` values;
+ * this client normalizes them into the stable event shapes below so
+ * consumers never see wire-version churn. Legacy `result.type` frames are
+ * still accepted for tolerance.
  *
  * No backend-generated codegen used here because this client is used in the
  * standalone template which may not have a CR backend on the same origin.
@@ -17,7 +25,8 @@
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface TextPart {
-  type: "text";
+  /** Always "text" on normalized events; omitted on outgoing wire requests. */
+  type?: "text";
   text: string;
 }
 
@@ -30,7 +39,7 @@ export interface FileRefPart {
 export type MessagePart = TextPart | FileRefPart;
 
 export interface A2AMessage {
-  role: "user" | "agent";
+  role: "ROLE_USER" | "ROLE_AGENT";
   parts: MessagePart[];
   /** Optional thread context for conversation continuity (contextId per A2A spec). */
   contextId?: string;
@@ -46,18 +55,18 @@ export interface A2ATaskParams {
     org_id?: string;
     thread_id?: string;
     scope?: Record<string, unknown>;
-    guest_session_id?: string;
     [key: string]: unknown;
   };
 }
 
-// ── Discriminated union of SSE events emitted by tasks/sendSubscribe ──────────
+// ── Normalized event shapes (stable consumer surface) ─────────────────────────
 
 /**
  * TaskStatusUpdateEvent: state transitions (submitted, working, failed, completed,
  * input-required). Carries `final: true` on terminal states.
  *
- * Derived from tasks.py: _completed_event, _runtime_failure_event, _runtime_progress_event
+ * Normalized from current-wire `statusUpdate` envelopes (TASK_STATE_* values)
+ * and from legacy `result.type` frames.
  */
 export interface TaskStatusUpdateEvent {
   type: "TaskStatusUpdateEvent";
@@ -86,7 +95,8 @@ export interface TaskStatusUpdateEvent {
  * `artifact.lastChunk = true` on the final artifact event before the
  * completed TaskStatusUpdateEvent.
  *
- * Derived from tasks.py: _artifact_chunk_event
+ * Normalized from current-wire `artifactUpdate` envelopes (append/lastChunk
+ * live on the update, not the artifact) and from legacy `result.type` frames.
  */
 export interface TaskArtifactUpdateEvent {
   type: "TaskArtifactUpdateEvent";
@@ -202,13 +212,69 @@ export interface JSONRPCErrorEnvelope {
   };
 }
 
+// ── Wire normalization helpers ────────────────────────────────────────────────
+
+type TaskState =
+  | "submitted"
+  | "working"
+  | "completed"
+  | "failed"
+  | "canceled"
+  | "input-required";
+
+const TASK_STATES = new Set<string>([
+  "submitted",
+  "working",
+  "completed",
+  "failed",
+  "canceled",
+  "input-required",
+]);
+
+/** Normalize TASK_STATE_* / snake_case wire states to the consumer shape. */
+function normalizeTaskState(value: unknown): TaskState | null {
+  if (typeof value !== "string" || !value) return null;
+  const normalized = value
+    .replace(/^TASK_STATE_/, "")
+    .toLowerCase()
+    .replace(/_/g, "-");
+  return TASK_STATES.has(normalized) ? (normalized as TaskState) : null;
+}
+
+function isTerminalState(state: TaskState): boolean {
+  return (
+    state === "completed" ||
+    state === "failed" ||
+    state === "canceled" ||
+    state === "input-required"
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+/** Map wire parts (typeless one-of `{text}`) to normalized TextParts. */
+function normalizeTextParts(value: unknown): TextPart[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((part): TextPart[] => {
+    if (!isRecord(part) || typeof part.text !== "string" || !part.text) {
+      return [];
+    }
+    return [{ type: "text", text: part.text }];
+  });
+}
+
 // ── SSE parser ────────────────────────────────────────────────────────────────
 
 /**
  * Parse a raw SSE `data:` line into a discriminated A2AEvent union.
  *
- * The wire format from the CR backend is a JSON-RPC 2.0 success envelope:
- *   { "jsonrpc": "2.0", "id": ..., "result": { "type": "...", ... } }
+ * The current wire format from the CR backend is a JSON-RPC 2.0 success
+ * envelope whose result carries a `statusUpdate` or `artifactUpdate`:
+ *   { "jsonrpc": "2.0", "id": ..., "result": { "statusUpdate": { ... } } }
+ * Legacy envelopes carrying `result.type` ("TaskStatusUpdateEvent" /
+ * "TaskArtifactUpdateEvent") are still accepted for tolerance.
  *
  * Returns null when the line should be ignored (comment, empty, non-data).
  * Throws A2AParseError when the line is malformed or unknown type.
@@ -221,6 +287,64 @@ export class A2AParseError extends Error {
     super(message);
     this.name = "A2AParseError";
   }
+}
+
+function mapStatusUpdate(update: Record<string, unknown>): A2AEvent | null {
+  const state = normalizeTaskState(
+    isRecord(update.status) ? update.status.state : undefined,
+  );
+  if (!state) return null;
+
+  const status = isRecord(update.status) ? update.status : {};
+  const message = isRecord(status.message)
+    ? {
+        role: "agent" as const,
+        parts: normalizeTextParts(status.message.parts),
+      }
+    : undefined;
+
+  const metadata = isRecord(update.metadata)
+    ? (update.metadata as A2AEventMetadata)
+    : undefined;
+
+  return {
+    type: "TaskStatusUpdateEvent",
+    id: typeof update.taskId === "string" ? update.taskId : "",
+    status: {
+      state,
+      ...(typeof status.timestamp === "string"
+        ? { timestamp: status.timestamp }
+        : {}),
+      ...(message && message.parts.length > 0 ? { message } : {}),
+    },
+    final: isTerminalState(state),
+    ...(metadata ? { metadata } : {}),
+  };
+}
+
+function mapArtifactUpdate(update: Record<string, unknown>): A2AEvent | null {
+  const artifact = isRecord(update.artifact) ? update.artifact : {};
+  const parts = normalizeTextParts(artifact.parts);
+  if (parts.length === 0) return null;
+
+  const artifactMeta = isRecord(artifact.metadata) ? artifact.metadata : {};
+  const metadata = isRecord(update.metadata)
+    ? (update.metadata as A2AEventMetadata)
+    : undefined;
+
+  return {
+    type: "TaskArtifactUpdateEvent",
+    id: typeof update.taskId === "string" ? update.taskId : "",
+    artifact: {
+      ...(typeof artifact.name === "string" ? { name: artifact.name } : {}),
+      parts,
+      index: typeof artifactMeta.index === "number" ? artifactMeta.index : 0,
+      append: update.append === true,
+      lastChunk: update.lastChunk === true,
+    },
+    final: false,
+    ...(metadata ? { metadata } : {}),
+  };
 }
 
 export function parseA2AEvent(line: string): A2AEvent | null {
@@ -271,8 +395,18 @@ export function parseA2AEvent(line: string): A2AEvent | null {
     event = envelope;
   }
 
+  // Current wire: statusUpdate / artifactUpdate envelopes.
+  if (isRecord(event.statusUpdate)) {
+    return mapStatusUpdate(event.statusUpdate);
+  }
+
+  if (isRecord(event.artifactUpdate)) {
+    return mapArtifactUpdate(event.artifactUpdate);
+  }
+
   const type = event.type;
 
+  // Legacy wire: result.type discriminators (tolerance only).
   if (type === "TaskStatusUpdateEvent") {
     return event as unknown as TaskStatusUpdateEvent;
   }
@@ -287,15 +421,31 @@ export function parseA2AEvent(line: string): A2AEvent | null {
 
 // ── Request builder ───────────────────────────────────────────────────────────
 
+/** Outgoing wire methods (A2A 1.0). Retired: tasks/send, tasks/sendSubscribe. */
+type WireMethod = "SendMessage" | "SendStreamingMessage";
+
 function buildJSONRPCRequest(
-  method: "tasks/send" | "tasks/sendSubscribe",
+  method: WireMethod,
   params: A2ATaskParams,
 ): string {
+  // Wire request parts are typeless one-of fields: {text}, never {type, text}.
+  const wireParams = {
+    ...params,
+    message: {
+      ...params.message,
+      parts: params.message.parts.map((part) => {
+        if ("text" in part) {
+          return { text: part.text };
+        }
+        return part;
+      }),
+    },
+  };
   return JSON.stringify({
     jsonrpc: "2.0",
     id: params.id ?? `cr-${Date.now()}`,
     method,
-    params,
+    params: wireParams,
   });
 }
 
@@ -308,18 +458,34 @@ export interface A2AClientOptions {
   apiKey?: string;
   /** Public organization handle for anonymous browser A2A. */
   handle?: string;
-  /** JWT bearer token for authenticated requests; omit for guest sessions. */
+  /** JWT bearer token for authenticated requests. */
   bearerToken?: string;
   /**
-   * Guest session id cookie value. The server reads this from the cookie jar
-   * automatically in browsers; pass here for non-browser clients or when
-   * the caller manages credentials explicitly.
+   * @deprecated The guest tier was removed server-side. This option is
+   * accepted for source compatibility but ignored; it emits a console warning
+   * when set. Remove it from callers.
    */
   guestSessionId?: string;
 }
 
 const A2A_ENDPOINT = "/api/agent/a2a";
 const AGENT_CARD_ENDPOINT = "/.well-known/agent-card.json";
+const A2A_PROTOCOL_VERSION = "1.0";
+
+let guestSessionIdWarned = false;
+
+function warnGuestSessionIdIgnored(): void {
+  if (guestSessionIdWarned) return;
+  guestSessionIdWarned = true;
+  console.warn(
+    "[@contextrocket/sdk] guestSessionId is deprecated and ignored: the guest tier was removed server-side. Use bearerToken or the website API key + handle instead.",
+  );
+}
+
+/** Test seam: reset the once-per-process deprecation warning. */
+export function resetGuestSessionIdWarning(): void {
+  guestSessionIdWarned = false;
+}
 
 function buildHeaders(
   opts: A2AClientOptions,
@@ -328,6 +494,7 @@ function buildHeaders(
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json",
+    "A2A-Version": A2A_PROTOCOL_VERSION,
     ...extra,
   };
   if (opts.bearerToken) {
@@ -362,15 +529,17 @@ export async function fetchAgentCard(
 }
 
 /**
- * Send a non-streaming task (tasks/send).
- * Returns the completed Task object from the JSON-RPC result.
+ * Send a non-streaming task (SendMessage).
+ * The current wire wraps the Task in `{task}`; unwrap it and return the
+ * Task object.
  */
 export async function sendTask(
   opts: A2AClientOptions,
   params: A2ATaskParams,
 ): Promise<Record<string, unknown>> {
+  if (opts.guestSessionId) warnGuestSessionIdIgnored();
   const url = `${opts.baseUrl.replace(/\/$/, "")}${A2A_ENDPOINT}`;
-  const body = buildJSONRPCRequest("tasks/send", params);
+  const body = buildJSONRPCRequest("SendMessage", params);
 
   const resp = await fetch(url, {
     method: "POST",
@@ -379,7 +548,7 @@ export async function sendTask(
   });
 
   if (!resp.ok) {
-    throw new Error(`A2A tasks/send failed: ${resp.status} ${resp.statusText}`);
+    throw new Error(`A2A SendMessage failed: ${resp.status} ${resp.statusText}`);
   }
 
   const data = (await resp.json()) as JSONRPCSuccess | JSONRPCErrorEnvelope;
@@ -388,11 +557,16 @@ export async function sendTask(
     throw new Error(data.error.message ?? "ERROR_A2A_INTERNAL");
   }
 
-  return (data as JSONRPCSuccess).result as Record<string, unknown>;
+  const result = (data as JSONRPCSuccess).result as Record<string, unknown>;
+  // Current wire: {task: {...}}. Legacy tolerance: bare task object.
+  if (isRecord(result.task)) {
+    return result.task;
+  }
+  return result;
 }
 
 /**
- * Open a streaming task (tasks/sendSubscribe).
+ * Open a streaming task (SendStreamingMessage).
  *
  * Returns an AsyncGenerator yielding parsed A2AEvent objects. The generator
  * completes when the stream closes or a terminal event (final: true) is received.
@@ -403,8 +577,9 @@ export async function* streamTask(
   params: A2ATaskParams,
   signal?: AbortSignal,
 ): AsyncGenerator<A2AEvent> {
+  if (opts.guestSessionId) warnGuestSessionIdIgnored();
   const url = `${opts.baseUrl.replace(/\/$/, "")}${A2A_ENDPOINT}`;
-  const body = buildJSONRPCRequest("tasks/sendSubscribe", params);
+  const body = buildJSONRPCRequest("SendStreamingMessage", params);
 
   const resp = await fetch(url, {
     method: "POST",
@@ -415,7 +590,7 @@ export async function* streamTask(
 
   if (!resp.ok) {
     throw new Error(
-      `A2A tasks/sendSubscribe failed: ${resp.status} ${resp.statusText}`,
+      `A2A SendStreamingMessage failed: ${resp.status} ${resp.statusText}`,
     );
   }
 
@@ -478,24 +653,27 @@ export async function* streamTask(
  * @param opts     Optional thread/org/handle context for continuity.
  *
  * Anonymous browser turns carry the organization handle in `metadata.handle`.
- * Authentication remains separate: registered and guest sessions continue to
- * use their bearer/session credentials, while the website API key is only a
- * publishable origin-bound browser credential.
+ * Authentication remains separate: registered sessions use their bearer
+ * token, while the website API key is only a publishable origin-bound
+ * browser credential.
  */
 export function buildTextTurnParams(
   text: string,
   opts?: {
     threadId?: string;
     orgId?: string;
+    /** @deprecated Ignored; see A2AClientOptions.guestSessionId. */
     guestSessionId?: string;
     scope?: Record<string, unknown>;
     /** Public organization handle for anonymous browser requests. */
     handle?: string;
   },
 ): A2ATaskParams {
+  if (opts?.guestSessionId) warnGuestSessionIdIgnored();
+
   const message: A2AMessage = {
-    role: "user",
-    parts: [{ type: "text", text }],
+    role: "ROLE_USER",
+    parts: [{ text }],
   };
 
   if (opts?.threadId) {
@@ -505,7 +683,6 @@ export function buildTextTurnParams(
   const metadata: A2ATaskParams["metadata"] = {};
   if (opts?.threadId) metadata.thread_id = opts.threadId;
   if (opts?.orgId) metadata.org_id = opts.orgId;
-  if (opts?.guestSessionId) metadata.guest_session_id = opts.guestSessionId;
   if (opts?.scope) metadata.scope = opts.scope;
   if (opts?.handle) metadata.handle = opts.handle;
 

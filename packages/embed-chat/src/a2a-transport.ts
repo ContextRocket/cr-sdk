@@ -39,6 +39,18 @@ const TRANSPORT_STATES = new Set<string>([
   "failed",
 ]);
 
+const A2A_PROTOCOL_VERSION = "1.0";
+
+/** Normalize TASK_STATE_* / snake_case wire states to the widget shape. */
+function normalizeTaskState(value: unknown): WidgetTransportState | null {
+  if (typeof value !== "string" || !value) return null;
+  const normalized = value
+    .replace(/^TASK_STATE_/, "")
+    .toLowerCase()
+    .replace(/_/g, "-");
+  return isTransportState(normalized) ? normalized : null;
+}
+
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -63,13 +75,9 @@ function extractTextParts(container: unknown): string[] {
     return [];
   }
 
+  // Wire parts are typeless one-of fields ({text}); read .text directly.
   return container.parts.flatMap((part) => {
-    if (
-      !isRecord(part) ||
-      part.type !== "text" ||
-      typeof part.text !== "string" ||
-      !part.text
-    ) {
+    if (!isRecord(part) || typeof part.text !== "string" || !part.text) {
       return [];
     }
     return [part.text];
@@ -138,20 +146,50 @@ function metadataEvent(
   };
 }
 
-function mapEnvelopeToEvents(envelope: unknown): WidgetTransportEvent[] {
-  if (!isRecord(envelope)) {
-    return [{ type: "error", message: GENERIC_ERROR }];
-  }
+function mapStatusUpdateEvents(update: Record<string, unknown>): WidgetTransportEvent[] {
+  const status = isRecord(update.status) ? update.status : undefined;
+  const state = normalizeTaskState(status?.state);
 
-  if (envelope.error !== undefined && envelope.error !== null) {
-    return [{ type: "error", message: GENERIC_ERROR }];
-  }
-
-  const result = envelope.result;
-  if (!isRecord(result)) {
+  if (!isTransportState(state)) {
     return [];
   }
 
+  const taskId = typeof update.taskId === "string" ? update.taskId : undefined;
+  const containers: unknown[] = [update, status];
+
+  if (state === "failed" || state === "canceled") {
+    return [
+      metadataEvent(state, true, ...containers),
+      { type: "error", message: GENERIC_ERROR },
+    ];
+  }
+
+  const sessionEvents = extractSessionEvents(...containers);
+
+  if (state === "completed" || state === "input-required") {
+    return [
+      metadataEvent(state, true, ...containers),
+      ...sessionEvents,
+      { type: "done", taskId },
+    ];
+  }
+
+  return [metadataEvent(state, false, ...containers), ...sessionEvents];
+}
+
+function mapArtifactUpdateEvents(update: Record<string, unknown>): WidgetTransportEvent[] {
+  const artifact = isRecord(update.artifact) ? update.artifact : undefined;
+  const events: WidgetTransportEvent[] = extractTextParts(artifact).map(
+    (text) => ({
+      type: "delta",
+      text,
+    }),
+  );
+  events.push(metadataEvent("working", false, update, artifact));
+  return events;
+}
+
+function mapLegacyEnvelope(result: Record<string, unknown>): WidgetTransportEvent[] {
   const eventType = result.type;
 
   if (eventType === "TaskArtifactUpdateEvent") {
@@ -171,7 +209,7 @@ function mapEnvelopeToEvents(envelope: unknown): WidgetTransportEvent[] {
 
   const taskId = typeof result.id === "string" ? result.id : undefined;
   const status = isRecord(result.status) ? result.status : undefined;
-  const state = status?.state;
+  const state = normalizeTaskState(status?.state);
 
   if (!isTransportState(state)) {
     return [];
@@ -199,6 +237,33 @@ function mapEnvelopeToEvents(envelope: unknown): WidgetTransportEvent[] {
   }
 
   return [metadataEvent(state, false, status, result), ...sessionEvents];
+}
+
+function mapEnvelopeToEvents(envelope: unknown): WidgetTransportEvent[] {
+  if (!isRecord(envelope)) {
+    return [{ type: "error", message: GENERIC_ERROR }];
+  }
+
+  if (envelope.error !== undefined && envelope.error !== null) {
+    return [{ type: "error", message: GENERIC_ERROR }];
+  }
+
+  const result = envelope.result;
+  if (!isRecord(result)) {
+    return [];
+  }
+
+  // Current wire: statusUpdate / artifactUpdate result envelopes.
+  if (isRecord(result.statusUpdate)) {
+    return mapStatusUpdateEvents(result.statusUpdate);
+  }
+
+  if (isRecord(result.artifactUpdate)) {
+    return mapArtifactUpdateEvents(result.artifactUpdate);
+  }
+
+  // Legacy wire: result.type discriminators (tolerance only).
+  return mapLegacyEnvelope(result);
 }
 
 function extractSessionEvents(
@@ -266,7 +331,7 @@ async function* streamDemoEvents(
 }
 
 /**
- * Stream A2A `tasks/sendSubscribe` events from the embed API base.
+ * Stream A2A `SendStreamingMessage` events from the embed API base.
  * Uses the public JSON-RPC envelope and calls `/api/agent/a2a` directly with
  * the website API key.
  */
@@ -285,8 +350,8 @@ export async function* streamEmbedA2aSubscribe(
     return;
   }
   const messageObj: Record<string, unknown> = {
-    role: "user",
-    parts: [{ type: "text", text: request.message }],
+    role: "ROLE_USER",
+    parts: [{ text: request.message }],
   };
 
   if (request.threadId && UUID_PATTERN.test(request.threadId)) {
@@ -301,7 +366,7 @@ export async function* streamEmbedA2aSubscribe(
   const body = {
     jsonrpc: "2.0",
     id: `embed-chat-${crypto.randomUUID()}`,
-    method: "tasks/sendSubscribe",
+    method: "SendStreamingMessage",
     params: {
       message: messageObj,
       metadata,
@@ -313,6 +378,7 @@ export async function* streamEmbedA2aSubscribe(
   const headers: Record<string, string> = {
     "content-type": "application/json",
     accept: "text/event-stream",
+    "a2a-version": A2A_PROTOCOL_VERSION,
   };
   if (config.apiKey) {
     headers["x-api-key"] = config.apiKey;

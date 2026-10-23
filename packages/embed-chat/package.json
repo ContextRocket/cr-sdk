@@ -9,11 +9,14 @@
   ],
   "scripts": {
     "build": "node build.mjs",
+    "test": "vitest run",
     "verify": "node build.mjs && node -e \"const{statSync}=require('node:fs');const p='dist/widget.js';const s=statSync(p);if(s.size<1000){console.error('widget.js too small: '+s.size+' bytes');process.exit(1)}console.log('OK '+p+' ('+s.size+' bytes)')\""
   },
   "devDependencies": {
     "esbuild": "^0.25.10",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vite": "^7.3.7",
+    "vitest": "^5.0.5"
   },
   "engines": {
     "node": ">=22"
