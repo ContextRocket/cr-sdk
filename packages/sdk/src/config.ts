@@ -42,7 +42,7 @@ function publicEnv(...names: string[]): string | undefined {
 export function resolveCRConfig(): CRConfig {
   const agentUrl =
     publicEnv("NEXT_PUBLIC_CR_AGENT_URL", "PUBLIC_CR_AGENT_URL") ||
-    "https://app-api.contextrocket.com";
+    "https://api.contextrocket.com";
   const handle =
     publicEnv(
       "NEXT_PUBLIC_CONTEXTROCKET_HANDLE",

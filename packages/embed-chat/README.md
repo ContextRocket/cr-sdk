@@ -32,7 +32,7 @@ For a live site, configure the API base and organization handle:
 <script
   src="https://cdn.contextrocket.com/widget/v<verified-version>/widget.js"
   data-contextrocket-mode="live"
-  data-contextrocket-api-base="https://app-api.contextrocket.com"
+  data-contextrocket-api-base="https://api.contextrocket.com"
   data-contextrocket-handle="your-organization-handle"
   data-contextrocket-api-key="publishable-api-key"
   data-contextrocket-theme="system"
