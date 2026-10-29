@@ -1,3 +1,4 @@
+import { copyFor } from "./copy";
 import { parseSSE } from "./sse-parser";
 import type {
   WidgetConfig,
@@ -59,8 +60,6 @@ const INTERRUPTED_ERROR =
   "The connection ended before the answer was complete. Please try again.";
 const UNSUPPORTED_CONTENT =
   "This content is not available in this chat. Please try again.";
-const DEMO_RESPONSE =
-  "This is a canned ContextRocket demo response. Configure live mode with an organization handle when you are ready to connect your own knowledge base.";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -146,7 +145,9 @@ function metadataEvent(
   };
 }
 
-function mapStatusUpdateEvents(update: Record<string, unknown>): WidgetTransportEvent[] {
+function mapStatusUpdateEvents(
+  update: Record<string, unknown>,
+): WidgetTransportEvent[] {
   const status = isRecord(update.status) ? update.status : undefined;
   const state = normalizeTaskState(status?.state);
 
@@ -160,7 +161,7 @@ function mapStatusUpdateEvents(update: Record<string, unknown>): WidgetTransport
   if (state === "failed" || state === "canceled") {
     return [
       metadataEvent(state, true, ...containers),
-      { type: "error", message: GENERIC_ERROR },
+      { type: "error", message: GENERIC_ERROR, reason: "generic" },
     ];
   }
 
@@ -177,7 +178,9 @@ function mapStatusUpdateEvents(update: Record<string, unknown>): WidgetTransport
   return [metadataEvent(state, false, ...containers), ...sessionEvents];
 }
 
-function mapArtifactUpdateEvents(update: Record<string, unknown>): WidgetTransportEvent[] {
+function mapArtifactUpdateEvents(
+  update: Record<string, unknown>,
+): WidgetTransportEvent[] {
   const artifact = isRecord(update.artifact) ? update.artifact : undefined;
   const events: WidgetTransportEvent[] = extractTextParts(artifact).map(
     (text) => ({
@@ -189,7 +192,9 @@ function mapArtifactUpdateEvents(update: Record<string, unknown>): WidgetTranspo
   return events;
 }
 
-function mapLegacyEnvelope(result: Record<string, unknown>): WidgetTransportEvent[] {
+function mapLegacyEnvelope(
+  result: Record<string, unknown>,
+): WidgetTransportEvent[] {
   const eventType = result.type;
 
   if (eventType === "TaskArtifactUpdateEvent") {
@@ -218,7 +223,7 @@ function mapLegacyEnvelope(result: Record<string, unknown>): WidgetTransportEven
   if (state === "failed" || state === "canceled") {
     return [
       metadataEvent(state, true, status, result),
-      { type: "error", message: GENERIC_ERROR },
+      { type: "error", message: GENERIC_ERROR, reason: "generic" },
     ];
   }
 
@@ -241,11 +246,11 @@ function mapLegacyEnvelope(result: Record<string, unknown>): WidgetTransportEven
 
 function mapEnvelopeToEvents(envelope: unknown): WidgetTransportEvent[] {
   if (!isRecord(envelope)) {
-    return [{ type: "error", message: GENERIC_ERROR }];
+    return [{ type: "error", message: GENERIC_ERROR, reason: "generic" }];
   }
 
   if (envelope.error !== undefined && envelope.error !== null) {
-    return [{ type: "error", message: GENERIC_ERROR }];
+    return [{ type: "error", message: GENERIC_ERROR, reason: "generic" }];
   }
 
   const result = envelope.result;
@@ -291,7 +296,7 @@ function mapSseDataToEvents(data: string): WidgetTransportEvent[] {
   try {
     return mapEnvelopeToEvents(JSON.parse(data));
   } catch {
-    return [{ type: "error", message: GENERIC_ERROR }];
+    return [{ type: "error", message: GENERIC_ERROR, reason: "generic" }];
   }
 }
 
@@ -311,12 +316,13 @@ async function* streamTransportEvents(
 }
 
 async function* streamDemoEvents(
+  config: WidgetConfig,
   request: WidgetSendRequest,
   signal?: AbortSignal,
 ): AsyncGenerator<WidgetTransportEvent> {
   const threadId = request.threadId ?? "demo-thread";
   yield { type: "meta", state: "working" };
-  for (const token of DEMO_RESPONSE.split(/(\s+)/)) {
+  for (const token of copyFor(config).demoResponse.split(/(\s+)/)) {
     if (signal?.aborted) {
       return;
     }
@@ -346,7 +352,7 @@ export async function* streamEmbedA2aSubscribe(
   }
 
   if (config.mode === "demo") {
-    yield* streamDemoEvents(request, signal);
+    yield* streamDemoEvents(config, request, signal);
     return;
   }
   const messageObj: Record<string, unknown> = {
@@ -396,18 +402,18 @@ export async function* streamEmbedA2aSubscribe(
     if (signal?.aborted) {
       return;
     }
-    yield { type: "error", message: GENERIC_ERROR };
+    yield { type: "error", message: GENERIC_ERROR, reason: "generic" };
     return;
   }
 
   if (!response.ok) {
-    yield { type: "error", message: GENERIC_ERROR };
+    yield { type: "error", message: GENERIC_ERROR, reason: "generic" };
     return;
   }
 
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("text/event-stream")) {
-    yield { type: "error", message: GENERIC_ERROR };
+    yield { type: "error", message: GENERIC_ERROR, reason: "generic" };
     return;
   }
 
@@ -427,7 +433,7 @@ export async function* streamEmbedA2aSubscribe(
   // A cleanly closed HTTP stream is not proof that the task completed. Keep
   // partial text visible, but make the interruption explicit and retryable.
   if (!signal?.aborted && !sawTerminalEvent) {
-    yield { type: "error", message: INTERRUPTED_ERROR };
+    yield { type: "error", message: INTERRUPTED_ERROR, reason: "interrupted" };
   }
 }
 

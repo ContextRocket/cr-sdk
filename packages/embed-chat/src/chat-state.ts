@@ -1,5 +1,6 @@
 import type {
   WidgetChatMessage,
+  WidgetFailureReason,
   WidgetChatStatus,
   WidgetTransportEvent,
   WidgetTransportState,
@@ -9,6 +10,7 @@ export interface WidgetChatState {
   status: WidgetChatStatus;
   messages: WidgetChatMessage[];
   errorMessage: string | null;
+  errorReason?: WidgetFailureReason | null;
   threadId: string | null;
   transportState: WidgetTransportState | null;
 }
@@ -28,6 +30,7 @@ export function createInitialChatState(greeting?: string): WidgetChatState {
     status: "idle",
     messages,
     errorMessage: null,
+    errorReason: null,
     threadId: null,
     transportState: null,
   };
@@ -61,6 +64,7 @@ export function beginSend(
       ...state,
       status: "streaming",
       errorMessage: null,
+      errorReason: null,
       messages: [
         ...state.messages,
         { id: userMessageId, role: "user", content: userText },
@@ -97,6 +101,7 @@ export function applyTransportEvent(
         ...state,
         status: "error",
         errorMessage: event.message,
+        errorReason: event.reason ?? "generic",
       };
 
     case "unsupported":
@@ -104,6 +109,7 @@ export function applyTransportEvent(
         ...state,
         status: "error",
         errorMessage: event.message,
+        errorReason: "unsupported",
       };
 
     case "done":

@@ -33,10 +33,12 @@ export type WidgetTransportState =
 
 export type WidgetMode = "demo" | "live";
 
+export type WidgetFailureReason = "generic" | "interrupted" | "unsupported";
+
 export type WidgetTransportEvent =
   | { type: "delta"; text: string }
   | { type: "done"; taskId?: string }
-  | { type: "error"; message: string }
+  | { type: "error"; message: string; reason?: WidgetFailureReason }
   | {
       type: "meta";
       state: WidgetTransportState;
@@ -62,6 +64,7 @@ export interface WidgetConfig {
   ref?: string;
   theme?: "system" | "light" | "dark";
   position?: "bottom-right" | "bottom-left";
+  /** Auto/omitted uses supported host document language (including regional tags), else English. */
   locale?: "auto" | "en" | "es" | "de";
 }
 

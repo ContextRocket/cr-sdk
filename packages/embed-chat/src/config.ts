@@ -1,3 +1,4 @@
+import { resolveWidgetLocale } from "./copy";
 import type { WidgetConfig } from "./types";
 
 const DATA_PREFIX = "contextrocket";
@@ -86,12 +87,10 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
     ...(rawPosition === "bottom-right" || rawPosition === "bottom-left"
       ? { position: rawPosition }
       : {}),
-    ...(rawLocale === "auto" ||
-    rawLocale === "en" ||
-    rawLocale === "es" ||
-    rawLocale === "de"
-      ? { locale: rawLocale }
-      : {}),
+    locale: resolveWidgetLocale(
+      rawLocale,
+      source.ownerDocument.documentElement.lang,
+    ),
   };
 }
 

@@ -141,11 +141,12 @@ function sseBody(frames: unknown[]): string {
 
 function livePortWithFrames(frames: unknown[]) {
   const body = sseBody(frames);
-  return createInMemoryEmbedWidgetA2aPort(async () =>
-    new Response(body, {
-      status: 200,
-      headers: { "content-type": "text/event-stream" },
-    }),
+  return createInMemoryEmbedWidgetA2aPort(
+    async () =>
+      new Response(body, {
+        status: 200,
+        headers: { "content-type": "text/event-stream" },
+      }),
   );
 }
 
@@ -223,7 +224,10 @@ describe("streamEmbedA2aSubscribe (current-wire frames)", () => {
       port,
     );
     const text = events
-      .filter((e): e is Extract<WidgetTransportEvent, { type: "delta" }> => e.type === "delta")
+      .filter(
+        (e): e is Extract<WidgetTransportEvent, { type: "delta" }> =>
+          e.type === "delta",
+      )
       .map((e) => e.text)
       .join("");
     expect(text).toBe("Hello, world!");
@@ -240,7 +244,11 @@ describe("streamEmbedA2aSubscribe (current-wire frames)", () => {
       { message: "hi" },
       port,
     );
-    expect(events.at(-1)).toEqual({ type: "error", message: expect.any(String) });
+    expect(events.at(-1)).toMatchObject({
+      type: "error",
+      reason: "generic",
+      message: expect.any(String),
+    });
   });
 
   it("maps TASK_STATE_INPUT_REQUIRED to a terminal done event", async () => {
@@ -264,9 +272,7 @@ describe("streamEmbedA2aSubscribe (current-wire frames)", () => {
     );
     expect(events.at(-1)?.type).toBe("error");
     expect(
-      events.at(-1) &&
-        "message" in events.at(-1)! &&
-        events.at(-1)!.message,
+      events.at(-1) && "message" in events.at(-1)! && events.at(-1)!.message,
     ).toContain("connection ended");
   });
 
@@ -341,7 +347,10 @@ describe("streamEmbedA2aSubscribe (legacy tolerance)", () => {
       port,
     );
     const text = events
-      .filter((e): e is Extract<WidgetTransportEvent, { type: "delta" }> => e.type === "delta")
+      .filter(
+        (e): e is Extract<WidgetTransportEvent, { type: "delta" }> =>
+          e.type === "delta",
+      )
       .map((e) => e.text)
       .join("");
     expect(text).toBe("legacy ");
@@ -367,7 +376,9 @@ describe("streamEmbedA2aSubscribe (legacy tolerance)", () => {
       { message: "hi" },
       port,
     );
-    expect(events).toEqual([{ type: "error", message: expect.any(String) }]);
+    expect(events).toEqual([
+      { type: "error", reason: "generic", message: expect.any(String) },
+    ]);
   });
 });
 
@@ -382,14 +393,16 @@ describe("streamEmbedA2aSubscribe (demo mode)", () => {
       port,
     );
     const text = events
-      .filter((e): e is Extract<WidgetTransportEvent, { type: "delta" }> => e.type === "delta")
+      .filter(
+        (e): e is Extract<WidgetTransportEvent, { type: "delta" }> =>
+          e.type === "delta",
+      )
       .map((e) => e.text)
       .join("");
     expect(text).toContain("canned ContextRocket demo response");
     expect(events.at(-1)).toEqual({ type: "done", taskId: "demo-task" });
   });
 });
-
 
 it("delivers streamed content through the real native browser fetch port", async () => {
   const bundle = buildSync({
@@ -455,3 +468,142 @@ it("delivers streamed content through the real native browser fetch port", async
     await browser.close();
   }
 }, 15000);
+
+it("keeps host-resolved recovery UI localized without changing caller or partial answer text", async () => {
+  const bundle = buildSync({
+    entryPoints: [fileURLToPath(new URL("./index.ts", import.meta.url))],
+    bundle: true,
+    write: false,
+    format: "iife",
+    globalName: "ContextRocketWidget",
+    platform: "browser",
+    target: "es2020",
+  }).outputFiles[0]!.text;
+  const browser = await chromium.launch();
+  try {
+    for (const item of [
+      {
+        host: "es-ES",
+        locale: "auto",
+        lang: "es",
+        title: "Pregunta a ContextRocket",
+        error: "Algo salió mal. Inténtalo de nuevo.",
+      },
+      {
+        host: "de-AT",
+        locale: undefined,
+        lang: "de",
+        title: "Frag ContextRocket",
+        error: "Etwas ist schiefgelaufen. Versuch es erneut.",
+      },
+      {
+        host: "es-MX",
+        locale: "de",
+        lang: "de",
+        title: "Caller title",
+        error: "Etwas ist schiefgelaufen. Versuch es erneut.",
+        custom: true,
+      },
+      {
+        host: "de-DE",
+        locale: "es",
+        lang: "es",
+        title: "Pregunta a ContextRocket",
+        error: "Algo salió mal. Inténtalo de nuevo.",
+      },
+      {
+        host: "fr-FR",
+        locale: undefined,
+        lang: "en",
+        title: "Ask ContextRocket",
+        error: "Something went wrong. Try again.",
+      },
+    ]) {
+      const page = await browser.newPage();
+      page.setDefaultTimeout(5000);
+      let attempts = 0;
+      const unexpected: string[] = [];
+      await page.route("**/*", async (route) => {
+        const url = new URL(route.request().url());
+        if (url.origin === "http://localhost:39992" && url.pathname === "/") {
+          await route.fulfill({
+            contentType: "text/html",
+            body: `<html lang="${item.host}"><script>${bundle}</script><contextrocket-chat data-contextrocket-mode="live" data-contextrocket-api-base="http://localhost:39992" data-contextrocket-greeting="Caller greeting" ${item.locale ? `data-contextrocket-locale="${item.locale}"` : ""} ${item.custom ? 'data-contextrocket-title="Caller title"' : ""}></contextrocket-chat></html>`,
+          });
+        } else if (
+          url.origin === "http://localhost:39992" &&
+          url.pathname === "/api/agent/a2a" &&
+          route.request().method() === "POST"
+        ) {
+          attempts += 1;
+          await route.fulfill(
+            attempts === 1
+              ? {
+                  status: 503,
+                  contentType: "application/json",
+                  body: '{"error":{"message":"INTERNAL MUST NOT RENDER"}}',
+                }
+              : {
+                  contentType: "text/event-stream",
+                  body: sseBody([WORKING_FRAME, ARTIFACT_FRAME, FAILED_FRAME]),
+                },
+          );
+        } else if (url.pathname === "/brand/cr-icon-red.svg") {
+          await route.fulfill({ status: 204, body: "" });
+        } else {
+          unexpected.push(url.pathname);
+          await route.abort();
+        }
+      });
+      await page.goto("http://localhost:39992");
+      const host = page.locator("contextrocket-chat");
+      expect(await host.getAttribute("lang")).toBe(item.lang);
+      await host.locator(".cr-launcher").click();
+      expect(await host.locator(".cr-title").textContent()).toBe(item.title);
+      expect(await host.locator(".cr-panel").getAttribute("aria-label")).toBe(
+        item.title,
+      );
+      await host.locator(".cr-input").fill("Synthetic locale test");
+      await host.locator(".cr-send").click();
+      await host.locator(".cr-error:not([hidden])").waitFor();
+      expect(await host.locator(".cr-error").textContent()).toBe(item.error);
+      expect(
+        await host
+          .locator('.cr-message[data-role="assistant"]')
+          .allTextContents(),
+      ).toEqual(["Caller greeting"]);
+      await host.locator(".cr-retry").click();
+      await page.waitForFunction(
+        () =>
+          document
+            .querySelector("contextrocket-chat")
+            ?.shadowRoot?.querySelectorAll('.cr-message[data-role="assistant"]')
+            .length === 2,
+      );
+      await host.locator(".cr-error:not([hidden])").waitFor();
+      expect(
+        await host
+          .locator('.cr-message[data-role="assistant"]')
+          .allTextContents(),
+      ).toEqual(["Caller greeting", "Hello, "]);
+      expect(await host.locator(".cr-error").textContent()).toBe(item.error);
+      expect(await host.locator(".cr-footer span").textContent()).toBe(
+        item.lang === "es"
+          ? "Con tecnología de ContextRocket"
+          : item.lang === "de"
+            ? "Mit ContextRocket"
+            : "Powered by ContextRocket",
+      );
+      if (item.host === "de-AT") {
+        const demo = await page.evaluate<string>(
+          "ContextRocketWidget.collectEmbedA2aSubscribe({mode:'demo',locale:'de'},{message:'Synthetic demo'}).then(events => events.filter(event => event.type === 'delta').map(event => event.text).join(''))",
+        );
+        expect(demo).toContain("Demo-Antwort von ContextRocket");
+      }
+      expect(unexpected).toEqual([]);
+      await page.close();
+    }
+  } finally {
+    await browser.close();
+  }
+}, 30000);

@@ -11,73 +11,9 @@ import { renderMarkdown } from "./markdown";
 import { safeHref, escapeHtml } from "./safe-url";
 import { widgetStyles } from "./styles";
 import type { WidgetConfig } from "./types";
+import { copyFor, type WidgetCopy } from "./copy";
 
 const ELEMENT_TAG = "contextrocket-chat";
-
-const COPY = {
-  en: {
-    open: "Open chat",
-    close: "Close chat",
-    send: "Send",
-    stop: "Stop response",
-    retry: "Try again",
-    placeholder: "Ask a question…",
-    working: "Working…",
-    submitted: "Connecting…",
-    inputRequired: "A response is needed to continue.",
-    canceled: "Response stopped. You can try again.",
-    interrupted:
-      "The connection ended before the answer was complete. Please try again.",
-    unsupported:
-      "This content is not available in this chat. Please try again.",
-    sources: "Sources",
-    suggestions: "Suggested follow-ups",
-  },
-  es: {
-    open: "Abrir chat",
-    close: "Cerrar chat",
-    send: "Enviar",
-    stop: "Detener respuesta",
-    retry: "Intentar de nuevo",
-    placeholder: "Haz una pregunta…",
-    working: "Trabajando…",
-    submitted: "Conectando…",
-    inputRequired: "Se necesita una respuesta para continuar.",
-    canceled: "Respuesta detenida. Puedes intentarlo de nuevo.",
-    interrupted:
-      "La conexión terminó antes de completar la respuesta. Inténtalo de nuevo.",
-    unsupported:
-      "Este contenido no está disponible en este chat. Inténtalo de nuevo.",
-    sources: "Fuentes",
-    suggestions: "Sugerencias",
-  },
-  de: {
-    open: "Chat öffnen",
-    close: "Chat schließen",
-    send: "Senden",
-    stop: "Antwort stoppen",
-    retry: "Erneut versuchen",
-    placeholder: "Frage stellen…",
-    working: "Wird bearbeitet…",
-    submitted: "Verbindung wird hergestellt…",
-    inputRequired: "Für die Fortsetzung ist eine Antwort erforderlich.",
-    canceled: "Antwort gestoppt. Du kannst es erneut versuchen.",
-    interrupted:
-      "Die Verbindung endete vor Abschluss der Antwort. Bitte erneut versuchen.",
-    unsupported:
-      "Dieser Inhalt ist in diesem Chat nicht verfügbar. Bitte erneut versuchen.",
-    sources: "Quellen",
-    suggestions: "Vorschläge",
-  },
-} as const;
-
-type WidgetCopy = (typeof COPY)[keyof typeof COPY];
-
-function copyFor(config: WidgetConfig): WidgetCopy {
-  return COPY[
-    config.locale === "es" || config.locale === "de" ? config.locale : "en"
-  ];
-}
 
 export class ContextRocketChatElement extends HTMLElement {
   #config: WidgetConfig | null = null;
@@ -123,6 +59,7 @@ export class ContextRocketChatElement extends HTMLElement {
     this.#config = parseWidgetConfig(this);
     if (!this.#config) return;
 
+    this.lang = this.#config.locale!;
     this.#state = createInitialChatState(this.#config.greeting);
     this.#render();
     this.#bindEvents();
@@ -135,13 +72,29 @@ export class ContextRocketChatElement extends HTMLElement {
     const next = parseWidgetConfig(this);
     if (!next) return;
     this.#config = next;
+    this.lang = next.locale!;
     if (!this.#footerLink) return;
-    this.#footerLink.href = buildPoweredByHref(next);
-    this.#shadow.host.style.setProperty(
-      "--cr-accent",
-      next.accentColor ?? "#ff2b67",
+    const copy = copyFor(next);
+    const root = this.#shadow.querySelector<HTMLElement>(".cr-root")!;
+    root.lang = this.lang;
+    this.#shadow.querySelector<HTMLElement>(".cr-title")!.textContent =
+      next.title ?? copy.defaultTitle;
+    this.#panel.setAttribute("aria-label", next.title ?? copy.defaultTitle);
+    this.#shadow
+      .querySelector(".cr-close")!
+      .setAttribute("aria-label", copy.close);
+    this.#launcher.setAttribute(
+      "aria-label",
+      this.#panel.dataset.open === "true" ? copy.close : copy.open,
     );
-    this.#shadow.host.dataset.theme = next.theme ?? "system";
+    this.#input.placeholder = copy.placeholder;
+    this.#input.setAttribute("aria-label", copy.placeholder);
+    this.#retry.textContent = copy.retry;
+    this.#footerLink.querySelector("span")!.textContent = copy.poweredBy;
+    this.#syncUi();
+    this.#footerLink.href = buildPoweredByHref(next);
+    this.style.setProperty("--cr-accent", next.accentColor ?? "#ff2b67");
+    this.dataset.theme = next.theme ?? "system";
     this.#shadow
       .querySelector<HTMLElement>(".cr-root")
       ?.setAttribute("data-position", next.position ?? "bottom-right");
@@ -155,11 +108,12 @@ export class ContextRocketChatElement extends HTMLElement {
 
     const root = document.createElement("div");
     root.className = "cr-root";
+    root.lang = this.lang;
     root.dataset.position = config.position ?? "bottom-right";
     root.innerHTML = `
-      <div class="cr-panel" data-open="false" data-position="${escapeHtml(config.position ?? "bottom-right")}" part="panel" role="dialog" aria-modal="true" aria-hidden="true" aria-label="${escapeHtml(config.title ?? "Ask ContextRocket")}" inert>
+      <div class="cr-panel" data-open="false" data-position="${escapeHtml(config.position ?? "bottom-right")}" part="panel" role="dialog" aria-modal="true" aria-hidden="true" aria-label="${escapeHtml(config.title ?? copy.defaultTitle)}" inert>
         <header class="cr-header">
-          <h2 class="cr-title">${escapeHtml(config.title ?? "Ask ContextRocket")}</h2>
+          <h2 class="cr-title">${escapeHtml(config.title ?? copy.defaultTitle)}</h2>
           <button type="button" class="cr-close" aria-label="${copy.close}">×</button>
         </header>
         <div class="cr-messages" part="messages" role="log" aria-live="polite"></div>
@@ -173,7 +127,7 @@ export class ContextRocketChatElement extends HTMLElement {
         <footer class="cr-footer" part="footer">
           <a class="powered-by-badge" href="${escapeHtml(buildPoweredByHref(config))}" target="_blank" rel="noopener noreferrer">
             <img src="/brand/cr-icon-red.svg" alt="" width="14" height="14" aria-hidden="true">
-            <span>Powered by ContextRocket</span>
+            <span>${escapeHtml(copy.poweredBy)}</span>
           </a>
         </footer>
       </div>
@@ -204,7 +158,7 @@ export class ContextRocketChatElement extends HTMLElement {
     this.#footerLink = this.#shadow.querySelector(
       ".cr-footer a",
     ) as HTMLAnchorElement;
-    this.#shadow.host.dataset.theme = config.theme ?? "system";
+    this.dataset.theme = config.theme ?? "system";
   }
 
   #bindEvents(): void {
@@ -236,6 +190,7 @@ export class ContextRocketChatElement extends HTMLElement {
         }
       });
     this.#shadow.addEventListener("keydown", (event) => {
+      if (!(event instanceof KeyboardEvent)) return;
       if (!this.#panel || this.#panel.dataset.open !== "true") return;
       if (event.key === "Escape") {
         event.preventDefault();
@@ -344,7 +299,8 @@ export class ContextRocketChatElement extends HTMLElement {
         this.#state = {
           ...this.#state,
           status: "error",
-          errorMessage: "Something went wrong. Please try again.",
+          errorMessage: null,
+          errorReason: "generic",
         };
         this.#syncUi();
       }
@@ -361,6 +317,7 @@ export class ContextRocketChatElement extends HTMLElement {
       ...this.#state,
       status: "canceled",
       errorMessage: copyFor(this.#config!).canceled,
+      errorReason: null,
     };
     this.#syncUi();
   }
@@ -371,6 +328,17 @@ export class ContextRocketChatElement extends HTMLElement {
     this.#messages.replaceChildren();
 
     for (const message of this.#state.messages) {
+      if (
+        message.role === "assistant" &&
+        !message.content.trim() &&
+        !message.sourceRefs?.length &&
+        !message.suggestions?.length &&
+        !(
+          this.#state.status === "streaming" &&
+          message.id === this.#assistantMessageId
+        )
+      )
+        continue;
       const bubble = document.createElement("div");
       bubble.className = "cr-message";
       bubble.dataset.role = message.role;
@@ -395,9 +363,19 @@ export class ContextRocketChatElement extends HTMLElement {
     }
 
     this.#messages.scrollTop = this.#messages.scrollHeight;
-    const hasError = Boolean(this.#state.errorMessage);
+    const errorCopy =
+      this.#state.status === "error"
+        ? this.#state.errorReason === "interrupted"
+          ? copy.interrupted
+          : this.#state.errorReason === "unsupported"
+            ? copy.unsupported
+            : copy.generic
+        : this.#state.status === "canceled"
+          ? copy.canceled
+          : "";
+    const hasError = Boolean(errorCopy);
     this.#error.hidden = !hasError;
-    this.#error.textContent = this.#state.errorMessage ?? "";
+    this.#error.textContent = errorCopy;
     this.#retry.hidden = !hasError || !this.#lastUserMessage;
 
     let statusText = "";
