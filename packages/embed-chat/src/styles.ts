@@ -339,7 +339,7 @@ export function widgetStyles(accentColor = "#ff2b67"): string {
 .cr-retry {
   align-self: flex-start;
   margin: 0 var(--tw-space-4) var(--tw-space-2);
-  min-height: 2rem;
+  min-height: 2.75rem;
   border: 1px solid var(--cr-border-strong);
   border-radius: 9999px;
   background: var(--cr-bg);
@@ -404,6 +404,7 @@ export function widgetStyles(accentColor = "#ff2b67"): string {
 .cr-input {
   flex: 1;
   min-width: 0;
+  min-height: 2.75rem;
   width: 100%;
   border: none;
   border-radius: 0;
@@ -417,6 +418,11 @@ export function widgetStyles(accentColor = "#ff2b67"): string {
 
 .cr-input:focus {
   outline: none;
+}
+
+.cr-input:focus-visible {
+  outline: 2px solid var(--cr-accent);
+  outline-offset: 2px;
 }
 
 .cr-input::placeholder {
@@ -481,6 +487,7 @@ export function widgetStyles(accentColor = "#ff2b67"): string {
 
 .powered-by-badge {
   display: inline-flex;
+  min-height: 2.75rem;
   align-items: center;
   gap: var(--tw-space-1_5);
   color: var(--cr-muted);
