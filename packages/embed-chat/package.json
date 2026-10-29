@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "build": "node build.mjs",
-    "test": "vitest run",
+    "test": "playwright install --only-shell chromium && vitest run",
     "verify": "node build.mjs && node -e \"const{statSync}=require('node:fs');const p='dist/widget.js';const s=statSync(p);if(s.size<1000){console.error('widget.js too small: '+s.size+' bytes');process.exit(1)}console.log('OK '+p+' ('+s.size+' bytes)')\""
   },
   "devDependencies": {
