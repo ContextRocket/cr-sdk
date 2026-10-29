@@ -208,7 +208,7 @@ export function widgetStyles(accentColor = "#ff2b67"): string {
   color: var(--cr-text);
 }
 
-/* size-8 rounded-md icon button */
+/* Rounded icon button with a 44px minimum touch target. */
 .cr-close {
   border: none;
   background: transparent;
@@ -218,8 +218,8 @@ export function widgetStyles(accentColor = "#ff2b67"): string {
   line-height: 1;
   width: 2rem;
   height: 2rem;
-  min-width: 2rem;
-  min-height: 2rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   padding: 0;
   border-radius: var(--tw-radius-md);
   display: grid;
