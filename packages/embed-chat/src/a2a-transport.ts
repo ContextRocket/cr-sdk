@@ -355,7 +355,9 @@ export async function* streamEmbedA2aSubscribe(
     yield* streamDemoEvents(config, request, signal);
     return;
   }
+  request.messageId ??= crypto.randomUUID();
   const messageObj: Record<string, unknown> = {
+    messageId: request.messageId,
     role: "ROLE_USER",
     parts: [{ text: request.message }],
   };

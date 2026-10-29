@@ -522,6 +522,10 @@ it("keeps host-resolved recovery UI localized without changing caller or partial
       const page = await browser.newPage();
       page.setDefaultTimeout(5000);
       let attempts = 0;
+      const sent: {
+        id: string;
+        params: { message: { messageId?: string } };
+      }[] = [];
       const unexpected: string[] = [];
       await page.route("**/*", async (route) => {
         const url = new URL(route.request().url());
@@ -536,6 +540,7 @@ it("keeps host-resolved recovery UI localized without changing caller or partial
           route.request().method() === "POST"
         ) {
           attempts += 1;
+          sent.push(route.request().postDataJSON());
           await route.fulfill(
             attempts === 1
               ? {
@@ -587,6 +592,25 @@ it("keeps host-resolved recovery UI localized without changing caller or partial
           .allTextContents(),
       ).toEqual(["Caller greeting", "Hello, "]);
       expect(await host.locator(".cr-error").textContent()).toBe(item.error);
+      expect(sent[0]?.params.message.messageId).toMatch(/^[0-9a-f-]{36}$/);
+      expect(sent[1]?.params.message.messageId).toBe(
+        sent[0]?.params.message.messageId,
+      );
+      expect(sent[1]?.id).not.toBe(sent[0]?.id);
+      await host.locator(".cr-input").fill("Synthetic locale test");
+      await host.locator(".cr-send").click();
+      await page.waitForFunction(
+        () =>
+          document
+            .querySelector("contextrocket-chat")
+            ?.shadowRoot?.querySelectorAll('.cr-message[data-role="user"]')
+            .length === 3,
+      );
+      await host.locator(".cr-error:not([hidden])").waitFor();
+      expect(sent[2]?.params.message.messageId).toMatch(/^[0-9a-f-]{36}$/);
+      expect(sent[2]?.params.message.messageId).not.toBe(
+        sent[0]?.params.message.messageId,
+      );
       expect(await host.locator(".cr-footer span").textContent()).toBe(
         item.lang === "es"
           ? "Con tecnología de ContextRocket"

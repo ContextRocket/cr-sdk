@@ -22,6 +22,7 @@ export class ContextRocketChatElement extends HTMLElement {
   #runId = 0;
   #assistantMessageId: string | null = null;
   #lastUserMessage = "";
+  #lastUserMessageId: string | undefined;
   #abortController: AbortController | null = null;
 
   #launcher!: HTMLButtonElement;
@@ -171,7 +172,7 @@ export class ContextRocketChatElement extends HTMLElement {
       ?.addEventListener("click", () => this.#setOpen(false));
     this.#retry.addEventListener(
       "click",
-      () => void this.#sendText(this.#lastUserMessage),
+      () => void this.#sendText(this.#lastUserMessage, this.#lastUserMessageId),
     );
     this.#messages.addEventListener("click", (event) => {
       const target = event.target as HTMLElement;
@@ -257,11 +258,12 @@ export class ContextRocketChatElement extends HTMLElement {
     await this.#sendText(text);
   }
 
-  async #sendText(text: string): Promise<void> {
+  async #sendText(text: string, messageId?: string): Promise<void> {
     const config = this.#config;
     if (!config || !text.trim() || !canSend(this.#state)) return;
 
     this.#lastUserMessage = text.trim();
+    this.#lastUserMessageId = messageId ?? crypto.randomUUID();
     const started = beginSend(this.#state, this.#lastUserMessage);
     this.#state = started.state;
     this.#assistantMessageId = started.assistantMessageId;
@@ -275,6 +277,7 @@ export class ContextRocketChatElement extends HTMLElement {
         config,
         {
           message: this.#lastUserMessage,
+          messageId: this.#lastUserMessageId,
           threadId: this.#state.threadId ?? undefined,
         },
         undefined,

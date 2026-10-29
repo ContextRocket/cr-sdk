@@ -69,6 +69,8 @@ export interface WidgetConfig {
 }
 
 export interface WidgetSendRequest {
+  /** Logical user turn identity, preserved for every retry of this request. */
+  messageId?: string;
   message: string;
   threadId?: string;
 }

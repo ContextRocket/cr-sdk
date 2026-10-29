@@ -28,7 +28,10 @@ const SUBMITTED_FRAME = {
     statusUpdate: {
       taskId: "task-1",
       contextId: "thread-1",
-      status: { state: "TASK_STATE_SUBMITTED", timestamp: "2026-01-01T00:00:00Z" },
+      status: {
+        state: "TASK_STATE_SUBMITTED",
+        timestamp: "2026-01-01T00:00:00Z",
+      },
       metadata: { thread_id: "thread-1" },
     },
   },
@@ -41,7 +44,10 @@ const WORKING_FRAME = {
     statusUpdate: {
       taskId: "task-1",
       contextId: "thread-1",
-      status: { state: "TASK_STATE_WORKING", timestamp: "2026-01-01T00:00:01Z" },
+      status: {
+        state: "TASK_STATE_WORKING",
+        timestamp: "2026-01-01T00:00:01Z",
+      },
       metadata: { thread_id: "thread-1" },
     },
   },
@@ -140,7 +146,10 @@ const SYNC_TASK_RESULT = {
     task: {
       id: "task-1",
       contextId: "thread-1",
-      status: { state: "TASK_STATE_COMPLETED", timestamp: "2026-01-01T00:00:02Z" },
+      status: {
+        state: "TASK_STATE_COMPLETED",
+        timestamp: "2026-01-01T00:00:02Z",
+      },
       artifacts: [],
       history: [],
     },
@@ -335,7 +344,8 @@ describe("parseA2AEvent (line hygiene)", () => {
   it("returns null for unknown result shapes", () => {
     expect(
       parseA2AEvent(
-        "data: " + JSON.stringify({ jsonrpc: "2.0", id: "1", result: { foo: 1 } }),
+        "data: " +
+          JSON.stringify({ jsonrpc: "2.0", id: "1", result: { foo: 1 } }),
       ),
     ).toBeNull();
   });
@@ -432,25 +442,31 @@ describe("sendTask", () => {
     );
     expect(task.id).toBe("task-1");
     expect(task.contextId).toBe("thread-1");
-    expect((task.status as { state: string }).state).toBe("TASK_STATE_COMPLETED");
+    expect((task.status as { state: string }).state).toBe(
+      "TASK_STATE_COMPLETED",
+    );
   });
 
   it("throws on JSON-RPC error envelopes", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () =>
-        new Response(
-          JSON.stringify({
-            jsonrpc: "2.0",
-            id: "1",
-            error: { code: -32601, message: "Method not found" },
-          }),
-          { status: 200 },
-        ),
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              jsonrpc: "2.0",
+              id: "1",
+              error: { code: -32601, message: "Method not found" },
+            }),
+            { status: 200 },
+          ),
       ),
     );
     await expect(
-      sendTask({ baseUrl: "https://api.example.com" }, buildTextTurnParams("hi")),
+      sendTask(
+        { baseUrl: "https://api.example.com" },
+        buildTextTurnParams("hi"),
+      ),
     ).rejects.toThrow("Method not found");
   });
 
@@ -541,4 +557,58 @@ describe("streamTask", () => {
       .join("");
     expect(text).toBe("alpha beta gamma delta epsilon");
   });
+});
+
+it("preserves logical message identity across wire retries and separates identical new turns", async () => {
+  const sent: { id: string; params: { message: { messageId?: string } } }[] =
+    [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (_url: string, init?: RequestInit) => {
+      sent.push(JSON.parse(String(init?.body)));
+      if (new Headers(init?.headers).get("Accept") === "text/event-stream")
+        return sseResponse([COMPLETED_FRAME]);
+      return new Response(JSON.stringify(SYNC_TASK_RESULT), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }),
+  );
+  try {
+    const options = { baseUrl: "https://api.example.com" };
+    const turn = buildTextTurnParams("same text", { handle: "acme" });
+    await sendTask(options, turn);
+    await sendTask(options, turn);
+    await sendTask(
+      options,
+      buildTextTurnParams("same text", { handle: "acme" }),
+    );
+    expect(sent[0]?.params.message.messageId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(sent[1]?.params.message.messageId).toBe(
+      sent[0]?.params.message.messageId,
+    );
+    expect(sent[1]?.id).not.toBe(sent[0]?.id);
+    expect(sent[2]?.params.message.messageId).not.toBe(
+      sent[0]?.params.message.messageId,
+    );
+    const retry = buildTextTurnParams("same text", {
+      handle: "acme",
+      messageId: turn.message.messageId,
+    });
+    for await (const _ of streamTask(options, retry)) {
+      /* drain the actual wire */
+    }
+    for await (const _ of streamTask(options, retry)) {
+      /* retry streaming */
+    }
+    expect(sent[3]?.params.message.messageId).toBe(
+      sent[0]?.params.message.messageId,
+    );
+    expect(sent[4]?.params.message.messageId).toBe(
+      sent[0]?.params.message.messageId,
+    );
+    expect(new Set(sent.map((request) => request.id)).size).toBe(5);
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });

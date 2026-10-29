@@ -39,6 +39,8 @@ export interface FileRefPart {
 export type MessagePart = TextPart | FileRefPart;
 
 export interface A2AMessage {
+  /** Logical turn identity. Reuse unchanged for retries; new turns get new IDs. */
+  messageId?: string;
   role: "ROLE_USER" | "ROLE_AGENT";
   parts: MessagePart[];
   /** Optional thread context for conversation continuity (contextId per A2A spec). */
@@ -428,6 +430,8 @@ function buildJSONRPCRequest(
   method: WireMethod,
   params: A2ATaskParams,
 ): string {
+  // Retain the generated identity on this logical turn for retransmission.
+  params.message.messageId ??= crypto.randomUUID();
   // Wire request parts are typeless one-of fields: {text}, never {type, text}.
   const wireParams = {
     ...params,
@@ -443,7 +447,7 @@ function buildJSONRPCRequest(
   };
   return JSON.stringify({
     jsonrpc: "2.0",
-    id: params.id ?? `cr-${Date.now()}`,
+    id: params.id ?? crypto.randomUUID(),
     method,
     params: wireParams,
   });
@@ -548,7 +552,9 @@ export async function sendTask(
   });
 
   if (!resp.ok) {
-    throw new Error(`A2A SendMessage failed: ${resp.status} ${resp.statusText}`);
+    throw new Error(
+      `A2A SendMessage failed: ${resp.status} ${resp.statusText}`,
+    );
   }
 
   const data = (await resp.json()) as JSONRPCSuccess | JSONRPCErrorEnvelope;
@@ -661,6 +667,8 @@ export function buildTextTurnParams(
   text: string,
   opts?: {
     threadId?: string;
+    /** Reuse the original logical message ID when reconstructing a retry. */
+    messageId?: string;
     orgId?: string;
     /** @deprecated Ignored; see A2AClientOptions.guestSessionId. */
     guestSessionId?: string;
@@ -672,6 +680,7 @@ export function buildTextTurnParams(
   if (opts?.guestSessionId) warnGuestSessionIdIgnored();
 
   const message: A2AMessage = {
+    messageId: opts?.messageId ?? crypto.randomUUID(),
     role: "ROLE_USER",
     parts: [{ text }],
   };
