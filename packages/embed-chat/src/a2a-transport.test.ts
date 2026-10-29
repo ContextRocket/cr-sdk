@@ -420,6 +420,8 @@ it("delivers streamed content through the real native browser fetch port", async
   const page = await browser.newPage();
   const unexpected: string[] = [];
   let guardedRequests = 0;
+  const sent: { id: string; params: { message: { messageId?: string } } }[] =
+    [];
   try {
     await page.route("**/*", async (route) => {
       const request = route.request();
@@ -439,6 +441,7 @@ it("delivers streamed content through the real native browser fetch port", async
         request.method() === "POST"
       ) {
         guardedRequests += 1;
+        sent.push(request.postDataJSON());
         await route.fulfill({
           contentType: "text/event-stream",
           body: sseBody([WORKING_FRAME, ARTIFACT_FRAME, COMPLETED_FRAME]),
@@ -449,12 +452,23 @@ it("delivers streamed content through the real native browser fetch port", async
       }
     });
     await page.goto("http://localhost:39991");
-    const events = await page.evaluate<
-      WidgetTransportEvent[]
-    >(`NativeWidgetTransport.collectEmbedA2aSubscribe(
-      ${JSON.stringify({ ...LIVE_CONFIG, apiBaseUrl: "http://localhost:39991" })},
-      {message:"Synthetic native transport test"}
-    )`);
+    const events = await page.evaluate<WidgetTransportEvent[]>(`(async () => {
+      const config = ${JSON.stringify({ mode: "live", apiBaseUrl: "http://localhost:39991", handle: "acme" })};
+      const request = Object.freeze({message:"Synthetic native transport test"});
+      const events = await NativeWidgetTransport.collectEmbedA2aSubscribe(config, request);
+      await NativeWidgetTransport.collectEmbedA2aSubscribe(config, request);
+      await NativeWidgetTransport.collectEmbedA2aSubscribe(config, Object.seal({message:request.message}));
+      if ('messageId' in request) throw new Error('caller request mutated');
+      return events;
+    })()`);
+    expect(sent[0]?.params.message.messageId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(sent[1]?.params.message.messageId).toBe(
+      sent[0]?.params.message.messageId,
+    );
+    expect(sent[2]?.params.message.messageId).not.toBe(
+      sent[0]?.params.message.messageId,
+    );
+    expect(new Set(sent.map((request) => request.id)).size).toBe(3);
     expect(unexpected).toEqual([]);
     expect(guardedRequests).toBeGreaterThan(0);
     expect(

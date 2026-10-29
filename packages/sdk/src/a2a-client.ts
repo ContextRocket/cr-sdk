@@ -426,17 +426,25 @@ export function parseA2AEvent(line: string): A2AEvent | null {
 /** Outgoing wire methods (A2A 1.0). Retired: tasks/send, tasks/sendSubscribe. */
 type WireMethod = "SendMessage" | "SendStreamingMessage";
 
+const implicitMessageIds = new WeakMap<A2AMessage, string>();
+
 function buildJSONRPCRequest(
   method: WireMethod,
   params: A2ATaskParams,
 ): string {
-  // Retain the generated identity on this logical turn for retransmission.
-  params.message.messageId ??= crypto.randomUUID();
+  // Caller messages may be frozen; keep implicit retry identity outside them.
+  const messageId =
+    params.message.messageId ??
+    implicitMessageIds.get(params.message) ??
+    crypto.randomUUID();
+  if (params.message.messageId == null)
+    implicitMessageIds.set(params.message, messageId);
   // Wire request parts are typeless one-of fields: {text}, never {type, text}.
   const wireParams = {
     ...params,
     message: {
       ...params.message,
+      messageId,
       parts: params.message.parts.map((part) => {
         if ("text" in part) {
           return { text: part.text };

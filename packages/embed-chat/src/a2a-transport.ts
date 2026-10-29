@@ -341,6 +341,8 @@ async function* streamDemoEvents(
  * Uses the public JSON-RPC envelope and calls `/api/agent/a2a` directly with
  * the website API key.
  */
+const implicitMessageIds = new WeakMap<WidgetSendRequest, string>();
+
 export async function* streamEmbedA2aSubscribe(
   config: WidgetConfig,
   request: WidgetSendRequest,
@@ -355,9 +357,11 @@ export async function* streamEmbedA2aSubscribe(
     yield* streamDemoEvents(config, request, signal);
     return;
   }
-  request.messageId ??= crypto.randomUUID();
+  const messageId =
+    request.messageId ?? implicitMessageIds.get(request) ?? crypto.randomUUID();
+  if (request.messageId == null) implicitMessageIds.set(request, messageId);
   const messageObj: Record<string, unknown> = {
-    messageId: request.messageId,
+    messageId,
     role: "ROLE_USER",
     parts: [{ text: request.message }],
   };

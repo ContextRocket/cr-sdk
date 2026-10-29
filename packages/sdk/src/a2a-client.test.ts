@@ -7,6 +7,7 @@ import {
   sendTask,
   streamTask,
   type A2AEvent,
+  type A2ATaskParams,
 } from "./a2a-client.js";
 
 /**
@@ -576,7 +577,13 @@ it("preserves logical message identity across wire retries and separates identic
   );
   try {
     const options = { baseUrl: "https://api.example.com" };
-    const turn = buildTextTurnParams("same text", { handle: "acme" });
+    const turn: A2ATaskParams = Object.freeze({
+      message: Object.freeze({
+        role: "ROLE_USER" as const,
+        parts: [{ text: "same text" }],
+      }),
+      metadata: { handle: "acme" },
+    });
     await sendTask(options, turn);
     await sendTask(options, turn);
     await sendTask(
@@ -591,10 +598,7 @@ it("preserves logical message identity across wire retries and separates identic
     expect(sent[2]?.params.message.messageId).not.toBe(
       sent[0]?.params.message.messageId,
     );
-    const retry = buildTextTurnParams("same text", {
-      handle: "acme",
-      messageId: turn.message.messageId,
-    });
+    const retry = turn;
     for await (const _ of streamTask(options, retry)) {
       /* drain the actual wire */
     }
@@ -608,6 +612,17 @@ it("preserves logical message identity across wire retries and separates identic
       sent[0]?.params.message.messageId,
     );
     expect(new Set(sent.map((request) => request.id)).size).toBe(5);
+    expect(turn.message.messageId).toBeUndefined();
+    const reconstructed = Object.freeze(
+      buildTextTurnParams("same text", {
+        handle: "acme",
+        messageId: sent[0]?.params.message.messageId,
+      }),
+    );
+    await sendTask(options, reconstructed);
+    expect(sent[5]?.params.message.messageId).toBe(
+      sent[0]?.params.message.messageId,
+    );
   } finally {
     vi.unstubAllGlobals();
   }
