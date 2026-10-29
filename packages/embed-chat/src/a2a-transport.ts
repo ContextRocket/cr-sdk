@@ -19,7 +19,7 @@ export interface EmbedWidgetA2aPort {
 export function createEmbedWidgetA2aPort(
   fetchImpl: EmbedWidgetA2aFetch = fetch,
 ): EmbedWidgetA2aPort {
-  return { request: fetchImpl };
+  return { request: (input, init) => fetchImpl(input, init) };
 }
 
 export function createInMemoryEmbedWidgetA2aPort(

@@ -1,3 +1,6 @@
+import { chromium } from "playwright";
+import { buildSync } from "esbuild";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   collectEmbedA2aSubscribe,
@@ -386,3 +389,69 @@ describe("streamEmbedA2aSubscribe (demo mode)", () => {
     expect(events.at(-1)).toEqual({ type: "done", taskId: "demo-task" });
   });
 });
+
+
+it("delivers streamed content through the real native browser fetch port", async () => {
+  const bundle = buildSync({
+    entryPoints: [
+      fileURLToPath(new URL("./a2a-transport.ts", import.meta.url)),
+    ],
+    bundle: true,
+    write: false,
+    format: "iife",
+    globalName: "NativeWidgetTransport",
+    platform: "browser",
+    target: "es2020",
+  }).outputFiles[0]!.text;
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  const unexpected: string[] = [];
+  let guardedRequests = 0;
+  try {
+    await page.route("**/*", async (route) => {
+      const request = route.request();
+      const url = new URL(request.url());
+      if (
+        url.origin === "http://localhost:39991" &&
+        url.pathname === "/" &&
+        request.method() === "GET"
+      ) {
+        await route.fulfill({
+          contentType: "text/html",
+          body: `<script>${bundle}</script>`,
+        });
+      } else if (
+        url.origin === "http://localhost:39991" &&
+        url.pathname === "/api/agent/a2a" &&
+        request.method() === "POST"
+      ) {
+        guardedRequests += 1;
+        await route.fulfill({
+          contentType: "text/event-stream",
+          body: sseBody([WORKING_FRAME, ARTIFACT_FRAME, COMPLETED_FRAME]),
+        });
+      } else {
+        unexpected.push(`${request.method()} ${url.pathname}`);
+        await route.abort();
+      }
+    });
+    await page.goto("http://localhost:39991");
+    const events = await page.evaluate<
+      WidgetTransportEvent[]
+    >(`NativeWidgetTransport.collectEmbedA2aSubscribe(
+      ${JSON.stringify({ ...LIVE_CONFIG, apiBaseUrl: "http://localhost:39991" })},
+      {message:"Synthetic native transport test"}
+    )`);
+    expect(unexpected).toEqual([]);
+    expect(guardedRequests).toBeGreaterThan(0);
+    expect(
+      events.some(
+        (event) => event.type === "delta" && event.text.includes("Hello"),
+      ),
+    ).toBe(true);
+    expect(events.some((event) => event.type === "done")).toBe(true);
+    expect(events.some((event) => event.type === "error")).toBe(false);
+  } finally {
+    await browser.close();
+  }
+}, 15000);
