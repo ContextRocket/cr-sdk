@@ -33,7 +33,7 @@ Root `package.json` is **private**. Publishable units are the packages under
 source ~/.zshrc && nvm use --silent   # Node from .nvmrc
 pnpm install
 pnpm build                            # builds all packages
-pnpm verify                           # currently: build
+pnpm verify                           # build, typecheck, and test all packages
 ```
 
 Node **>= 22**. Package manager: **pnpm** (see root `packageManager`).
@@ -64,7 +64,8 @@ pnpm --dir packages/embed-chat build
 
 - Root stays private; publish `@contextrocket/sdk` and `@contextrocket/embed-chat`
   (and later `embed-*`) individually or via workspace filtered publish.
-- Ship `dist/` only (`files: ["dist"]` in each package).
+- Ship only built artifacts plus package-specific README and license files
+  (`files: ["dist"]`; npm includes README, license, and package metadata).
 - Embed IIFE is also a CDN candidate
   (`https://cdn.contextrocket.com/sdk/v…/chat.js`); version immutably.
 - Until the registry is live, `file:` deps in starters are the supported path.

@@ -345,9 +345,9 @@ describe("streamEmbedA2aSubscribe (current-wire frames)", () => {
   });
 });
 
-describe("streamEmbedA2aSubscribe (legacy tolerance)", () => {
-  it("still maps legacy result.type frames", async () => {
-    const legacyWorking = {
+describe("streamEmbedA2aSubscribe (unsupported wire shapes)", () => {
+  it("surfaces retired result.type frames as unsupported content", async () => {
+    const retiredFrame = {
       jsonrpc: "2.0",
       id: "embed-1",
       result: {
@@ -355,57 +355,23 @@ describe("streamEmbedA2aSubscribe (legacy tolerance)", () => {
         id: "task-1",
         status: { state: "working" },
         final: false,
-        metadata: { thread_id: "thread-1" },
       },
     };
-    const legacyArtifact = {
-      jsonrpc: "2.0",
-      id: "embed-1",
-      result: {
-        type: "TaskArtifactUpdateEvent",
-        id: "task-1",
-        artifact: {
-          parts: [{ type: "text", text: "legacy " }],
-          index: 0,
-          append: false,
-          lastChunk: false,
-        },
-        final: false,
-        metadata: {},
-      },
-    };
-    const legacyCompleted = {
-      jsonrpc: "2.0",
-      id: "embed-1",
-      result: {
-        type: "TaskStatusUpdateEvent",
-        id: "task-1",
-        status: { state: "completed" },
-        final: true,
-        metadata: { thread_id: "thread-1" },
-      },
-    };
-    const port = livePortWithFrames([
-      legacyWorking,
-      legacyArtifact,
-      legacyCompleted,
-    ]);
+    const port = livePortWithFrames([retiredFrame]);
     const events = await collectEmbedA2aSubscribe(
       LIVE_CONFIG,
       { message: "hi" },
       port,
     );
-    const text = events
-      .filter(
-        (e): e is Extract<WidgetTransportEvent, { type: "delta" }> =>
-          e.type === "delta",
-      )
-      .map((e) => e.text)
-      .join("");
-    expect(text).toBe("legacy ");
-    expect(events.at(-1)).toEqual({ type: "done", taskId: "task-1" });
+    expect(events).toContainEqual({
+      type: "unsupported",
+      message: "This content is not available in this chat. Please try again.",
+    });
+    expect(events.some((event) => event.type === "delta")).toBe(false);
   });
+});
 
+describe("streamEmbedA2aSubscribe (errors)", () => {
   it("maps a JSON-RPC error envelope to an error event", async () => {
     const port = createInMemoryEmbedWidgetA2aPort(
       async () =>

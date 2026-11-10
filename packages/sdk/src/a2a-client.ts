@@ -14,12 +14,12 @@
  * (`{text}`), and the `A2A-Version: 1.0` header. Responses arrive as
  * `statusUpdate` / `artifactUpdate` envelopes with `TASK_STATE_*` values;
  * this client normalizes them into the stable event shapes below so
- * consumers never see wire-version churn. Legacy `result.type` frames are
- * still accepted for tolerance.
+ * consumers depend on the current contract rather than historical wire
+ * shapes.
  *
  * No backend-generated codegen used here because this client is used in the
  * standalone template which may not have a CR backend on the same origin.
- * Base URL comes from NEXT_PUBLIC_CR_AGENT_URL.
+ * Base URL comes from PUBLIC_CR_AGENT_URL or explicit client options.
  */
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ export interface A2ATaskParams {
  * input-required). Carries `final: true` on terminal states.
  *
  * Normalized from current-wire `statusUpdate` envelopes (TASK_STATE_* values)
- * and from legacy `result.type` frames.
+ * A2A statusUpdate envelopes.
  */
 export interface TaskStatusUpdateEvent {
   type: "TaskStatusUpdateEvent";
@@ -98,7 +98,7 @@ export interface TaskStatusUpdateEvent {
  * completed TaskStatusUpdateEvent.
  *
  * Normalized from current-wire `artifactUpdate` envelopes (append/lastChunk
- * live on the update, not the artifact) and from legacy `result.type` frames.
+ * live on the update, not the artifact).
  */
 export interface TaskArtifactUpdateEvent {
   type: "TaskArtifactUpdateEvent";
@@ -275,9 +275,6 @@ function normalizeTextParts(value: unknown): TextPart[] {
  * The current wire format from the CR backend is a JSON-RPC 2.0 success
  * envelope whose result carries a `statusUpdate` or `artifactUpdate`:
  *   { "jsonrpc": "2.0", "id": ..., "result": { "statusUpdate": { ... } } }
- * Legacy envelopes carrying `result.type` ("TaskStatusUpdateEvent" /
- * "TaskArtifactUpdateEvent") are still accepted for tolerance.
- *
  * Returns null when the line should be ignored (comment, empty, non-data).
  * Throws A2AParseError when the line is malformed or unknown type.
  */
@@ -367,7 +364,9 @@ export function parseA2AEvent(line: string): A2AEvent | null {
   }
 
   // Unwrap JSON-RPC envelope: result carries the actual event.
-  const envelope = parsed as Record<string, unknown>;
+  if (!isRecord(parsed)) return null;
+  const envelope = parsed;
+  if (envelope.jsonrpc !== "2.0") return null;
   let event: Record<string, unknown>;
 
   if (
@@ -378,7 +377,7 @@ export function parseA2AEvent(line: string): A2AEvent | null {
     event = envelope.result as Record<string, unknown>;
   } else if ("error" in envelope) {
     // JSON-RPC error envelope -- surface as a failed TaskStatusUpdateEvent.
-    const err = envelope.error as Record<string, unknown>;
+    const err = isRecord(envelope.error) ? envelope.error : {};
     return {
       type: "TaskStatusUpdateEvent",
       id: String(envelope.id ?? ""),
@@ -393,8 +392,9 @@ export function parseA2AEvent(line: string): A2AEvent | null {
       },
     };
   } else {
-    // Direct event (not wrapped) -- tolerate for compatibility.
-    event = envelope;
+    // Streaming A2A events use JSON-RPC result envelopes. Ignore unrelated
+    // payloads instead of guessing at non-standard wire shapes.
+    return null;
   }
 
   // Current wire: statusUpdate / artifactUpdate envelopes.
@@ -406,18 +406,7 @@ export function parseA2AEvent(line: string): A2AEvent | null {
     return mapArtifactUpdate(event.artifactUpdate);
   }
 
-  const type = event.type;
-
-  // Legacy wire: result.type discriminators (tolerance only).
-  if (type === "TaskStatusUpdateEvent") {
-    return event as unknown as TaskStatusUpdateEvent;
-  }
-
-  if (type === "TaskArtifactUpdateEvent") {
-    return event as unknown as TaskArtifactUpdateEvent;
-  }
-
-  // Unknown type -- not an error the parser should hard-fail on; caller decides.
+  // Unknown current-contract event -- caller decides how to surface it.
   return null;
 }
 

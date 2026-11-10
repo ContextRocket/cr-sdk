@@ -251,61 +251,9 @@ function mapArtifactUpdateEvents(
   return events;
 }
 
-function mapLegacyEnvelope(
-  result: Record<string, unknown>,
-): WidgetTransportEvent[] {
-  const eventType = result.type;
-
-  if (eventType === "TaskArtifactUpdateEvent") {
-    const events: WidgetTransportEvent[] = extractTextParts(
-      result.artifact,
-    ).map((text) => ({
-      type: "delta",
-      text,
-    }));
-    events.push(metadataEvent("working", false, result, result.artifact));
-    return events;
-  }
-
-  if (eventType !== "TaskStatusUpdateEvent") {
-    return [{ type: "unsupported", message: UNSUPPORTED_CONTENT }];
-  }
-
-  const taskId = typeof result.id === "string" ? result.id : undefined;
-  const status = isRecord(result.status) ? result.status : undefined;
-  const state = normalizeTaskState(status?.state);
-
-  if (!isTransportState(state)) {
-    return [];
-  }
-
-  if (state === "failed" || state === "canceled") {
-    return [
-      metadataEvent(state, true, status, status?.message, result),
-      { type: "error", message: GENERIC_ERROR, reason: "generic" },
-    ];
-  }
-
-  const sessionEvents = extractSessionEvents(status, result);
-
-  if (
-    state === "completed" ||
-    state === "input-required" ||
-    result.final === true
-  ) {
-    return [
-      metadataEvent(state, true, status, status?.message, result),
-      ...sessionEvents,
-      { type: "done", taskId },
-    ];
-  }
-
-  return [metadataEvent(state, false, status, result), ...sessionEvents];
-}
-
 function mapEnvelopeToEvents(envelope: unknown): WidgetTransportEvent[] {
-  if (!isRecord(envelope)) {
-    return [{ type: "error", message: GENERIC_ERROR, reason: "generic" }];
+  if (!isRecord(envelope) || envelope.jsonrpc !== "2.0") {
+    return [{ type: "unsupported", message: UNSUPPORTED_CONTENT }];
   }
 
   if (envelope.error !== undefined && envelope.error !== null) {
@@ -326,8 +274,9 @@ function mapEnvelopeToEvents(envelope: unknown): WidgetTransportEvent[] {
     return mapArtifactUpdateEvents(result.artifactUpdate);
   }
 
-  // Legacy wire: result.type discriminators (tolerance only).
-  return mapLegacyEnvelope(result);
+  // Streaming responses use statusUpdate / artifactUpdate. Surface unknown
+  // shapes instead of silently accepting an older wire format or stalling.
+  return [{ type: "unsupported", message: UNSUPPORTED_CONTENT }];
 }
 
 function extractSessionEvents(
