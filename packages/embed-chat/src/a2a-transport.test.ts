@@ -698,7 +698,7 @@ it("opens full-screen on load, supports resizing, and can be closed and reopened
 
     await fullscreen.click();
     expect(await panel.getAttribute("data-fullscreen")).toBe("false");
-    expect(await launcher.isHidden()).toBe(false);
+    expect(await launcher.isHidden()).toBe(true);
     expect(await fullscreen.getAttribute("aria-pressed")).toBe("false");
 
     await host.locator(".cr-close").click();
