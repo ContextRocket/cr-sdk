@@ -614,7 +614,7 @@ it("keeps the compact demo showcase visible and renders a JSON response card", a
     loader: { ".svg": "text" },
   }).outputFiles[0]!.text;
   const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   try {
     await page.route("**/*", async (route) => {
       const url = new URL(route.request().url());
@@ -630,20 +630,30 @@ it("keeps the compact demo showcase visible and renders a JSON response card", a
     await page.goto("http://localhost:39995");
     const host = page.locator("contextrocket-chat");
     await host.locator(".cr-launcher").click();
+    expect(await host.locator(".cr-launcher").isVisible()).toBe(false);
     await host.locator('[data-suggestion-tab="cards"]').click();
 
     const geometry = await host.evaluate((element) => {
       const root = element.shadowRoot!;
       const messages = root.querySelector(".cr-messages")!.getBoundingClientRect();
       const probe = root.querySelector(".cr-probe-large")!.getBoundingClientRect();
-      return { messagesTop: messages.top, probeTop: probe.top };
+      const lastSuggestion = root.querySelector(".cr-suggestion-items button:last-child")!.getBoundingClientRect();
+      return {
+        messagesTop: messages.top,
+        messagesBottom: messages.bottom,
+        probeTop: probe.top,
+        lastSuggestionBottom: lastSuggestion.bottom,
+      };
     });
     expect(geometry.probeTop).toBeGreaterThanOrEqual(geometry.messagesTop);
+    expect(geometry.lastSuggestionBottom).toBeLessThanOrEqual(geometry.messagesBottom);
 
     await host.locator('[data-demo-card="Evidence"]').click();
     const responseCard = host.locator(".cr-agent-card-evidence");
     await expect.poll(() => responseCard.count()).toBe(1);
     expect(await responseCard.textContent()).toContain("Evidence");
+    await host.locator(".cr-close").click();
+    expect(await host.locator(".cr-launcher").isVisible()).toBe(true);
   } finally {
     await browser.close();
   }

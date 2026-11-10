@@ -96,6 +96,10 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
   display: none;
 }
 
+.cr-panel[data-open="true"] ~ .cr-launcher {
+  display: none;
+}
+
 /* size-14 rounded-full */
 .cr-launcher {
   width: 3.5rem;
@@ -207,6 +211,11 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
 .cr-probe svg { width: 100%; height: 100%; overflow: visible; }
 .cr-probe-large { width: 4rem; height: 4rem; margin: 0 0 1rem; padding: .65rem; border-radius: 9999px; background: #0e0f13; color: #ecedf1; }
 .cr-empty { display: flex; flex: 1; min-height: 12rem; flex-direction: column; align-items: center; justify-content: safe center; padding: 2rem; text-align: center; }
+.cr-empty[data-suggestions-view="cards"] { justify-content: flex-start; padding: .75rem 1rem; }
+.cr-empty[data-suggestions-view="cards"] .cr-probe-large { width: 2.5rem; height: 2.5rem; margin-bottom: .5rem; padding: .375rem; }
+.cr-empty[data-suggestions-view="cards"] p { display: none; }
+.cr-empty[data-suggestions-view="cards"] .cr-suggestion-tabs { flex-wrap: nowrap; gap: .375rem; }
+.cr-empty[data-suggestions-view="cards"] .cr-suggestion-tab { min-width: 0; flex: 1; padding: .375rem .5rem; font-size: .6875rem; white-space: nowrap; }
 .cr-empty h3 { margin: 0; color: var(--cr-text); font-size: 1rem; font-weight: 650; letter-spacing: -.02em; }
 .cr-empty p { max-width: 18rem; margin: .4rem 0 0; color: var(--cr-muted); font-size: .875rem; line-height: 1.5; }
 .cr-probe path, .cr-probe-foot { fill: currentColor; }
@@ -479,6 +488,29 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
   display: flex;
   flex-wrap: wrap;
   gap: var(--tw-space-2);
+}
+
+.cr-suggestion-items[data-view="cards"] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.cr-suggestion-items[data-view="cards"] .cr-suggestion {
+  min-width: 0;
+  min-height: 2.25rem;
+  border-radius: var(--tw-radius-lg);
+  background: var(--cr-card);
+  padding: var(--tw-space-1) var(--tw-space-2);
+  text-align: left;
+  white-space: normal;
+  font-size: .6875rem;
+  line-height: 1rem;
+}
+
+.cr-suggestion-items[data-view="cards"] .cr-suggestion:first-child {
+  grid-column: 1 / -1;
+  text-align: center;
 }
 
 /* rounded-full border px-3 py-1 text-xs/sm */

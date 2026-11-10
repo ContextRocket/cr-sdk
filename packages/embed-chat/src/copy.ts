@@ -60,8 +60,8 @@ export const COPY = {
     representation: "Representation",
     emptyTitle: "Start a conversation",
     emptyDescription: "Ask a question to explore what I can help you find.",
-    suggestionQuestions: "Ask ContextRocket",
-    suggestionCards: "Preview response cards",
+    suggestionQuestions: "Questions",
+    suggestionCards: "Response cards",
     suggestionGroup: "Chat starters",
     defaultSuggestions: [
       "What can you help me find?",
@@ -117,8 +117,8 @@ export const COPY = {
     representation: "Representación",
     emptyTitle: "Inicia una conversación",
     emptyDescription: "Haz una pregunta para descubrir qué puedo ayudarte a encontrar.",
-    suggestionQuestions: "Pregunta a ContextRocket",
-    suggestionCards: "Ver tarjetas de respuesta",
+    suggestionQuestions: "Preguntas",
+    suggestionCards: "Tarjetas de respuesta",
     suggestionGroup: "Sugerencias para empezar",
     defaultSuggestions: [
       "¿Qué puedes ayudarme a encontrar?",
@@ -174,8 +174,8 @@ export const COPY = {
     representation: "Darstellung",
     emptyTitle: "Gespräch beginnen",
     emptyDescription: "Stelle eine Frage und entdecke, wobei ich dir helfen kann.",
-    suggestionQuestions: "ContextRocket fragen",
-    suggestionCards: "Antwortkarten ansehen",
+    suggestionQuestions: "Fragen",
+    suggestionCards: "Antwortkarten",
     suggestionGroup: "Gesprächseinstiege",
     defaultSuggestions: [
       "Wobei kannst du mir helfen?",
@@ -202,7 +202,7 @@ export const COPY = {
     interrupted: "连接在回复完成前中断，请重试。", unsupported: "此聊天暂不支持该内容，请重试。", sources: "来源",
     suggestions: "后续建议", unavailable: "此回复卡片暂不可用。", evidence: "依据", question: "问题", proposals: "方案",
     representation: "表示方式", emptyTitle: "开始对话", emptyDescription: "提出问题，看看我能为您查找什么。",
-    suggestionQuestions: "询问 ContextRocket", suggestionCards: "预览回复卡片", suggestionGroup: "对话建议",
+    suggestionQuestions: "问题", suggestionCards: "回复卡片", suggestionGroup: "对话建议",
     defaultSuggestions: ["您能帮我查找什么？", "您的回答如何引用来源？", "我可以询问哪些内容？"],
     componentSuggestions: [
       { label: "预览所有回复卡片" }, { component: "Evidence", label: "显示证据卡片" },

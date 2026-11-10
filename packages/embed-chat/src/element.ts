@@ -530,6 +530,7 @@ export class ContextRocketChatElement extends HTMLElement {
     if (this.#state.messages.length === 0) {
       const empty = document.createElement("div");
       empty.className = "cr-empty";
+      empty.dataset.suggestionsView = this.#suggestionTab;
       const probe = this.#createProbe(false);
       probe.classList.add("cr-probe-large");
       const title = document.createElement("h3");
@@ -655,6 +656,7 @@ export class ContextRocketChatElement extends HTMLElement {
       : copy.componentSuggestions;
     const list = document.createElement("div");
     list.className = "cr-suggestion-items";
+    list.dataset.view = this.#suggestionTab;
     for (const prompt of prompts) {
       const button = document.createElement("button");
       button.type = "button";
