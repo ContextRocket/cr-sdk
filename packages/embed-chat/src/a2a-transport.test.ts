@@ -602,6 +602,53 @@ it("delivers streamed content through the real native browser fetch port", async
   }
 }, 15000);
 
+it("keeps the compact demo showcase visible and renders a JSON response card", async () => {
+  const bundle = buildSync({
+    entryPoints: [fileURLToPath(new URL("./index.ts", import.meta.url))],
+    bundle: true,
+    write: false,
+    format: "iife",
+    globalName: "ContextRocketWidget",
+    platform: "browser",
+    target: "es2020",
+    loader: { ".svg": "text" },
+  }).outputFiles[0]!.text;
+  const browser = await chromium.launch();
+  const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+  try {
+    await page.route("**/*", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.origin === "http://localhost:39995" && url.pathname === "/") {
+        await route.fulfill({
+          contentType: "text/html",
+          body: `<script>${bundle}</script><contextrocket-chat data-contextrocket-mode="demo"></contextrocket-chat>`,
+        });
+      } else {
+        await route.abort();
+      }
+    });
+    await page.goto("http://localhost:39995");
+    const host = page.locator("contextrocket-chat");
+    await host.locator(".cr-launcher").click();
+    await host.locator('[data-suggestion-tab="cards"]').click();
+
+    const geometry = await host.evaluate((element) => {
+      const root = element.shadowRoot!;
+      const messages = root.querySelector(".cr-messages")!.getBoundingClientRect();
+      const probe = root.querySelector(".cr-probe-large")!.getBoundingClientRect();
+      return { messagesTop: messages.top, probeTop: probe.top };
+    });
+    expect(geometry.probeTop).toBeGreaterThanOrEqual(geometry.messagesTop);
+
+    await host.locator('[data-demo-card="Evidence"]').click();
+    const responseCard = host.locator(".cr-agent-card-evidence");
+    await expect.poll(() => responseCard.count()).toBe(1);
+    expect(await responseCard.textContent()).toContain("Evidence");
+  } finally {
+    await browser.close();
+  }
+}, 15000);
+
 it("opens full-screen on load, supports resizing, and can be closed and reopened", async () => {
   const bundle = buildSync({
     entryPoints: [fileURLToPath(new URL("./index.ts", import.meta.url))],

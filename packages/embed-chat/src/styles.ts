@@ -206,7 +206,7 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
 }
 .cr-probe svg { width: 100%; height: 100%; overflow: visible; }
 .cr-probe-large { width: 4rem; height: 4rem; margin: 0 0 1rem; padding: .65rem; border-radius: 9999px; background: #0e0f13; color: #ecedf1; }
-.cr-empty { display: flex; flex: 1; min-height: 12rem; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center; }
+.cr-empty { display: flex; flex: 1; min-height: 12rem; flex-direction: column; align-items: center; justify-content: safe center; padding: 2rem; text-align: center; }
 .cr-empty h3 { margin: 0; color: var(--cr-text); font-size: 1rem; font-weight: 650; letter-spacing: -.02em; }
 .cr-empty p { max-width: 18rem; margin: .4rem 0 0; color: var(--cr-muted); font-size: .875rem; line-height: 1.5; }
 .cr-probe path, .cr-probe-foot { fill: currentColor; }
