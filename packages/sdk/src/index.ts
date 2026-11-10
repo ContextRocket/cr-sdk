@@ -23,6 +23,21 @@ export {
 } from "./credentials-port.js";
 export type { CredentialsPort } from "./credentials-port.js";
 
+export {
+  LeadCaptureError,
+  extractLeadAttribution,
+  submitPublicLead,
+  submitPublicLeadWithAttribution,
+} from "./lead-capture.js";
+export type {
+  LeadIntent,
+  PublicLeadAttribution,
+  PublicLeadInput,
+  PublicLeadReceipt,
+  SubmitPublicLeadOptions,
+  SubmitPublicLeadWithAttributionOptions,
+} from "./lead-capture.js";
+
 export type {
   A2AClientOptions,
   A2AEvent,

@@ -120,7 +120,7 @@ export function applyTransportEvent(
 
     case "meta": {
       const messages =
-        event.sourceRefs || event.suggestions
+        event.sourceRefs || event.suggestions || event.responseSpec || event.unavailable
           ? state.messages.map((message) =>
               message.id === assistantMessageId && message.role === "assistant"
                 ? {
@@ -131,6 +131,9 @@ export function applyTransportEvent(
                     ...(event.suggestions
                       ? { suggestions: event.suggestions }
                       : {}),
+                    ...(event.responseSpec ? { responseSpec: event.responseSpec } : {}),
+                    ...(event.unavailable ? { responseSpec: undefined } : {}),
+                    ...(event.unavailable ? { responseUnavailable: true } : {}),
                   }
                 : message,
             )

@@ -4,22 +4,30 @@
   "description": "ContextRocket browser SDK (A2A client + createCRClient)",
   "type": "module",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./lead-capture": {
+      "types": "./dist/lead-capture.d.ts",
+      "import": "./dist/lead-capture.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node scripts/build-browser.mjs",
     "test": "vitest run"
   },
   "devDependencies": {
+    "esbuild": "^0.25.10",
     "@types/node": "^22.20.1",
     "typescript": "^5.9.2",
     "vite": "^7.3.7",
