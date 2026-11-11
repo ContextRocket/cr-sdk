@@ -62,6 +62,40 @@ path, the referrer origin, and bounded `utm_*` values. It omits other query
 parameters and fragments so form URLs do not accidentally forward tokens or
 personal data.
 
+## npm release
+
+The package manifests are prepared for public scoped packages: each package
+sets `publishConfig.access` to `public`, includes its README and MIT license,
+and publishes only its built `dist/` output. The root workspace remains
+private. Before a first release, confirm the npm organization owns the
+`@contextrocket` scope and that the exact package versions are still
+unpublished. Build and inspect each tarball with the `npm pack --dry-run`
+commands above.
+
+Prefer npm trusted publishing from GitHub Actions over a long-lived npm token.
+The repository is public, so trusted publishing can also attach npm provenance
+to each release. Add a dedicated release workflow, then configure a trusted
+publisher for each package using the `ContextRocket/cr-sdk` repository and
+that workflow's exact path. Publish from a GitHub-hosted runner with
+`id-token: write`. The first trusted publish validates npm's publisher
+configuration; complete it within two days of creating that configuration.
+See [npm's trusted publishing guide](https://docs.npmjs.com/trusted-publishers/).
+
+For an explicitly authorized one-off release, publish each package from its
+own directory after reviewing its tarball and authenticating with the npm
+account's required two-factor authentication or an appropriately scoped
+granular access token:
+
+```bash
+cd packages/sdk && npm publish --access public
+cd ../embed-chat && npm publish --access public
+```
+
+Both commands run the package `prepack` build. Do not put an npm token in the
+repository, a `PUBLIC_*` variable, or a customer site. After publishing, check
+the package versions with `npm view @contextrocket/sdk version` and
+`npm view @contextrocket/embed-chat version`.
+
 The SDK build also emits `packages/sdk/dist/contact-form.browser.js`, a
 dependency-free IIFE that installs `window.ContextRocketSDK` for static sites
 that cannot bundle npm modules. The starter checks in that generated file as
