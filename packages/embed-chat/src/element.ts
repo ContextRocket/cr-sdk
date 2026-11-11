@@ -707,7 +707,7 @@ export class ContextRocketChatElement extends HTMLElement {
     tabs.setAttribute("role", "group");
     tabs.setAttribute("aria-label", copy.suggestionGroup);
     const tabOptions = [
-      { id: "questions" as const, label: copy.suggestionQuestions },
+      { id: "questions" as const, label: copy.suggestionPrompts },
       { id: "cards" as const, label: copy.suggestionCards },
     ];
     for (const option of tabOptions) {
