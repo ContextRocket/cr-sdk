@@ -32,6 +32,26 @@ NEXT_PUBLIC_CONTEXTROCKET_API_KEY=your-publishable-api-key
 The website API key is meant for browser use and must be publishable and
 origin-bound. Never put a server secret in a public variable.
 
+### A2A identity and access tiers
+
+The handle selects an organization; it does not prove that the caller is a
+member. ContextRocket resolves credentials before applying its shared
+capability scopes:
+
+| A2A caller | SDK credential | Access boundary |
+| --- | --- | --- |
+| Published public visitor | No credential, with the public handle | Published public context only; subject to the handle's exposure and origin/rate policy |
+| Website chat | `apiKey` plus `handle` | Same public-read boundary. The origin-bound key identifies an allowed website; it does not grant member or private Context Graph access |
+| Signed-in organization member | `bearerToken` | Membership-scoped capabilities after the API verifies the member and organization |
+| Organization machine credential | Server-side credential | Machine-scoped capabilities; never expose it to a browser |
+
+The standalone embed supports the public visitor and website-chat paths. Use the
+typed SDK with a verified signed-in session for member A2A. Do not send both a
+website key and a member token to try to combine their authority. An organization
+handle or credential's organization binding alone is not authorization: the API
+checks authentication, membership or credential scope, origin, and current
+organization policy before resolving capabilities.
+
 ## Stream an A2A turn
 
 ```ts
