@@ -18,9 +18,11 @@ fail closed to an accessible retry message.
 The empty conversation can show opening suggestions. A site may supply them with
 `data-contextrocket-suggestions` (a JSON array of strings); otherwise the widget
 discovers `skills[].examples` from the public handle-specific A2A AgentCard.
-After a turn, context-sensitive follow-up suggestions are read from the A2A
-response `metadata.suggestions`. Both entry prompts and follow-ups use the same
-suggestions terminology in the UI.
+Discovery follows changes to the organization or API base and discards a late
+response from an earlier configuration; a failed lookup can be retried when a
+visitor reopens the chat. After a turn, context-sensitive follow-up suggestions
+are read from the A2A response `metadata.suggestions`. Both entry prompts and
+follow-ups use the same suggestions terminology in the UI.
 
 In demo mode, the “Preview response cards” tab lets visitors inspect the full
 five-component catalog or choose a focused Evidence, Progress, Question,
