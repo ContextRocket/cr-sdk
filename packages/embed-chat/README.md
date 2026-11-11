@@ -85,7 +85,7 @@ uses the platform `/a2a` endpoint. The widget does not try legacy organization
 routes.
 
 The widget is published at the versioned URL
-`https://contextrocket.cdn.contextrocket.com/embeds/chat/v0.1.2/widget.js`.
+`https://contextrocket.cdn.contextrocket.com/embeds/chat/v0.1.3/widget.js`.
 You can use that URL directly or copy the generated IIFE into a consuming
 site's `public/embed/widget.js` for offline demos. Publish each package version
 under a unique prefix.
@@ -94,7 +94,7 @@ again, so never reuse a published version path. The current CDN applies a
 five-minute public cache to these paths; one-year immutable caching is reserved
 for `/_next/static/` assets. Versioned widget URLs are therefore stable by
 release discipline, not by a server-enforced immutability guarantee. The
-version `0.1.2` URL was published and verified to return the bundle with a
+version `0.1.3` URL was published and verified to return the bundle with a
 JavaScript content type on 2026-11-11.
 
 Build and copy the browser artifact into the starter public directory:
