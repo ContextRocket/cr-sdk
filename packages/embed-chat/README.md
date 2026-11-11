@@ -4,19 +4,43 @@ Standalone, dependency-free browser widget for the public starter. It supports
 canned demo mode (the default, including static exports) and direct browser A2A
 mode. The widget never contains a server-side credential.
 
+Live A2A responses may include the closed JSON Render v2 catalog. The widget
+validates its bounded `Response`, `Evidence`, `Progress`, `Question`,
+`ProposalBatch`, and `Representation` elements, then renders their text as
+passive cards. It does not execute response-provided markup, URLs, or actions.
+
 The renderer is deliberately bounded rather than a second application surface:
 it supports safe Markdown, typed citations and suggestions, honest working and
 interrupted states, retry, keyboard focus management, and the same `handle` /
 `api-key` browser contract as the React ChatFab. Unknown event/content types
 fail closed to an accessible retry message.
 
+The empty conversation can show opening suggestions. A site may supply them with
+`data-contextrocket-suggestions` (a JSON array of strings); otherwise the widget
+discovers `skills[].examples` from the public handle-specific A2A AgentCard.
+Discovery follows changes to the organization or API base and discards a late
+response from an earlier configuration; a failed lookup can be retried when a
+visitor reopens the chat. After a turn, context-sensitive follow-up suggestions
+are read from the A2A response `metadata.suggestions`. Both entry prompts and
+follow-ups use the same suggestions terminology in the UI.
+
+In demo mode, the “Preview response cards” tab lets visitors inspect the full
+five-component catalog or choose a focused Evidence, Progress, Question,
+ProposalBatch, or Representation example. Question cards are informational in
+the public embed; authorized product interactions remain in ContextRocket.
+
+The chat may optionally expose a full-screen toggle. Set
+`data-contextrocket-fullscreen="true"` to show the expand control, and add
+`data-contextrocket-fullscreen-on-open="true"` when the launcher should open in
+full screen. Use `data-contextrocket-fullscreen-on-load="true"` only when the
+chat should open automatically as the page loads. The header close control
+returns visitors to the website; Escape exits full screen to the drawer, then
+closes the drawer.
+
 The widget source, tests, build, versioning, and release workflow are owned by
-this starter repository. Build it locally as part of the starter; do not add a
-second widget copy to a customer fork. A versioned CDN bundle is the
-starter-owned distribution channel for copy/paste integrations, while the
-GitHub-first local bundle remains the recommended path when a customer owns
-the site repository. The Context Rocket dashboard only provisions the Website
-API key and generates the verified installation snippet.
+this SDK repository. Build it locally as part of the starter; do not add a
+second widget implementation to a customer fork. The starter demonstrates the
+installation snippet and can copy a local bundle for demos.
 
 ```html
 <script
@@ -30,18 +54,39 @@ For a live site, configure the API base and organization handle:
 
 ```html
 <script
-  src="https://cdn.contextrocket.com/widget/v<verified-version>/widget.js"
+  src="/embed/widget.js"
   data-contextrocket-mode="live"
   data-contextrocket-api-base="https://api.contextrocket.com"
   data-contextrocket-handle="your-organization-handle"
   data-contextrocket-api-key="publishable-api-key"
-  data-contextrocket-theme="system"
-  data-contextrocket-accent="#ff2b67"
+  data-contextrocket-background="#FAF9F6"
+  data-contextrocket-foreground="#0E0F13"
+  data-contextrocket-surface="#FFFFFF"
+  data-contextrocket-muted="#5E616B"
+  data-contextrocket-border="#E3E0D9"
+  data-contextrocket-accent="#0E0F13"
+  data-contextrocket-suggestions='["What can you help me find?","Show an evidence card"]'
   data-contextrocket-position="bottom-right"
+  data-contextrocket-fullscreen="true"
+  data-contextrocket-fullscreen-on-open="false"
+  data-contextrocket-fullscreen-on-load="false"
   data-contextrocket-locale="auto"
   defer
 ></script>
 ```
+
+The widget is published at the versioned URL
+`https://contextrocket.cdn.contextrocket.com/embeds/chat/v0.1.0/widget.js`.
+You can use that URL directly or copy the generated IIFE into a consuming
+site's `public/embed/widget.js` for offline demos. Publish each package version
+under a unique prefix.
+The publishing backend activates a new release if the same prefix is published
+again, so never reuse a published version path. The current CDN applies a
+five-minute public cache to these paths; one-year immutable caching is reserved
+for `/_next/static/` assets. Versioned widget URLs are therefore stable by
+release discipline, not by a server-enforced immutability guarantee. The
+version `0.1.0` URL was verified to return the bundle with a JavaScript content
+type on 2026-11-11.
 
 Build and copy the browser artifact into the starter public directory:
 
@@ -50,14 +95,14 @@ pnpm run build:widget
 # -> public/embed/widget.js
 ```
 
-The npm package is intentionally standalone; the Astro site does not import it
-as an application module. Longer term this client may move to a dedicated
-`cr-embed` repository — see [docs/embed-direction.md](../../docs/embed-direction.md).
+The package is designed to be standalone, but has not yet been published to
+npm. After release, Astro sites can load the built IIFE from their public
+folder or a versioned CDN URL. The widget source and reusable embed
+capabilities stay in `cr-sdk` packages.
 
-The CDN example is illustrative until a verified release exists; use
-the immutable versioned URL generated by the Context Rocket dashboard for a
-real deployment. The bounded appearance contract supports theme (`system`,
-`light`, `dark`), validated accent, position (`bottom-right`, `bottom-left`),
-bounded title/greeting, and supported locale. Keep richer fork-specific
-configuration in typed starter `siteConfig`; do not add arbitrary CSS, HTML,
-JavaScript, or custom endpoints.
+Operators publish new versions of the built `dist/` directory with the
+ContextRocket `sites publish` CLI; see the SDK repository README for the dry-run
+command. Customers only load the public URL. The widget uses a single
+site-defined palette. Set bounded CSS color values for the background,
+foreground, surface, muted text, border, and accent; title, greeting, position,
+and locale are also configurable.

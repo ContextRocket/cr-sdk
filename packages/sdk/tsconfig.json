@@ -4,7 +4,7 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "declaration": true,
-    "declarationMap": true,
+    "declarationMap": false,
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,
@@ -12,5 +12,5 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["src/**/*.test.ts"]
+  "exclude": ["src/**/*.test.ts", "src/browser-contact-form.ts"]
 }

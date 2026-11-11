@@ -24,6 +24,7 @@ await esbuild.build({
   globalName: "ContextRocketWidget",
   platform: "browser",
   target: ["es2020"],
+  loader: { ".svg": "text" },
   minify: true,
   sourcemap: false,
   legalComments: "none",

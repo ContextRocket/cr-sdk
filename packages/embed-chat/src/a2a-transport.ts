@@ -1,11 +1,14 @@
 import { copyFor } from "./copy";
+import { parseAgentResponsePart } from "./agent-response";
 import { parseSSE } from "./sse-parser";
 import type {
   WidgetConfig,
+  AgentResponseSpec,
   WidgetSendRequest,
   WidgetSourceRef,
   WidgetTransportEvent,
   WidgetTransportState,
+  WidgetDemoCard,
 } from "./types";
 
 export type EmbedWidgetA2aFetch = (
@@ -41,6 +44,48 @@ const TRANSPORT_STATES = new Set<string>([
 ]);
 
 const A2A_PROTOCOL_VERSION = "1.0";
+
+function demoResponseSpec(
+  config: WidgetConfig,
+  selectedComponent?: WidgetDemoCard,
+): AgentResponseSpec {
+  const copy = copyFor(config);
+  const cards = {
+    progress: { type: "Progress", props: { stage: copy.demoProgress, completed: 2, total: 4 }, children: [] },
+    evidence: { type: "Evidence", props: { refs: [
+      { title: copy.demoEvidenceTitle, excerpt: copy.demoEvidenceExcerpt },
+      { title: copy.demoEvidenceTitleTwo, excerpt: copy.demoEvidenceExcerptTwo },
+    ] }, children: [] },
+    question: { type: "Question", props: { id: "demo-question", question: copy.demoQuestion, interactionId: "demo-interaction", questionId: "demo-question-1" }, children: [] },
+    proposals: { type: "ProposalBatch", props: { views: [
+      { id: "demo-proposal-1", workItemId: "demo-work-1", summary: copy.demoProposal },
+      { id: "demo-proposal-2", workItemId: "demo-work-2", summary: copy.demoProposalTwo },
+    ] }, children: [] },
+    representation: { type: "Representation", props: { id: "demo-representation", organizationId: "demo-organization", representationId: "demo-artifact" }, children: [] },
+  } satisfies Record<string, AgentResponseSpec["elements"][string]>;
+  type DemoCardKey = keyof typeof cards;
+  const componentKeys: Record<WidgetDemoCard, DemoCardKey> = {
+    Evidence: "evidence",
+    Progress: "progress",
+    Question: "question",
+    ProposalBatch: "proposals",
+    Representation: "representation",
+  };
+  const focusedCard = selectedComponent
+    ? componentKeys[selectedComponent]
+    : null;
+  const cardKeys: DemoCardKey[] = focusedCard
+    ? [focusedCard]
+    : ["progress", "evidence", "question", "proposals", "representation"];
+  const elements = Object.fromEntries(
+    cardKeys.map((key) => [key, cards[key]]),
+  ) as AgentResponseSpec["elements"];
+  elements.response = { type: "Response", props: {}, children: cardKeys };
+  return {
+    root: "response",
+    elements,
+  };
+}
 
 /** Normalize TASK_STATE_* / snake_case wire states to the widget shape. */
 function normalizeTaskState(value: unknown): WidgetTransportState | null {
@@ -136,13 +181,27 @@ function metadataEvent(
 ): WidgetTransportEvent {
   const sourceRefs = extractSourceRefs(...containers);
   const suggestions = extractSuggestions(...containers);
+  const structured = extractAgentResponse(...containers);
   return {
     type: "meta",
     state,
     terminal,
     ...(sourceRefs ? { sourceRefs } : {}),
     ...(suggestions ? { suggestions } : {}),
+    ...(structured.spec ? { responseSpec: structured.spec } : {}),
+    ...(structured.unavailable ? { unavailable: true } : {}),
   };
+}
+
+function extractAgentResponse(...containers: unknown[]): { spec?: import("./types").AgentResponseSpec; unavailable?: boolean } {
+  for (const container of containers) {
+    if (!isRecord(container) || !Array.isArray(container.parts)) continue;
+    for (const part of container.parts) {
+      const parsed = parseAgentResponsePart(part);
+      if (parsed !== undefined) return parsed ? { spec: parsed } : { unavailable: true };
+    }
+  }
+  return {};
 }
 
 function mapStatusUpdateEvents(
@@ -156,7 +215,7 @@ function mapStatusUpdateEvents(
   }
 
   const taskId = typeof update.taskId === "string" ? update.taskId : undefined;
-  const containers: unknown[] = [update, status];
+  const containers: unknown[] = [update, status, status?.message];
 
   if (state === "failed" || state === "canceled") {
     return [
@@ -192,61 +251,9 @@ function mapArtifactUpdateEvents(
   return events;
 }
 
-function mapLegacyEnvelope(
-  result: Record<string, unknown>,
-): WidgetTransportEvent[] {
-  const eventType = result.type;
-
-  if (eventType === "TaskArtifactUpdateEvent") {
-    const events: WidgetTransportEvent[] = extractTextParts(
-      result.artifact,
-    ).map((text) => ({
-      type: "delta",
-      text,
-    }));
-    events.push(metadataEvent("working", false, result, result.artifact));
-    return events;
-  }
-
-  if (eventType !== "TaskStatusUpdateEvent") {
-    return [{ type: "unsupported", message: UNSUPPORTED_CONTENT }];
-  }
-
-  const taskId = typeof result.id === "string" ? result.id : undefined;
-  const status = isRecord(result.status) ? result.status : undefined;
-  const state = normalizeTaskState(status?.state);
-
-  if (!isTransportState(state)) {
-    return [];
-  }
-
-  if (state === "failed" || state === "canceled") {
-    return [
-      metadataEvent(state, true, status, result),
-      { type: "error", message: GENERIC_ERROR, reason: "generic" },
-    ];
-  }
-
-  const sessionEvents = extractSessionEvents(status, result);
-
-  if (
-    state === "completed" ||
-    state === "input-required" ||
-    result.final === true
-  ) {
-    return [
-      metadataEvent(state, true, status, result),
-      ...sessionEvents,
-      { type: "done", taskId },
-    ];
-  }
-
-  return [metadataEvent(state, false, status, result), ...sessionEvents];
-}
-
 function mapEnvelopeToEvents(envelope: unknown): WidgetTransportEvent[] {
-  if (!isRecord(envelope)) {
-    return [{ type: "error", message: GENERIC_ERROR, reason: "generic" }];
+  if (!isRecord(envelope) || envelope.jsonrpc !== "2.0") {
+    return [{ type: "unsupported", message: UNSUPPORTED_CONTENT }];
   }
 
   if (envelope.error !== undefined && envelope.error !== null) {
@@ -267,8 +274,9 @@ function mapEnvelopeToEvents(envelope: unknown): WidgetTransportEvent[] {
     return mapArtifactUpdateEvents(result.artifactUpdate);
   }
 
-  // Legacy wire: result.type discriminators (tolerance only).
-  return mapLegacyEnvelope(result);
+  // Streaming responses use statusUpdate / artifactUpdate. Surface unknown
+  // shapes instead of silently accepting an older wire format or stalling.
+  return [{ type: "unsupported", message: UNSUPPORTED_CONTENT }];
 }
 
 function extractSessionEvents(
@@ -282,6 +290,7 @@ function extractSessionEvents(
       ? container.metadata
       : container;
     const raw =
+      (typeof container.contextId === "string" && container.contextId) ||
       (typeof metadata.thread_id === "string" && metadata.thread_id) ||
       (typeof metadata.threadId === "string" && metadata.threadId) ||
       undefined;
@@ -329,6 +338,11 @@ async function* streamDemoEvents(
     if (token) yield { type: "delta", text: token };
     await new Promise((resolve) => setTimeout(resolve, token.trim() ? 18 : 4));
   }
+  yield {
+    type: "meta",
+    state: "working",
+    responseSpec: demoResponseSpec(config, request.demoCard),
+  };
   if (signal?.aborted) {
     return;
   }

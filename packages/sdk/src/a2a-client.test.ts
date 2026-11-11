@@ -282,52 +282,6 @@ describe("parseA2AEvent (current wire)", () => {
   });
 });
 
-// ── parseA2AEvent: legacy tolerance ───────────────────────────────────────────
-
-describe("parseA2AEvent (legacy tolerance)", () => {
-  it("passes through a legacy result.type status event", () => {
-    const frame = {
-      jsonrpc: "2.0",
-      id: "test-1",
-      result: {
-        type: "TaskStatusUpdateEvent",
-        id: "task-1",
-        status: { state: "working", timestamp: "2026-01-01T00:00:01Z" },
-        final: false,
-        metadata: { thread_id: "thread-1" },
-      },
-    };
-    const event = parseA2AEvent(dataLine(frame));
-    expect(event?.type).toBe("TaskStatusUpdateEvent");
-    expect(event && "status" in event && event.status.state).toBe("working");
-  });
-
-  it("passes through a legacy result.type artifact event", () => {
-    const frame = {
-      jsonrpc: "2.0",
-      id: "test-1",
-      result: {
-        type: "TaskArtifactUpdateEvent",
-        id: "task-1",
-        artifact: {
-          parts: [{ type: "text", text: "hello" }],
-          index: 0,
-          append: false,
-          lastChunk: true,
-        },
-        final: true,
-        metadata: {},
-      },
-    };
-    const event = parseA2AEvent(dataLine(frame)) as Extract<
-      A2AEvent,
-      { type: "TaskArtifactUpdateEvent" }
-    >;
-    expect(event.type).toBe("TaskArtifactUpdateEvent");
-    expect(event.artifact.parts[0]?.text).toBe("hello");
-  });
-});
-
 // ── parseA2AEvent: non-event lines ────────────────────────────────────────────
 
 describe("parseA2AEvent (line hygiene)", () => {
@@ -349,6 +303,28 @@ describe("parseA2AEvent (line hygiene)", () => {
           JSON.stringify({ jsonrpc: "2.0", id: "1", result: { foo: 1 } }),
       ),
     ).toBeNull();
+  });
+
+  it("does not accept retired result.type event envelopes", () => {
+    const frame = {
+      jsonrpc: "2.0",
+      id: "test-1",
+      result: {
+        type: "TaskStatusUpdateEvent",
+        id: "task-1",
+        status: { state: "working" },
+        final: false,
+      },
+    };
+    expect(parseA2AEvent(dataLine(frame))).toBeNull();
+  });
+
+  it("does not accept unwrapped non-JSON-RPC events", () => {
+    expect(parseA2AEvent(dataLine({ statusUpdate: WORKING_FRAME.result.statusUpdate }))).toBeNull();
+  });
+
+  it("requires a JSON-RPC 2.0 envelope", () => {
+    expect(parseA2AEvent(dataLine({ result: WORKING_FRAME.result }))).toBeNull();
   });
 });
 

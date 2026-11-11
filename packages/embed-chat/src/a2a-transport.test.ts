@@ -7,7 +7,12 @@ import {
   createInMemoryEmbedWidgetA2aPort,
   type EmbedWidgetA2aFetch,
 } from "./a2a-transport";
-import type { WidgetConfig, WidgetTransportEvent } from "./types";
+import { parseAgentResponsePart } from "./agent-response";
+import type {
+  WidgetConfig,
+  WidgetDemoCard,
+  WidgetTransportEvent,
+} from "./types";
 
 /**
  * Wire contract under test: the current A2A 1.0 contract from the CR backend.
@@ -86,6 +91,36 @@ const FINAL_ARTIFACT_FRAME = {
         metadata: { index: 0 },
       },
       metadata: { thread_id: "thread-1" },
+    },
+  },
+};
+
+const JSON_RENDER_FRAME = {
+  jsonrpc: "2.0",
+  id: "embed-1",
+  result: {
+    artifactUpdate: {
+      taskId: "task-1",
+      append: false,
+      lastChunk: false,
+      artifact: {
+        parts: [
+          {
+            kind: "data",
+            data: {
+              component: "agent_ui",
+              spec: {
+                root: "response",
+                elements: {
+                  response: { type: "Response", props: {}, children: ["progress"] },
+                  progress: { type: "Progress", props: { stage: "Searching", completed: 1, total: 2 }, children: [] },
+                },
+              },
+            },
+            metadata: { "cr.catalog": "contextrocket.agent.response.v2", "cr.component": "agent_ui" },
+          },
+        ],
+      },
     },
   },
 };
@@ -237,6 +272,18 @@ describe("streamEmbedA2aSubscribe (current-wire frames)", () => {
     });
   });
 
+  it("preserves validated JSON Render v2 data parts in the stream", async () => {
+    const events = await collectEmbedA2aSubscribe(
+      LIVE_CONFIG,
+      { message: "hi" },
+      livePortWithFrames([JSON_RENDER_FRAME]),
+    );
+    expect(events).toContainEqual(expect.objectContaining({
+      type: "meta",
+      responseSpec: expect.objectContaining({ root: "response" }),
+    }));
+  });
+
   it("maps TASK_STATE_FAILED to an error event", async () => {
     const port = livePortWithFrames([FAILED_FRAME]);
     const events = await collectEmbedA2aSubscribe(
@@ -270,10 +317,12 @@ describe("streamEmbedA2aSubscribe (current-wire frames)", () => {
       { message: "hi" },
       port,
     );
-    expect(events.at(-1)?.type).toBe("error");
-    expect(
-      events.at(-1) && "message" in events.at(-1)! && events.at(-1)!.message,
-    ).toContain("connection ended");
+    const finalEvent = events.at(-1);
+    expect(finalEvent?.type).toBe("error");
+    if (finalEvent?.type !== "error") {
+      throw new Error("Expected the stream to end with an error event");
+    }
+    expect(finalEvent.message).toContain("connection ended");
   });
 
   it("emits a session event when metadata carries a UUID thread_id", async () => {
@@ -296,9 +345,9 @@ describe("streamEmbedA2aSubscribe (current-wire frames)", () => {
   });
 });
 
-describe("streamEmbedA2aSubscribe (legacy tolerance)", () => {
-  it("still maps legacy result.type frames", async () => {
-    const legacyWorking = {
+describe("streamEmbedA2aSubscribe (unsupported wire shapes)", () => {
+  it("surfaces retired result.type frames as unsupported content", async () => {
+    const retiredFrame = {
       jsonrpc: "2.0",
       id: "embed-1",
       result: {
@@ -306,57 +355,23 @@ describe("streamEmbedA2aSubscribe (legacy tolerance)", () => {
         id: "task-1",
         status: { state: "working" },
         final: false,
-        metadata: { thread_id: "thread-1" },
       },
     };
-    const legacyArtifact = {
-      jsonrpc: "2.0",
-      id: "embed-1",
-      result: {
-        type: "TaskArtifactUpdateEvent",
-        id: "task-1",
-        artifact: {
-          parts: [{ type: "text", text: "legacy " }],
-          index: 0,
-          append: false,
-          lastChunk: false,
-        },
-        final: false,
-        metadata: {},
-      },
-    };
-    const legacyCompleted = {
-      jsonrpc: "2.0",
-      id: "embed-1",
-      result: {
-        type: "TaskStatusUpdateEvent",
-        id: "task-1",
-        status: { state: "completed" },
-        final: true,
-        metadata: { thread_id: "thread-1" },
-      },
-    };
-    const port = livePortWithFrames([
-      legacyWorking,
-      legacyArtifact,
-      legacyCompleted,
-    ]);
+    const port = livePortWithFrames([retiredFrame]);
     const events = await collectEmbedA2aSubscribe(
       LIVE_CONFIG,
       { message: "hi" },
       port,
     );
-    const text = events
-      .filter(
-        (e): e is Extract<WidgetTransportEvent, { type: "delta" }> =>
-          e.type === "delta",
-      )
-      .map((e) => e.text)
-      .join("");
-    expect(text).toBe("legacy ");
-    expect(events.at(-1)).toEqual({ type: "done", taskId: "task-1" });
+    expect(events).toContainEqual({
+      type: "unsupported",
+      message: "This content is not available in this chat. Please try again.",
+    });
+    expect(events.some((event) => event.type === "delta")).toBe(false);
   });
+});
 
+describe("streamEmbedA2aSubscribe (errors)", () => {
   it("maps a JSON-RPC error envelope to an error event", async () => {
     const port = createInMemoryEmbedWidgetA2aPort(
       async () =>
@@ -399,8 +414,77 @@ describe("streamEmbedA2aSubscribe (demo mode)", () => {
       )
       .map((e) => e.text)
       .join("");
-    expect(text).toContain("canned ContextRocket demo response");
+    expect(text).toContain("sample content");
+    const responseEvent = events.find(
+      (event) => event.type === "meta" && event.responseSpec,
+    );
+    expect(responseEvent?.type).toBe("meta");
+    if (responseEvent?.type !== "meta" || !responseEvent.responseSpec) {
+      throw new Error("Demo response spec was not emitted");
+    }
+    const spec = responseEvent.responseSpec;
+    expect(parseAgentResponsePart({
+      kind: "data",
+      metadata: {
+        "cr.catalog": "contextrocket.agent.response.v2",
+        "cr.component": "agent_ui",
+      },
+      data: { component: "agent_ui", spec },
+    })).toEqual(spec);
+    expect(spec.elements.response.children.map((id) => spec.elements[id].type))
+      .toEqual([
+        "Progress",
+        "Evidence",
+        "Question",
+        "ProposalBatch",
+        "Representation",
+      ]);
     expect(events.at(-1)).toEqual({ type: "done", taskId: "demo-task" });
+  });
+
+  it("focuses the JSON Render preview on the requested response card", async () => {
+    const previews: Array<{
+      message: string;
+      demoCard: WidgetDemoCard;
+      type: WidgetDemoCard;
+    }> = [
+      { message: "Zeig mir eine Quellenkarte", demoCard: "Evidence", type: "Evidence" },
+      { message: "Show a progress card", demoCard: "Progress", type: "Progress" },
+      { message: "Ver una tarjeta de pregunta", demoCard: "Question", type: "Question" },
+      { message: "Show a proposal card", demoCard: "ProposalBatch", type: "ProposalBatch" },
+      { message: "Eine Repräsentationskarte ansehen", demoCard: "Representation", type: "Representation" },
+    ];
+
+    for (const preview of previews) {
+      const events = await collectEmbedA2aSubscribe(
+        { mode: "demo" },
+        {
+          message: preview.message,
+          demoCard: preview.demoCard,
+        },
+        createInMemoryEmbedWidgetA2aPort(async () => {
+          throw new Error("network must not be used in demo mode");
+        }),
+      );
+      const responseEvent = events.find(
+        (event) => event.type === "meta" && event.responseSpec,
+      );
+      expect(responseEvent?.type).toBe("meta");
+      if (responseEvent?.type !== "meta" || !responseEvent.responseSpec) {
+        throw new Error(`No response spec for ${preview.message}`);
+      }
+      expect(parseAgentResponsePart({
+        kind: "data",
+        metadata: {
+          "cr.catalog": "contextrocket.agent.response.v2",
+          "cr.component": "agent_ui",
+        },
+        data: { component: "agent_ui", spec: responseEvent.responseSpec },
+      })).toEqual(responseEvent.responseSpec);
+      const childTypes = responseEvent.responseSpec.elements.response.children
+        .map((id) => responseEvent.responseSpec!.elements[id].type);
+      expect(childTypes).toEqual([preview.type]);
+    }
   });
 });
 
@@ -415,6 +499,7 @@ it("delivers streamed content through the real native browser fetch port", async
     globalName: "NativeWidgetTransport",
     platform: "browser",
     target: "es2020",
+    loader: { ".svg": "text" },
   }).outputFiles[0]!.text;
   const browser = await chromium.launch();
   const page = await browser.newPage();
@@ -483,6 +568,169 @@ it("delivers streamed content through the real native browser fetch port", async
   }
 }, 15000);
 
+it("keeps the compact demo showcase visible and renders a JSON response card", async () => {
+  const bundle = buildSync({
+    entryPoints: [fileURLToPath(new URL("./index.ts", import.meta.url))],
+    bundle: true,
+    write: false,
+    format: "iife",
+    globalName: "ContextRocketWidget",
+    platform: "browser",
+    target: "es2020",
+    loader: { ".svg": "text" },
+  }).outputFiles[0]!.text;
+  const browser = await chromium.launch();
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  try {
+    await page.route("**/*", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.origin === "http://localhost:39995" && url.pathname === "/") {
+        await route.fulfill({
+          contentType: "text/html",
+          body: `<script>${bundle}</script><contextrocket-chat data-contextrocket-mode="demo"></contextrocket-chat>`,
+        });
+      } else {
+        await route.abort();
+      }
+    });
+    await page.goto("http://localhost:39995");
+    const host = page.locator("contextrocket-chat");
+    await host.locator(".cr-launcher").click();
+    expect(await host.locator(".cr-launcher").isVisible()).toBe(false);
+    await host.locator('[data-suggestion-tab="cards"]').click();
+
+    const geometry = await host.evaluate((element) => {
+      const root = element.shadowRoot!;
+      const messages = root.querySelector(".cr-messages")!.getBoundingClientRect();
+      const probe = root.querySelector(".cr-probe-large")!.getBoundingClientRect();
+      const lastSuggestion = root.querySelector(".cr-suggestion-items button:last-child")!.getBoundingClientRect();
+      return {
+        messagesTop: messages.top,
+        messagesBottom: messages.bottom,
+        probeTop: probe.top,
+        lastSuggestionBottom: lastSuggestion.bottom,
+      };
+    });
+    expect(geometry.probeTop).toBeGreaterThanOrEqual(geometry.messagesTop);
+    expect(geometry.lastSuggestionBottom).toBeLessThanOrEqual(geometry.messagesBottom);
+
+    await host.locator('[data-demo-card="Evidence"]').click();
+    const responseCard = host.locator(".cr-agent-card-evidence");
+    await expect.poll(() => responseCard.count()).toBe(1);
+    expect(await responseCard.textContent()).toContain("Evidence");
+    await host.locator(".cr-close").click();
+    expect(await host.locator(".cr-launcher").isVisible()).toBe(true);
+  } finally {
+    await browser.close();
+  }
+}, 15000);
+
+it("opens full-screen on load, supports resizing, and can be closed and reopened", async () => {
+  const bundle = buildSync({
+    entryPoints: [fileURLToPath(new URL("./index.ts", import.meta.url))],
+    bundle: true,
+    write: false,
+    format: "iife",
+    globalName: "ContextRocketWidget",
+    platform: "browser",
+    target: "es2020",
+    loader: { ".svg": "text" },
+  }).outputFiles[0]!.text;
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  try {
+    await page.route("**/*", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.origin === "http://localhost:39993" && url.pathname === "/") {
+        await route.fulfill({
+          contentType: "text/html",
+          body: `<script>${bundle}</script><contextrocket-chat data-contextrocket-mode="demo" data-contextrocket-fullscreen="true" data-contextrocket-fullscreen-on-load="true"></contextrocket-chat>`,
+        });
+      } else {
+        await route.abort();
+      }
+    });
+    await page.goto("http://localhost:39993");
+    const host = page.locator("contextrocket-chat");
+    const panel = host.locator(".cr-panel");
+    const launcher = host.locator(".cr-launcher");
+    const fullscreen = host.locator(".cr-fullscreen-toggle");
+
+    await expect.poll(() => panel.getAttribute("data-open")).toBe("true");
+    expect(await panel.getAttribute("data-fullscreen")).toBe("true");
+    expect(await panel.getAttribute("aria-hidden")).toBe("false");
+    expect(await launcher.isHidden()).toBe(true);
+    expect(await fullscreen.getAttribute("aria-pressed")).toBe("true");
+
+    await fullscreen.click();
+    expect(await panel.getAttribute("data-fullscreen")).toBe("false");
+    expect(await launcher.isHidden()).toBe(true);
+    expect(await fullscreen.getAttribute("aria-pressed")).toBe("false");
+
+    await host.locator(".cr-close").click();
+    expect(await panel.getAttribute("data-open")).toBe("false");
+    expect(await panel.getAttribute("aria-hidden")).toBe("true");
+    expect(await launcher.getAttribute("aria-expanded")).toBe("false");
+
+    await launcher.click();
+    expect(await panel.getAttribute("data-open")).toBe("true");
+    expect(await panel.getAttribute("data-fullscreen")).toBe("false");
+  } finally {
+    await browser.close();
+  }
+}, 15000);
+
+it("opens full-screen from the launcher when configured and keeps close/reopen usable", async () => {
+  const bundle = buildSync({
+    entryPoints: [fileURLToPath(new URL("./index.ts", import.meta.url))],
+    bundle: true,
+    write: false,
+    format: "iife",
+    globalName: "ContextRocketWidget",
+    platform: "browser",
+    target: "es2020",
+    loader: { ".svg": "text" },
+  }).outputFiles[0]!.text;
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  try {
+    await page.route("**/*", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.origin === "http://localhost:39994" && url.pathname === "/") {
+        await route.fulfill({
+          contentType: "text/html",
+          body: `<script>${bundle}</script><contextrocket-chat data-contextrocket-mode="demo" data-contextrocket-fullscreen="true" data-contextrocket-fullscreen-on-open="true"></contextrocket-chat>`,
+        });
+      } else {
+        await route.abort();
+      }
+    });
+    await page.goto("http://localhost:39994");
+    const host = page.locator("contextrocket-chat");
+    const panel = host.locator(".cr-panel");
+    const launcher = host.locator(".cr-launcher");
+    const fullscreen = host.locator(".cr-fullscreen-toggle");
+
+    expect(await panel.getAttribute("data-open")).toBe("false");
+    expect(await launcher.isHidden()).toBe(false);
+    await launcher.click();
+    expect(await panel.getAttribute("data-open")).toBe("true");
+    expect(await panel.getAttribute("data-fullscreen")).toBe("true");
+    expect(await launcher.isHidden()).toBe(true);
+
+    await fullscreen.click();
+    expect(await panel.getAttribute("data-fullscreen")).toBe("false");
+    await host.locator(".cr-close").click();
+    expect(await panel.getAttribute("data-open")).toBe("false");
+    expect(await launcher.isHidden()).toBe(false);
+
+    await launcher.click();
+    expect(await panel.getAttribute("data-fullscreen")).toBe("true");
+  } finally {
+    await browser.close();
+  }
+}, 15000);
+
 it("keeps host-resolved recovery UI localized without changing caller or partial answer text", async () => {
   const bundle = buildSync({
     entryPoints: [fileURLToPath(new URL("./index.ts", import.meta.url))],
@@ -492,6 +740,7 @@ it("keeps host-resolved recovery UI localized without changing caller or partial
     globalName: "ContextRocketWidget",
     platform: "browser",
     target: "es2020",
+    loader: { ".svg": "text" },
   }).outputFiles[0]!.text;
   const browser = await chromium.launch();
   try {
@@ -582,6 +831,7 @@ it("keeps host-resolved recovery UI localized without changing caller or partial
       expect(await host.locator(".cr-panel").getAttribute("aria-label")).toBe(
         item.title,
       );
+      expect(await host.locator('[data-suggestion-tab="questions"]').count()).toBe(1);
       await host.locator(".cr-input").fill("Synthetic locale test");
       await host.locator(".cr-send").click();
       await host.locator(".cr-error:not([hidden])").waitFor();
@@ -625,7 +875,7 @@ it("keeps host-resolved recovery UI localized without changing caller or partial
       expect(sent[2]?.params.message.messageId).not.toBe(
         sent[0]?.params.message.messageId,
       );
-      expect(await host.locator(".cr-footer span").textContent()).toBe(
+      expect(await host.locator(".cr-footer a").getAttribute("aria-label")).toBe(
         item.lang === "es"
           ? "Con tecnología de ContextRocket"
           : item.lang === "de"
@@ -636,7 +886,7 @@ it("keeps host-resolved recovery UI localized without changing caller or partial
         const demo = await page.evaluate<string>(
           "ContextRocketWidget.collectEmbedA2aSubscribe({mode:'demo',locale:'de'},{message:'Synthetic demo'}).then(events => events.filter(event => event.type === 'delta').map(event => event.text).join(''))",
         );
-        expect(demo).toContain("Demo-Antwort von ContextRocket");
+        expect(demo).toContain("Beispieldaten");
       }
       expect(unexpected).toEqual([]);
       await page.close();
@@ -645,3 +895,72 @@ it("keeps host-resolved recovery UI localized without changing caller or partial
     await browser.close();
   }
 }, 30000);
+
+it("refreshes opening suggestions for a changed organization and ignores stale card responses", async () => {
+  const bundle = buildSync({
+    entryPoints: [fileURLToPath(new URL("./index.ts", import.meta.url))],
+    bundle: true,
+    write: false,
+    format: "iife",
+    globalName: "ContextRocketWidget",
+    platform: "browser",
+    target: "es2020",
+    loader: { ".svg": "text" },
+  }).outputFiles[0]!.text;
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  let oldRequestStarted = false;
+  let oldRequestFinished = false;
+  let releaseOldRequest!: () => void;
+  const oldRequestGate = new Promise<void>((resolve) => {
+    releaseOldRequest = resolve;
+  });
+  try {
+    await page.route("**/*", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.origin !== "http://localhost:39996") {
+        await route.abort();
+      } else if (url.pathname === "/") {
+        await route.fulfill({
+          contentType: "text/html",
+          body: `<script>${bundle}</script><contextrocket-chat data-contextrocket-mode="live" data-contextrocket-api-base="http://localhost:39996" data-contextrocket-handle="old-org"></contextrocket-chat>`,
+        });
+      } else if (url.pathname === "/agent-card/old-org.json") {
+        oldRequestStarted = true;
+        await oldRequestGate;
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({ skills: [{ examples: ["Old organization suggestion"] }] }),
+        });
+        oldRequestFinished = true;
+      } else if (url.pathname === "/agent-card/new-org.json") {
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({ skills: [{ examples: ["New organization suggestion"] }] }),
+        });
+      } else {
+        await route.abort();
+      }
+    });
+
+    await page.goto("http://localhost:39996");
+    const host = page.locator("contextrocket-chat");
+    await expect.poll(() => oldRequestStarted).toBe(true);
+    await host.evaluate((element) => {
+      element.setAttribute("data-contextrocket-handle", "new-org");
+    });
+    await expect.poll(
+      () => host.locator('[data-suggestion="New organization suggestion"]').count(),
+    ).toBe(1);
+
+    releaseOldRequest();
+    await expect.poll(() => oldRequestFinished).toBe(true);
+    await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
+    expect(
+      await host.locator('[data-suggestion="Old organization suggestion"]').count(),
+    ).toBe(0);
+  } finally {
+    releaseOldRequest();
+    await browser.close();
+  }
+}, 15000);

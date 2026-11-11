@@ -4,22 +4,47 @@
   "description": "ContextRocket browser SDK (A2A client + createCRClient)",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ContextRocket/cr-sdk.git",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://github.com/ContextRocket/cr-sdk/tree/main/packages/sdk#readme",
+  "bugs": {
+    "url": "https://github.com/ContextRocket/cr-sdk/issues"
+  },
+  "keywords": [
+    "contextrocket",
+    "a2a",
+    "agent",
+    "browser-sdk",
+    "contact-form"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./contact-form": {
+      "types": "./dist/contact-form.d.ts",
+      "import": "./dist/contact-form.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "node scripts/clean-dist.mjs && tsc -p tsconfig.json && node scripts/build-browser.mjs",
+    "prepack": "pnpm run build",
     "test": "vitest run"
   },
   "devDependencies": {
+    "esbuild": "^0.25.10",
     "@types/node": "^22.20.1",
     "typescript": "^5.9.2",
     "vite": "^7.3.7",

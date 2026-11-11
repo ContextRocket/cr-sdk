@@ -14,6 +14,17 @@ export interface WidgetChatMessage {
   content: string;
   sourceRefs?: WidgetSourceRef[];
   suggestions?: string[];
+  responseSpec?: AgentResponseSpec;
+  responseUnavailable?: boolean;
+}
+
+export interface AgentResponseSpec {
+  root: "response";
+  elements: Record<string, {
+    type: "Response" | "Evidence" | "Progress" | "Question" | "ProposalBatch" | "Representation";
+    props: Record<string, unknown>;
+    children: string[];
+  }>;
 }
 
 export interface WidgetSourceRef {
@@ -33,6 +44,14 @@ export type WidgetTransportState =
 
 export type WidgetMode = "demo" | "live";
 
+/** Render types exposed by the current public-safe A2A JSON Render catalog. */
+export type WidgetDemoCard =
+  | "Evidence"
+  | "Progress"
+  | "Question"
+  | "ProposalBatch"
+  | "Representation";
+
 export type WidgetFailureReason = "generic" | "interrupted" | "unsupported";
 
 export type WidgetTransportEvent =
@@ -45,6 +64,8 @@ export type WidgetTransportEvent =
       terminal?: boolean;
       sourceRefs?: WidgetSourceRef[];
       suggestions?: string[];
+      responseSpec?: AgentResponseSpec;
+      unavailable?: boolean;
     }
   | { type: "unsupported"; message: string }
   | { type: "session"; threadId: string };
@@ -62,10 +83,22 @@ export interface WidgetConfig {
   greeting?: string;
   title?: string;
   ref?: string;
-  theme?: "system" | "light" | "dark";
+  backgroundColor?: string;
+  foregroundColor?: string;
+  surfaceColor?: string;
+  mutedColor?: string;
+  borderColor?: string;
+  poweredByLogo?: "ink" | "white";
+  suggestions?: string[];
   position?: "bottom-right" | "bottom-left";
+  /** Show a full-screen toggle in the chat header. */
+  fullscreen?: boolean;
+  /** Open expanded when the visitor launches the chat. */
+  fullscreenOnOpen?: boolean;
+  /** Open the chat over the full viewport as soon as the widget mounts. */
+  fullscreenOnLoad?: boolean;
   /** Auto/omitted uses supported host document language (including regional tags), else English. */
-  locale?: "auto" | "en" | "es" | "de";
+  locale?: "auto" | "en" | "es" | "de" | "zh";
 }
 
 export interface WidgetSendRequest {
@@ -73,4 +106,6 @@ export interface WidgetSendRequest {
   messageId?: string;
   message: string;
   threadId?: string;
+  /** Local demo affordance; never included in live A2A requests. */
+  demoCard?: WidgetDemoCard;
 }

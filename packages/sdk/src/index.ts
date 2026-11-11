@@ -23,6 +23,24 @@ export {
 } from "./credentials-port.js";
 export type { CredentialsPort } from "./credentials-port.js";
 
+export {
+  createContactFormController,
+  ContactFormError,
+  extractContactAttribution,
+  submitContactForm,
+  submitContactFormWithAttribution,
+} from "./contact-form.js";
+export type {
+  ContextRocketBrowserSDK,
+  ContactIntent,
+  ContactFormController,
+  ContactAttribution,
+  ContactFormData,
+  ContactFormReceipt,
+  SubmitContactFormOptions,
+  SubmitContactFormWithAttributionOptions,
+} from "./contact-form.js";
+
 export type {
   A2AClientOptions,
   A2AEvent,

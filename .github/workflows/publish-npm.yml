@@ -1,0 +1,52 @@
+name: Publish npm package
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Package to publish from this repository
+        required: true
+        type: choice
+        options:
+          - sdk
+          - embed-chat
+          - site-publisher
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: npm-publish-${{ inputs.package }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.14.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install npm CLI with trusted publishing support
+        run: npm install --global npm@11.5.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run verify
+      - name: Publish selected package
+        env:
+          PACKAGE_TARGET: ${{ inputs.package }}
+        shell: bash
+        run: |
+          case "$PACKAGE_TARGET" in
+            sdk) package_path=packages/sdk ;;
+            embed-chat) package_path=packages/embed-chat ;;
+            site-publisher) package_path=packages/site-publisher ;;
+            *) echo "Unsupported package selection" >&2; exit 2 ;;
+          esac
+          cd "$package_path"
+          npm publish --access public

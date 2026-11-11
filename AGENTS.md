@@ -11,6 +11,7 @@ source in-tree.
 | --- | --- | --- |
 | `packages/sdk` | `@contextrocket/sdk` | Typed browser SDK: A2A client, `createCRClient`, credentials, config |
 | `packages/embed-chat` | `@contextrocket/embed-chat` | Standalone chat widget IIFE → `dist/widget.js` |
+| `packages/site-publisher` | `@contextrocket/site-publisher` | Node-only static-site CDN publisher + `contextrocket-site-publish` command |
 
 Root `package.json` is **private**. Publishable units are the packages under
 `packages/`. Future widgets belong as `packages/embed-<name>` siblings.
@@ -19,6 +20,9 @@ Root `package.json` is **private**. Publishable units are the packages under
 
 1. Do not add LLM API keys or server secrets. Browser credentials are
    publishable, origin-bound Website API keys only.
+   The site-publisher package is Node-only and handles private org machine
+   tokens; never import it into browser code or add its credential path to the
+   browser SDK exports.
 2. Consumers import `@contextrocket/sdk` (or load the embed IIFE). Do not tell
    apps to reintroduce `lib/a2a-client` or `lib/cr-sdk` shims.
 3. Keep packages self-contained. No imports from sibling app repos
@@ -33,7 +37,7 @@ Root `package.json` is **private**. Publishable units are the packages under
 source ~/.zshrc && nvm use --silent   # Node from .nvmrc
 pnpm install
 pnpm build                            # builds all packages
-pnpm verify                           # currently: build
+pnpm verify                           # build, typecheck, and test all packages
 ```
 
 Node **>= 22**. Package manager: **pnpm** (see root `packageManager`).
@@ -63,11 +67,17 @@ pnpm --dir packages/embed-chat build
 ## Publishing mindset (npm / CDN)
 
 - Root stays private; publish `@contextrocket/sdk` and `@contextrocket/embed-chat`
-  (and later `embed-*`) individually or via workspace filtered publish.
-- Ship `dist/` only (`files: ["dist"]` in each package).
-- Embed IIFE is also a CDN candidate
-  (`https://cdn.contextrocket.com/sdk/v…/chat.js`); version immutably.
-- Until the registry is live, `file:` deps in starters are the supported path.
+  plus `@contextrocket/site-publisher` individually or via workspace filtered
+  publish. Future widgets belong in `embed-*` packages.
+- Ship only built artifacts plus package-specific README and license files
+  (`files: ["dist"]`; npm includes README, license, and package metadata).
+- Standalone browser artifacts can be published to the ContextRocket CDN at
+  versioned paths under `/embeds/`. `pnpm prepare:cdn` stages only the chat and
+  contact-form browser files, each in a separate prefix directory. Publish with
+  the ContextRocket operator CLI; never overwrite a released version path.
+- The GitHub repo is public; npm publication is pending. Standalone starters
+  use checked-in browser artifacts for normal builds. Use `file:` dependencies
+  only for local application development with a sibling `cr-sdk` checkout.
 
 ## What belongs elsewhere
 
@@ -75,7 +85,8 @@ pnpm --dir packages/embed-chat build
 | --- | --- |
 | Branded static sites | `cr-starter` / Astro forks |
 | Auth + dashboard product base | `cr-auth-starter` / `cr-luna` |
-| Customer CLI | `cli/` inside starters (not this repo) |
+| Customer static-site publishing | `packages/site-publisher` (Node-only; private org token) |
+| ContextRocket operator commands | Product backend CLI; keep operator-only flows out of public browser packages |
 | ContextRocket product slices | product repos — do not port here |
 
 ## Docs

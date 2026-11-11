@@ -4,13 +4,34 @@
   "description": "ContextRocket embeddable chat widget (standalone IIFE)",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ContextRocket/cr-sdk.git",
+    "directory": "packages/embed-chat"
+  },
+  "homepage": "https://github.com/ContextRocket/cr-sdk/tree/main/packages/embed-chat#readme",
+  "bugs": {
+    "url": "https://github.com/ContextRocket/cr-sdk/issues"
+  },
+  "keywords": [
+    "contextrocket",
+    "chat-widget",
+    "a2a",
+    "agent",
+    "embed"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist"
   ],
   "scripts": {
     "build": "node build.mjs",
+    "prepack": "pnpm run build",
+    "typecheck": "tsc --noEmit",
     "test": "playwright install --only-shell chromium && vitest run",
-    "verify": "node build.mjs && node -e \"const{statSync}=require('node:fs');const p='dist/widget.js';const s=statSync(p);if(s.size<1000){console.error('widget.js too small: '+s.size+' bytes');process.exit(1)}console.log('OK '+p+' ('+s.size+' bytes)')\""
+    "verify": "pnpm run typecheck && node build.mjs && node -e \"const{statSync}=require('node:fs');const p='dist/widget.js';const s=statSync(p);if(s.size<1000){console.error('widget.js too small: '+s.size+' bytes');process.exit(1)}console.log('OK '+p+' ('+s.size+' bytes)')\""
   },
   "devDependencies": {
     "esbuild": "^0.25.10",

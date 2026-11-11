@@ -16,6 +16,12 @@ function readAttr(element: Element, ...names: string[]): string | undefined {
   return undefined;
 }
 
+function readBooleanAttr(element: Element, name: string): boolean {
+  return ["true", "1", "yes"].includes(
+    element.getAttribute(name)?.trim().toLowerCase() ?? "",
+  );
+}
+
 function boundedText(
   value: string | undefined,
   maxLength: number,
@@ -60,9 +66,31 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
   const greeting = readAttr(source, `data-${DATA_PREFIX}-greeting`);
   const title = readAttr(source, `data-${DATA_PREFIX}-title`);
   const ref = readAttr(source, `data-${DATA_PREFIX}-ref`);
-  const rawTheme = readAttr(source, `data-${DATA_PREFIX}-theme`);
   const rawPosition = readAttr(source, `data-${DATA_PREFIX}-position`);
   const rawLocale = readAttr(source, `data-${DATA_PREFIX}-locale`);
+  const rawPoweredByLogo = readAttr(source, `data-${DATA_PREFIX}-powered-by-logo`);
+  const rawSuggestions = readAttr(source, `data-${DATA_PREFIX}-suggestions`);
+  let suggestions: string[] | undefined;
+  if (rawSuggestions) {
+    try {
+      const value: unknown = JSON.parse(rawSuggestions);
+      if (Array.isArray(value)) {
+        const parsed = value
+          .filter((item): item is string => typeof item === "string")
+          .map((item) => item.trim().slice(0, 200))
+          .filter(Boolean)
+          .slice(0, 5);
+        if (parsed.length) suggestions = parsed;
+      }
+    } catch { /* Invalid optional installation copy falls back to card examples. */ }
+  }
+  const themeColors = {
+    backgroundColor: readAttr(source, `data-${DATA_PREFIX}-background`),
+    foregroundColor: readAttr(source, `data-${DATA_PREFIX}-foreground`),
+    surfaceColor: readAttr(source, `data-${DATA_PREFIX}-surface`),
+    mutedColor: readAttr(source, `data-${DATA_PREFIX}-muted`),
+    borderColor: readAttr(source, `data-${DATA_PREFIX}-border`),
+  };
 
   return {
     ...(apiBaseUrl ? { apiBaseUrl: apiBaseUrl.replace(/\/$/, "") } : {}),
@@ -81,11 +109,20 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
     ...(boundedText(ref, MAX_REF_LENGTH)
       ? { ref: boundedText(ref, MAX_REF_LENGTH) }
       : {}),
-    ...(rawTheme === "system" || rawTheme === "light" || rawTheme === "dark"
-      ? { theme: rawTheme }
-      : {}),
+    ...Object.fromEntries(Object.entries(themeColors).flatMap(([key, value]) => safeAccent(value) ? [[key, safeAccent(value)]] : [])),
+    ...(rawPoweredByLogo === "ink" || rawPoweredByLogo === "white" ? { poweredByLogo: rawPoweredByLogo } : {}),
+    ...(suggestions ? { suggestions } : {}),
     ...(rawPosition === "bottom-right" || rawPosition === "bottom-left"
       ? { position: rawPosition }
+      : {}),
+    ...(readBooleanAttr(source, `data-${DATA_PREFIX}-fullscreen`)
+      ? { fullscreen: true }
+      : {}),
+    ...(readBooleanAttr(source, `data-${DATA_PREFIX}-fullscreen-on-open`)
+      ? { fullscreenOnOpen: true }
+      : {}),
+    ...(readBooleanAttr(source, `data-${DATA_PREFIX}-fullscreen-on-load`)
+      ? { fullscreenOnLoad: true }
       : {}),
     locale: resolveWidgetLocale(
       rawLocale,
@@ -96,8 +133,8 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
 
 export function buildPoweredByHref(config: WidgetConfig): string {
   // The "powered by ContextRocket" backlink points at the website
-  // (contextrocket.ai), never the API domain.
-  const base = "https://www.contextrocket.ai";
+  // (contextrocket.com), never the API domain.
+  const base = "https://contextrocket.com";
   const refToken = config.ref ?? config.handle ?? "widget";
   return `${base}?ref=${encodeURIComponent(refToken)}`;
 }
