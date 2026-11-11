@@ -10,8 +10,11 @@ Agent-oriented rules and day-to-day commands live in [AGENTS.md](./AGENTS.md).
 | --- | --- | --- |
 | `packages/sdk` | `@contextrocket/sdk` | A2A wire client + `createCRClient`, credentials, config, and contact form submissions |
 | `packages/embed-chat` | `@contextrocket/embed-chat` | Standalone chat widget IIFE (`dist/widget.js`) |
+| `packages/site-publisher` | `@contextrocket/site-publisher` | Node-only static CDN publishing API + TypeScript CLI |
 
 Future widgets land as `packages/embed-<name>` siblings.
+The site publisher is a Node-only capability: it uses a private, admin-scoped
+organization machine token and is not exported from the browser SDK.
 
 ## Local development (pnpm)
 
@@ -69,8 +72,8 @@ sets `publishConfig.access` to `public`, includes its README and MIT license,
 and publishes only its built `dist/` output. The root workspace remains
 private. Before a first release, confirm the npm organization owns the
 `@contextrocket` scope and that the exact package versions are still
-unpublished. Build and inspect each tarball with the `npm pack --dry-run`
-commands above.
+unpublished. Build and inspect each tarball with `npm pack --dry-run` from its
+package directory.
 
 Prefer npm trusted publishing from GitHub Actions over a long-lived npm token.
 The repository is public, so trusted publishing can also attach npm provenance
@@ -94,7 +97,32 @@ cd ../embed-chat && npm publish --access public
 Both commands run the package `prepack` build. Do not put an npm token in the
 repository, a `PUBLIC_*` variable, or a customer site. After publishing, check
 the package versions with `npm view @contextrocket/sdk version` and
-`npm view @contextrocket/embed-chat version`.
+`npm view @contextrocket/embed-chat version`. The site publisher release is
+separate and should be checked with `npm view @contextrocket/site-publisher version`.
+
+## Static site publishing from Node.js
+
+Install `@contextrocket/site-publisher` in a site repository to publish a
+static build without Python or a GitHub Actions dependency:
+
+```bash
+npm install --save-dev @contextrocket/site-publisher
+npx contextrocket-site-publish ./dist --org your-handle --prefix blog
+```
+
+In `cr-starter`, the CLI can resolve the organization handle from
+`CR_ORG_HANDLE`, `PUBLIC_CONTEXTROCKET_HANDLE`, or `config/site.json` →
+`contextrocket.handle`, so `--org` is optional. The handle selects the
+organization; authorization comes from the private credential.
+
+The command reads `CR_API_TOKEN` from the environment. Use `--env-file
+../cr-vault/.env.prod` for an operator environment file, or use `--api-base
+http://localhost:8000` with a local development token. The token currently
+must be a private admin-scoped machine credential for the target organization. It is
+never written into the built site or printed. `--dry-run` packages and reports
+the archive without requiring a token; `--no-wait` prints the queued release
+status URL. Publishing remains an API operation; the CLI only packages the
+static directory and calls the existing org-scoped publish/status endpoints.
 
 The SDK build also emits `packages/sdk/dist/contact-form.browser.js`, a
 dependency-free IIFE that installs `window.ContextRocketSDK` for static sites
