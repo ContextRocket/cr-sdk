@@ -106,7 +106,6 @@ const JSON_RENDER_FRAME = {
       artifact: {
         parts: [
           {
-            kind: "data",
             data: {
               component: "agent_ui",
               spec: {
@@ -424,7 +423,6 @@ describe("streamEmbedA2aSubscribe (demo mode)", () => {
     }
     const spec = responseEvent.responseSpec;
     expect(parseAgentResponsePart({
-      kind: "data",
       metadata: {
         "cr.catalog": "contextrocket.agent.response.v2",
         "cr.component": "agent_ui",
@@ -474,7 +472,6 @@ describe("streamEmbedA2aSubscribe (demo mode)", () => {
         throw new Error(`No response spec for ${preview.message}`);
       }
       expect(parseAgentResponsePart({
-        kind: "data",
         metadata: {
           "cr.catalog": "contextrocket.agent.response.v2",
           "cr.component": "agent_ui",

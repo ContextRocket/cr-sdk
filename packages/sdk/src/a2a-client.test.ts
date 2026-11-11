@@ -215,7 +215,6 @@ describe("parseA2AEvent (current wire)", () => {
     frame.result.artifactUpdate.artifact.parts = [
       { text: "Here is the evidence." },
       {
-        kind: "data",
         metadata: {
           "cr.catalog": "contextrocket.agent.response.v2",
           "cr.component": "agent_ui",
@@ -236,7 +235,6 @@ describe("parseA2AEvent (current wire)", () => {
         },
       },
       {
-        kind: "data",
         metadata: {
           "cr.catalog": "contextrocket.agent.response.v2",
           "cr.component": "agent_ui",
@@ -283,6 +281,24 @@ describe("parseA2AEvent (current wire)", () => {
       parts: [{ type: "text", text: "alpha beta gamma delta epsilon" }],
     });
     expect(event.metadata?.customerSafe).toBe(true);
+  });
+
+  it("exposes agent follow-up suggestions as typed A2A metadata", () => {
+    const frame = structuredClone(COMPLETED_FRAME) as unknown as {
+      result: { statusUpdate: { metadata: Record<string, unknown> } };
+    };
+    frame.result.statusUpdate.metadata.suggestions = [
+      "Show me the source",
+      "What should I do next?",
+    ];
+    const event = parseA2AEvent(dataLine(frame)) as Extract<
+      A2AEvent,
+      { type: "TaskStatusUpdateEvent" }
+    >;
+    expect(event.metadata?.suggestions).toEqual([
+      "Show me the source",
+      "What should I do next?",
+    ]);
   });
 
   it("maps TASK_STATE_INPUT_REQUIRED to input-required and marks it final", () => {

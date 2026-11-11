@@ -37,7 +37,6 @@ export interface AgentResponseSpec {
 }
 
 export interface AgentResponseDataPart {
-  kind: "data";
   metadata: {
     "cr.catalog": typeof AGENT_RESPONSE_CATALOG;
     "cr.component": "agent_ui";
@@ -75,7 +74,9 @@ function validProps(type: string, props: unknown): boolean {
  */
 export function parseAgentResponsePart(part: unknown): AgentResponseSpec | null | undefined {
   if (!record(part) || !record(part.metadata) || !Object.prototype.hasOwnProperty.call(part, "data")) return undefined;
-  if (part.kind !== "data") return undefined;
+  if (Object.prototype.hasOwnProperty.call(part, "kind")) return undefined;
+  const alternatives = ["text", "url", "raw", "data"].filter((key) => Object.prototype.hasOwnProperty.call(part, key));
+  if (alternatives.length !== 1 || alternatives[0] !== "data") return undefined;
   if (part.metadata["cr.catalog"] !== AGENT_RESPONSE_CATALOG || part.metadata["cr.component"] !== "agent_ui") return undefined;
   const data = part.data;
   if (!record(data) || Object.keys(data).sort().join(",") !== "component,spec" || data.component !== "agent_ui") return null;

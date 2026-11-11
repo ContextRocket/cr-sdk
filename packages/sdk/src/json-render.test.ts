@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { parseAgentResponsePart } from "./json-render.js";
 
 const responsePart = (props: Record<string, unknown> = { stage: "Searching", completed: 1, total: 2 }) => ({
-  kind: "data",
   data: {
     component: "agent_ui",
     spec: {
@@ -31,6 +30,13 @@ describe("parseAgentResponsePart", () => {
     const part = responsePart();
     part.metadata["cr.catalog"] = "other.catalog";
     expect(parseAgentResponsePart(part)).toBeUndefined();
+  });
+
+  it("accepts the current A2A 1.0 data one-of shape and rejects internal kind parts", () => {
+    const part = responsePart();
+    expect(parseAgentResponsePart(part)).toBeDefined();
+    expect(parseAgentResponsePart({ ...part, kind: "data" })).toBeUndefined();
+    expect(parseAgentResponsePart({ ...part, text: "not a data one-of" })).toBeUndefined();
   });
 
   it("fails closed when props contain unknown keys or component types", () => {

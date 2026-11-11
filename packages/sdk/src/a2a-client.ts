@@ -162,6 +162,8 @@ export interface A2AEventMetadata {
   thread_id?: string;
   /** Citation source references (ACS-3). */
   source_refs?: SourceRef[];
+  /** Context-sensitive opening or follow-up prompts from the agent. */
+  suggestions?: string[];
   /** Tool calls the agent invoked during this turn (A2A-SSE-2). */
   tool_calls?: ToolCallEvent[];
   /** Pending reviews requiring human approval (HITL). */

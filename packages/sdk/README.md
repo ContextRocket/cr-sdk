@@ -78,7 +78,9 @@ Only put publishable, origin-bound website API keys in browser variables.
 control of the A2A request options. Event types are normalized from the current
 ContextRocket A2A 1.0 contract. Artifact events retain text parts and validated
 JSON Render v2 response cards; unsupported or malformed structured parts are
-omitted.
+omitted. The SDK reads the standard A2A one-of `{ data, metadata }` shape and
+normalizes accepted cards to `type: "data"`. Terminal `suggestions` are typed
+on `A2AEventMetadata`.
 
 ```ts
 import { parseAgentResponsePart } from "@contextrocket/sdk/json-render";
