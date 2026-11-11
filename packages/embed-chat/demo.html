@@ -24,27 +24,32 @@
       <code>pnpm run dev</code>) and open this file via the dev server.
     </p>
     <p>
-      Set real credentials via query params or edit the script tag below:
-      <code>?apiKey=crk_...&amp;apiBase=http://127.0.0.1:8000</code>
+      The widget opens in demo mode and needs no credentials. To connect a live
+      organization, use its handle and publishable key:
+      <code>?mode=live&amp;handle=your-org&amp;apiKey=crk_...</code>
     </p>
 
     <script>
       (function () {
         const params = new URLSearchParams(window.location.search);
-        const apiKey = params.get("apiKey") ?? "crk_demo_replace_me";
-        const apiBase = params.get("apiBase") ?? "http://127.0.0.1:8000";
-        const org = params.get("org") ?? "demo-org";
+        const mode = params.get("mode") === "live" ? "live" : "demo";
+        const apiKey = params.get("apiKey");
+        const apiBase = params.get("apiBase") ?? "https://api.contextrocket.com";
+        const handle = params.get("handle") ?? "contextrocket";
         const script = document.createElement("script");
         script.src = "/embed/widget.js";
         script.async = true;
-        script.setAttribute("data-contextrocket-api-key", apiKey);
+        script.setAttribute("data-contextrocket-mode", mode);
         script.setAttribute("data-contextrocket-api-base", apiBase);
-        script.setAttribute("data-contextrocket-org", org);
+        script.setAttribute("data-contextrocket-handle", handle);
+        script.setAttribute("data-contextrocket-accent", "#0e0f13");
+        script.setAttribute("data-contextrocket-fullscreen", "true");
+        script.setAttribute("data-contextrocket-powered-by-logo", "ink");
+        if (apiKey) script.setAttribute("data-contextrocket-api-key", apiKey);
         script.setAttribute(
           "data-contextrocket-greeting",
           "Hi — ask anything about this brand.",
         );
-        script.setAttribute("data-contextrocket-accent", "#ff2b67");
         document.body.appendChild(script);
       })();
     </script>

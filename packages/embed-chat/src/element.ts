@@ -262,7 +262,7 @@ export class ContextRocketChatElement extends HTMLElement {
       this.#suggestionDiscoveryKey = null;
       const hadSuggestions = this.#suggestions.length > 0;
       this.#suggestions = [];
-      if (hadSuggestions && this.#state.messages.length === 0) this.#syncUi();
+      if (hadSuggestions && !this.#hasUserMessage()) this.#syncUi();
       return;
     }
 
@@ -274,7 +274,7 @@ export class ContextRocketChatElement extends HTMLElement {
     const run = ++this.#suggestionDiscoveryRun;
     const hadSuggestions = this.#suggestions.length > 0;
     this.#suggestions = [];
-    if (hadSuggestions && this.#state.messages.length === 0) this.#syncUi();
+    if (hadSuggestions && !this.#hasUserMessage()) this.#syncUi();
 
     try {
       const response = await fetch(`${apiBaseUrl}/agent-card/${encodeURIComponent(handle)}.json`, {
@@ -307,7 +307,7 @@ export class ContextRocketChatElement extends HTMLElement {
         .map((item) => item.trim().slice(0, 200))
         .filter(Boolean)
         .slice(0, 5);
-      if (prompts.length && this.#state.messages.length === 0) {
+      if (prompts.length && !this.#hasUserMessage()) {
         this.#suggestions = prompts;
         this.#syncUi();
       }
@@ -567,6 +567,7 @@ export class ContextRocketChatElement extends HTMLElement {
     const copy = copyFor(this.#config);
     this.#messages.replaceChildren();
 
+    const hasUserMessage = this.#hasUserMessage();
     if (this.#state.messages.length === 0) {
       const empty = document.createElement("div");
       empty.className = "cr-empty";
@@ -626,6 +627,13 @@ export class ContextRocketChatElement extends HTMLElement {
       this.#messages.appendChild(bubble);
     }
 
+    // A configured greeting is an assistant message, but the visitor has not
+    // started a conversation yet. Keep the opening suggestions available
+    // until their first message so greetings do not hide the demo entry point.
+    if (hasUserMessage === false && this.#state.messages.length > 0) {
+      this.#messages.appendChild(this.#renderOpeningSuggestions(copy));
+    }
+
     this.#messages.scrollTop = this.#state.messages.length
       ? this.#messages.scrollHeight
       : 0;
@@ -663,6 +671,10 @@ export class ContextRocketChatElement extends HTMLElement {
     this.#send.textContent = "";
     this.#send.dataset.state = sending ? "stop" : "send";
     this.#send.setAttribute("aria-label", sending ? copy.stop : copy.send);
+  }
+
+  #hasUserMessage(): boolean {
+    return this.#state.messages.some((message) => message.role === "user");
   }
 
   #renderOpeningSuggestions(copy: WidgetCopy): HTMLDivElement {

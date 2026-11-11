@@ -831,6 +831,7 @@ it("keeps host-resolved recovery UI localized without changing caller or partial
       expect(await host.locator(".cr-panel").getAttribute("aria-label")).toBe(
         item.title,
       );
+      expect(await host.locator('[data-suggestion-tab="questions"]').count()).toBe(1);
       await host.locator(".cr-input").fill("Synthetic locale test");
       await host.locator(".cr-send").click();
       await host.locator(".cr-error:not([hidden])").waitFor();
