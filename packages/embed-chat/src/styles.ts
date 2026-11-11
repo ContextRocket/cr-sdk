@@ -624,6 +624,11 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
   opacity: 0.8;
 }
 
+.cr-send:focus-visible {
+  outline: 2px solid var(--cr-focus);
+  outline-offset: 3px;
+}
+
 .cr-send:disabled {
   opacity: 0.45;
   cursor: not-allowed;
