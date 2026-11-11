@@ -75,30 +75,29 @@ private. Before a first release, confirm the npm organization owns the
 unpublished. Build and inspect each tarball with `npm pack --dry-run` from its
 package directory.
 
-Prefer npm trusted publishing from GitHub Actions over a long-lived npm token.
-The repository is public, so trusted publishing can also attach npm provenance
-to each release. Add a dedicated release workflow, then configure a trusted
-publisher for each package using the `ContextRocket/cr-sdk` repository and
-that workflow's exact path. Publish from a GitHub-hosted runner with
-`id-token: write`. The first trusted publish validates npm's publisher
-configuration; complete it within two days of creating that configuration.
-See [npm's trusted publishing guide](https://docs.npmjs.com/trusted-publishers/).
+The repository already has a manual GitHub Actions release workflow at
+`.github/workflows/publish-npm.yml`. Configure npm trusted publishing for each
+package using the `ContextRocket/cr-sdk` repository and that exact workflow
+path. The workflow runs on `main`, verifies the workspace, and publishes only
+the selected package from a GitHub-hosted runner with `id-token: write`. This
+avoids a long-lived npm token and provides npm provenance. The first trusted
+publish validates npm's publisher configuration; complete it within two days
+of creating that configuration. See
+[npm's trusted publishing guide](https://docs.npmjs.com/trusted-publishers/).
 
-For an explicitly authorized one-off release, publish each package from its
-own directory after reviewing its tarball and authenticating with the npm
-account's required two-factor authentication or an appropriately scoped
-granular access token:
+Before dispatching a release, review the package tarball and confirm its exact
+version is not already in the registry:
 
 ```bash
-cd packages/sdk && npm publish --access public
-cd ../embed-chat && npm publish --access public
+cd packages/sdk && npm pack --dry-run
+npm view @contextrocket/sdk@0.1.0 version
 ```
 
-Both commands run the package `prepack` build. Do not put an npm token in the
-repository, a `PUBLIC_*` variable, or a customer site. After publishing, check
-the package versions with `npm view @contextrocket/sdk version` and
-`npm view @contextrocket/embed-chat version`. The site publisher release is
-separate and should be checked with `npm view @contextrocket/site-publisher version`.
+Use the GitHub Actions **Publish npm package** workflow on `main` and select
+`sdk`, `embed-chat`, or `site-publisher`. After it succeeds, check the exact
+published version with `npm view`. Do not add an npm token to the repository,
+a `PUBLIC_*` variable, or a customer site. The packages remain unpublished
+until a first release is deliberately scheduled.
 
 ## Static site publishing from Node.js
 

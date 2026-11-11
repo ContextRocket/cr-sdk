@@ -98,5 +98,6 @@ pnpm --filter @contextrocket/site-publisher run verify
 npm pack --dry-run
 ```
 
-The repository root and package are private to npm until the first public
-release is explicitly scheduled.
+The GitHub repository is public. This npm package is not published yet; its
+first public release should be scheduled after its tarball and trusted
+publisher configuration are verified.
