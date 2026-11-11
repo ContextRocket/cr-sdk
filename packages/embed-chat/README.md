@@ -80,8 +80,9 @@ pnpm run build:widget
 # -> public/embed/widget.js
 ```
 
-The npm package is intentionally standalone; Astro sites load the built IIFE
-from their public folder. The widget source and future reusable embed
+The package is designed to be standalone, but has not yet been published to
+npm. After release, Astro sites can load the built IIFE from their public
+folder or a versioned CDN URL. The widget source and reusable embed
 capabilities stay in `cr-sdk` packages.
 
 The CDN example is illustrative until a verified release exists; use

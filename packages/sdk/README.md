@@ -3,7 +3,16 @@
 `@contextrocket/sdk` provides typed browser clients for ContextRocket's A2A
 agent endpoint and organization-scoped public inquiry capture.
 
-## Install
+## Install status
+
+The GitHub repository is public, but `@contextrocket/sdk` has not been
+published to the npm registry yet. `pnpm add @contextrocket/sdk` will not work
+until a version is released. For local package development, build this
+repository and use a `file:` dependency from a sibling checkout as described in
+the root [README](../../README.md). A standalone Astro starter uses the
+generated browser artifact and does not require this checkout for normal builds.
+
+After the npm release, install the package with:
 
 ```sh
 pnpm add @contextrocket/sdk

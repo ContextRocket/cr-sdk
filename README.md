@@ -15,20 +15,31 @@ Future widgets land as `packages/embed-<name>` siblings.
 
 ## Local development (pnpm)
 
-From a sibling starter checkout:
+The GitHub repository is public, but the packages have not been published to
+the npm registry yet. A standalone starter build does not need this checkout:
+it uses checked-in browser artifacts under `public/embed/`. The optional
+starter `pnpm run build:embeds` command refreshes those artifacts from this
+repository.
+
+For package development, build from this repository:
 
 ```bash
-cd ../cr-sdk && pnpm install && pnpm build
+pnpm install
+pnpm build
 ```
 
-In the starter `package.json`:
+For a local application prototype that imports the TypeScript SDK, use local
+package links while both repositories are checked out:
 
 ```json
 "@contextrocket/sdk": "file:../cr-sdk/packages/sdk",
 "@contextrocket/embed-chat": "file:../cr-sdk/packages/embed-chat"
 ```
 
-Then `pnpm install` in the starter. Import the SDK:
+Build the SDK packages first, then install the local links in the prototype.
+These paths are for local development; they are not a published customer
+installation method. Once the npm release is available, consumers can install
+the versioned packages from the registry. Import the SDK:
 
 ```ts
 import { createCRClient, resolveCRConfig, streamTask } from "@contextrocket/sdk";

@@ -68,7 +68,9 @@ pnpm --dir packages/embed-chat build
   (`files: ["dist"]`; npm includes README, license, and package metadata).
 - Embed IIFE is also a CDN candidate
   (`https://cdn.contextrocket.com/sdk/v…/chat.js`); version immutably.
-- Until the registry is live, `file:` deps in starters are the supported path.
+- The GitHub repo is public; npm publication is pending. Standalone starters
+  use checked-in browser artifacts for normal builds. Use `file:` dependencies
+  only for local application development with a sibling `cr-sdk` checkout.
 
 ## What belongs elsewhere
 
