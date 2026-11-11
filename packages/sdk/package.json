@@ -40,6 +40,7 @@
   ],
   "scripts": {
     "build": "node scripts/clean-dist.mjs && tsc -p tsconfig.json && node scripts/build-browser.mjs",
+    "prepack": "pnpm run build",
     "test": "vitest run"
   },
   "devDependencies": {

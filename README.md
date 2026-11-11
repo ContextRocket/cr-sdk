@@ -28,6 +28,14 @@ pnpm install
 pnpm build
 ```
 
+Each publishable package runs its build automatically during npm packing. Check
+the exact package contents without publishing from the package directory:
+
+```bash
+cd packages/sdk && npm pack --dry-run
+cd ../embed-chat && npm pack --dry-run
+```
+
 For a local application prototype that imports the TypeScript SDK, use local
 package links while both repositories are checked out:
 
