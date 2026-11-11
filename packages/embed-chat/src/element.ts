@@ -45,7 +45,8 @@ export class ContextRocketChatElement extends HTMLElement {
   #abortController: AbortController | null = null;
   #suggestions: string[] = [];
   #suggestionTab: "questions" | "cards" = "questions";
-  #suggestionDiscoveryStarted = false;
+  #suggestionDiscoveryKey: string | null = null;
+  #suggestionDiscoveryRun = 0;
   #fullscreen = false;
 
   #launcher!: HTMLButtonElement;
@@ -250,20 +251,54 @@ export class ContextRocketChatElement extends HTMLElement {
 
   async #loadSuggestions(): Promise<void> {
     const config = this.#config;
-    if (!config || config.mode !== "live" || config.suggestions?.length || !config.apiBaseUrl || !config.handle || this.#suggestionDiscoveryStarted) return;
-    this.#suggestionDiscoveryStarted = true;
+    if (
+      !config ||
+      config.mode !== "live" ||
+      config.suggestions?.length ||
+      !config.apiBaseUrl ||
+      !config.handle
+    ) {
+      this.#suggestionDiscoveryRun += 1;
+      this.#suggestionDiscoveryKey = null;
+      const hadSuggestions = this.#suggestions.length > 0;
+      this.#suggestions = [];
+      if (hadSuggestions && this.#state.messages.length === 0) this.#syncUi();
+      return;
+    }
+
+    const handle = config.handle;
+    const apiBaseUrl = config.apiBaseUrl;
+    const discoveryKey = `${apiBaseUrl}\n${handle}`;
+    if (this.#suggestionDiscoveryKey === discoveryKey) return;
+    this.#suggestionDiscoveryKey = discoveryKey;
+    const run = ++this.#suggestionDiscoveryRun;
+    const hadSuggestions = this.#suggestions.length > 0;
+    this.#suggestions = [];
+    if (hadSuggestions && this.#state.messages.length === 0) this.#syncUi();
+
     try {
-      const response = await fetch(`${config.apiBaseUrl}/agent-card/${encodeURIComponent(config.handle)}.json`, {
+      const response = await fetch(`${apiBaseUrl}/agent-card/${encodeURIComponent(handle)}.json`, {
         method: "GET",
         mode: "cors",
         credentials: "omit",
         headers: { accept: "application/json" },
       });
-      if (!response.ok) return;
+      if (run !== this.#suggestionDiscoveryRun) return;
+      if (!response.ok) {
+        this.#suggestionDiscoveryKey = null;
+        return;
+      }
       const card: unknown = await response.json();
-      if (!card || typeof card !== "object") return;
+      if (run !== this.#suggestionDiscoveryRun) return;
+      if (!card || typeof card !== "object") {
+        this.#suggestionDiscoveryKey = null;
+        return;
+      }
       const skills = (card as Record<string, unknown>).skills;
-      if (!Array.isArray(skills)) return;
+      if (!Array.isArray(skills)) {
+        this.#suggestionDiscoveryKey = null;
+        return;
+      }
       const prompts = skills.flatMap((skill) => {
         if (!skill || typeof skill !== "object") return [];
         const examples = (skill as Record<string, unknown>).examples;
@@ -278,6 +313,10 @@ export class ContextRocketChatElement extends HTMLElement {
       }
     } catch {
       // Card discovery is optional; the localized starter prompts remain available.
+      if (run === this.#suggestionDiscoveryRun) {
+        // Permit a later configuration update to retry discovery.
+        this.#suggestionDiscoveryKey = null;
+      }
     }
   }
 
@@ -396,6 +435,7 @@ export class ContextRocketChatElement extends HTMLElement {
     const copy = copyFor(this.#config!);
     this.#launcher.setAttribute("aria-label", open ? copy.close : copy.open);
     if (open) {
+      void this.#loadSuggestions();
       this.#panel.removeAttribute("inert");
       this.#launcher.setAttribute("aria-expanded", "true");
       (this.#input.disabled ? this.#send : this.#input).focus();

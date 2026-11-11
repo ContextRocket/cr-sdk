@@ -894,3 +894,72 @@ it("keeps host-resolved recovery UI localized without changing caller or partial
     await browser.close();
   }
 }, 30000);
+
+it("refreshes opening suggestions for a changed organization and ignores stale card responses", async () => {
+  const bundle = buildSync({
+    entryPoints: [fileURLToPath(new URL("./index.ts", import.meta.url))],
+    bundle: true,
+    write: false,
+    format: "iife",
+    globalName: "ContextRocketWidget",
+    platform: "browser",
+    target: "es2020",
+    loader: { ".svg": "text" },
+  }).outputFiles[0]!.text;
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  let oldRequestStarted = false;
+  let oldRequestFinished = false;
+  let releaseOldRequest!: () => void;
+  const oldRequestGate = new Promise<void>((resolve) => {
+    releaseOldRequest = resolve;
+  });
+  try {
+    await page.route("**/*", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.origin !== "http://localhost:39996") {
+        await route.abort();
+      } else if (url.pathname === "/") {
+        await route.fulfill({
+          contentType: "text/html",
+          body: `<script>${bundle}</script><contextrocket-chat data-contextrocket-mode="live" data-contextrocket-api-base="http://localhost:39996" data-contextrocket-handle="old-org"></contextrocket-chat>`,
+        });
+      } else if (url.pathname === "/agent-card/old-org.json") {
+        oldRequestStarted = true;
+        await oldRequestGate;
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({ skills: [{ examples: ["Old organization suggestion"] }] }),
+        });
+        oldRequestFinished = true;
+      } else if (url.pathname === "/agent-card/new-org.json") {
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({ skills: [{ examples: ["New organization suggestion"] }] }),
+        });
+      } else {
+        await route.abort();
+      }
+    });
+
+    await page.goto("http://localhost:39996");
+    const host = page.locator("contextrocket-chat");
+    await expect.poll(() => oldRequestStarted).toBe(true);
+    await host.evaluate((element) => {
+      element.setAttribute("data-contextrocket-handle", "new-org");
+    });
+    await expect.poll(
+      () => host.locator('[data-suggestion="New organization suggestion"]').count(),
+    ).toBe(1);
+
+    releaseOldRequest();
+    await expect.poll(() => oldRequestFinished).toBe(true);
+    await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
+    expect(
+      await host.locator('[data-suggestion="Old organization suggestion"]').count(),
+    ).toBe(0);
+  } finally {
+    releaseOldRequest();
+    await browser.close();
+  }
+}, 15000);
