@@ -59,6 +59,11 @@ ContextRocket A2A 1.0 contract.
 The `@contextrocket/sdk/contact-form` subpath exposes typed form submission
 helpers. The server resolves the organization from its public handle and
 validates the request origin; no browser API key is sent to this endpoint.
+Today, the backend sources the organization's allowed origins from an active
+website API key's `allowed_origins` setting, even for contact-only sites. The
+key is not a request credential for this endpoint. Configure the exact site
+origin there before enabling live forms; org-level origin settings are the
+cleaner long-term seam.
 ContextRocket records these submissions as leads, so the SDK keeps that term
 only in backend receipts and protocol fields.
 
