@@ -98,6 +98,11 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
     bottom: max(1rem, env(safe-area-inset-bottom, 0px));
   }
 
+  .cr-root .cr-panel {
+    width: min(28rem, calc(100vw - 2rem));
+    height: min(37.5rem, calc(100dvh - 2rem));
+  }
+
   .cr-root[data-position="bottom-left"] {
     right: auto;
     left: max(1rem, env(safe-area-inset-left, 0px));
@@ -556,6 +561,38 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
 .cr-suggestion-items[data-view="cards"] .cr-suggestion:first-child {
   grid-column: 1 / -1;
   text-align: center;
+}
+
+@media (max-width: 30rem) {
+  /* The centered empty state otherwise shrink-wraps this group on narrow phones. */
+  .cr-empty {
+    padding: 1.25rem;
+  }
+
+  .cr-empty .cr-probe-large {
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .cr-empty .cr-opening-suggestions {
+    width: 100%;
+  }
+
+  .cr-empty .cr-suggestion-tabs,
+  .cr-empty .cr-suggestion-items {
+    justify-content: center;
+  }
+
+  .cr-empty .cr-suggestion-tab {
+    padding: var(--tw-space-1_5) var(--tw-space-2);
+    font-size: var(--tw-text-xs);
+  }
+
+  .cr-empty .cr-suggestion-items[data-view="cards"] {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* rounded-full border px-3 py-1 text-xs/sm */
