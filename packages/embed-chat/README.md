@@ -75,18 +75,18 @@ For a live site, configure the API base and organization handle:
 ></script>
 ```
 
-The widget has not yet been published at a ContextRocket CDN URL. Copy the
-generated IIFE into the consuming site's `public/embed/widget.js` for now. The
-operator release convention is to publish each package version under a unique
-prefix; version `0.1.0` maps to
+The widget is published at the versioned URL
 `https://contextrocket.cdn.contextrocket.com/embeds/chat/v0.1.0/widget.js`.
+You can use that URL directly or copy the generated IIFE into a consuming
+site's `public/embed/widget.js` for offline demos. Publish each package version
+under a unique prefix.
 The publishing backend activates a new release if the same prefix is published
 again, so never reuse a published version path. The current CDN applies a
 five-minute public cache to these paths; one-year immutable caching is reserved
 for `/_next/static/` assets. Versioned widget URLs are therefore stable by
-release discipline, not by a server-enforced immutability guarantee. After the
-first upload, verify the public URL returns the JavaScript bundle with a
-JavaScript content type.
+release discipline, not by a server-enforced immutability guarantee. The
+version `0.1.0` URL was verified to return the bundle with a JavaScript content
+type on 2026-11-11.
 
 Build and copy the browser artifact into the starter public directory:
 
@@ -100,10 +100,9 @@ npm. After release, Astro sites can load the built IIFE from their public
 folder or a versioned CDN URL. The widget source and reusable embed
 capabilities stay in `cr-sdk` packages.
 
-The URL above is a release convention, not a claim that the artifact is live.
-Operators can publish the built `dist/` directory with the ContextRocket
-`sites publish` CLI; see the SDK repository README for the dry-run command.
-Customers only load the public URL. The widget uses a single site-defined
-palette. Set bounded CSS color values for the background, foreground, surface,
-muted text, border, and accent; title, greeting, position, and locale are also
-configurable.
+Operators publish new versions of the built `dist/` directory with the
+ContextRocket `sites publish` CLI; see the SDK repository README for the dry-run
+command. Customers only load the public URL. The widget uses a single
+site-defined palette. Set bounded CSS color values for the background,
+foreground, surface, muted text, border, and accent; title, greeting, position,
+and locale are also configurable.

@@ -128,17 +128,22 @@ publishing to the same prefix activates a new release at that public path. The
 current CDN gives files outside `/_next/static/` a five-minute public cache;
 only `/_next/static/` assets receive a one-year immutable cache. Treat versioned
 embed URLs as stable by release discipline, not as an immutable storage
-guarantee. For example, `@contextrocket/embed-chat` version `0.1.0` should
-publish `dist/widget.js` to:
+guarantee. The published `@contextrocket/embed-chat` version `0.1.0` is
+available at:
 
 ```text
 https://contextrocket.cdn.contextrocket.com/embeds/chat/v0.1.0/widget.js
 ```
 
-The contact-form bridge can use the same convention at
-`/embeds/contact-form/v<version>/contact-form.browser.js`. A site can pin the
-chat URL with `PUBLIC_CONTEXTROCKET_CHAT_WIDGET_URL`; keep the checked-in local
-artifact available for offline demos and standalone builds.
+The published contact-form browser bridge version `0.1.0` is available at:
+
+```text
+https://contextrocket.cdn.contextrocket.com/embeds/contact-form/v0.1.0/contact-form.browser.js
+```
+
+A site can pin these URLs with `PUBLIC_CONTEXTROCKET_CHAT_WIDGET_URL` and
+`PUBLIC_CONTEXTROCKET_CONTACT_FORM_SCRIPT_URL`; keep the checked-in local
+artifacts available for offline demos and standalone builds.
 
 Prepare only the standalone browser files (not the rest of the SDK package
 output) after building both packages:
@@ -167,12 +172,13 @@ uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \
   --dry-run
 ```
 
-Review both dry runs and confirm the versioned paths have not been released
-before publishing. Repeat the relevant command without `--dry-run` to upload.
-This is an operator task; customer sites only load the public URL and do not
-need an operator token. After the first release, fetch the public URLs and
-confirm their JavaScript content type and response body. Do not publish a
-mutable `/latest` path.
+For a new release, review both dry runs and confirm the versioned paths have
+not been released before publishing. Repeat the relevant command without
+`--dry-run` to upload. This is an operator task; customer sites only load the
+public URL and do not need an operator token. After publishing, fetch the public
+URLs and confirm the JavaScript content type and response body. Do not publish
+a mutable `/latest` path. The `v0.1.0` chat and contact-form URLs above were
+published and verified on 2026-11-11.
 
 ## License
 
