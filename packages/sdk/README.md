@@ -60,6 +60,15 @@ that caller, but the API checks policy and authorization again when handling a
 turn. Clients should treat the card as discovery, not as a grant of access. The
 A2A request and event wire contract is the same for these access tiers.
 
+`client.agentCard()` fetches the card for its configured handle from
+`https://api.contextrocket.com/agent-card/{handle}.json`. The generic
+`/.well-known/agent-card.json` endpoint describes the ContextRocket runtime and
+does not select an organization. When an organization's verified website
+origin is configured to proxy A2A, that site's own
+`/.well-known/agent-card.json` returns the organization card selected from the
+verified host. These are discovery routes; chat turns still use the direct
+`/api/agent/a2a` endpoint.
+
 ## Stream an A2A turn
 
 ```ts

@@ -7,7 +7,8 @@ import type { AgentResponseSpec } from "./json-render.js";
  * Implements the A2A JSON-RPC 2.0 protocol (A2A-Version: 1.0) as defined in
  * the CR backend:
  * - POST /api/agent/a2a with method SendMessage (sync) or SendStreamingMessage (SSE)
- * - GET /.well-known/agent-card.json for discovery
+ * - GET /.well-known/agent-card.json for generic or verified-origin discovery
+ * - GET /agent-card/{handle}.json for ContextRocket-hosted org discovery
  *
  * Wire format derived from:
  *   backend/app/modules/agent/a2a/current_contract.py
@@ -554,7 +555,9 @@ function buildHeaders(
 
 /**
  * Fetch the generic agent card from /.well-known/agent-card.json.
- * Pass a handle to use ContextRocket's handle-bound card instead.
+ * Pass a handle to fetch the ContextRocket-hosted org card from
+ * /agent-card/{handle}.json. A verified custom origin serves its org card at
+ * that origin's /.well-known/agent-card.json path instead.
  * No auth required per A2A spec.
  */
 export async function fetchAgentCard(
@@ -562,7 +565,7 @@ export async function fetchAgentCard(
   handle?: string,
 ): Promise<unknown> {
   const endpoint = handle
-    ? `/.well-known/agent-card/${encodeURIComponent(handle)}.json`
+    ? `/agent-card/${encodeURIComponent(handle)}.json`
     : AGENT_CARD_ENDPOINT;
   const resp = await fetch(`${baseUrl.replace(/\/$/, "")}${endpoint}`, {
     method: "GET",
