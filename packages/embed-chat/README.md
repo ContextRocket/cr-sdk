@@ -52,7 +52,7 @@ For a live site, configure the API base and organization handle:
 
 ```html
 <script
-  src="https://cdn.contextrocket.com/widget/v<verified-version>/widget.js"
+  src="/embed/widget.js"
   data-contextrocket-mode="live"
   data-contextrocket-api-base="https://api.contextrocket.com"
   data-contextrocket-handle="your-organization-handle"
@@ -72,6 +72,13 @@ For a live site, configure the API base and organization handle:
   defer
 ></script>
 ```
+
+The widget is not currently published at a ContextRocket CDN URL. Copy the
+generated IIFE into the consuming site's `public/embed/widget.js`; use this
+site-relative URL until the operator team selects and verifies a stable,
+versioned CDN path. The existing ContextRocket site publisher can publish
+static files under a prefix, but that does not by itself define the embed
+versioning or release convention.
 
 Build and copy the browser artifact into the starter public directory:
 

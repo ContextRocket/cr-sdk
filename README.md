@@ -73,11 +73,16 @@ That command builds the package and runs
 standalone site’s `public/embed/`; widget source and tests remain centralized
 here.
 
-## CDN (later)
+## CDN distribution
 
-Versioned artifacts, e.g. `https://cdn.contextrocket.com/sdk/v1/chat.js`.
-Until then, serve the built IIFE from the consuming site or a relative path to
-this checkout.
+The chat widget does not yet have a published CDN URL or release workflow.
+Serve the built IIFE from the consuming site (`/embed/widget.js`) until the
+operator publishing contract defines and verifies an immutable CDN path. The
+existing ContextRocket site publisher supports prefixed static files; the
+versioned embed prefix and release convention have not been selected. The
+ContextRocket CDN origin is `https://contextrocket.cdn.contextrocket.com`, but
+do not infer a widget URL from the origin or from the `/brand/` namespace used
+for shared brand assets.
 
 ## License
 

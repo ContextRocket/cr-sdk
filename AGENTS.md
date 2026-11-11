@@ -66,8 +66,9 @@ pnpm --dir packages/embed-chat build
   (and later `embed-*`) individually or via workspace filtered publish.
 - Ship only built artifacts plus package-specific README and license files
   (`files: ["dist"]`; npm includes README, license, and package metadata).
-- Embed IIFE is also a CDN candidate
-  (`https://cdn.contextrocket.com/sdk/v…/chat.js`); version immutably.
+- The embed IIFE may be published to the ContextRocket CDN after an operator
+  publishing path and immutable asset URL are defined. Until then, consumers
+  serve the built file from their own site; do not invent CDN URLs.
 - The GitHub repo is public; npm publication is pending. Standalone starters
   use checked-in browser artifacts for normal builds. Use `file:` dependencies
   only for local application development with a sibling `cr-sdk` checkout.
