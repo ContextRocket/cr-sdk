@@ -10,6 +10,7 @@ import type {
   WidgetTransportState,
   WidgetDemoCard,
 } from "./types";
+import { buildWidgetA2aUrl } from "./config";
 
 export type EmbedWidgetA2aFetch = (
   input: RequestInfo | URL,
@@ -351,9 +352,8 @@ async function* streamDemoEvents(
 }
 
 /**
- * Stream A2A `SendStreamingMessage` events from the embed API base.
- * Uses the public JSON-RPC envelope and calls `/api/agent/a2a` directly with
- * the website API key.
+ * Stream A2A `SendStreamingMessage` events from the embed API base. Tenant
+ * turns use the typed identity route; platform-only turns use `/a2a`.
  */
 const implicitMessageIds = new WeakMap<WidgetSendRequest, string>();
 
@@ -399,7 +399,11 @@ export async function* streamEmbedA2aSubscribe(
     },
   };
 
-  const endpoint = `${config.apiBaseUrl!.replace(/\/$/, "")}/api/agent/a2a`;
+  const endpoint = buildWidgetA2aUrl(config);
+  if (!endpoint) {
+    yield { type: "error", message: GENERIC_ERROR, reason: "generic" };
+    return;
+  }
 
   const headers: Record<string, string> = {
     "content-type": "application/json",

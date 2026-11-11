@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   A2AParseError,
   buildTextTurnParams,
+  fetchAgentCard,
   parseA2AEvent,
   resetGuestSessionIdWarning,
   sendTask,
@@ -467,7 +468,7 @@ describe("sendTask", () => {
       params,
     );
 
-    expect(captured.url).toBe("https://api.example.com/api/agent/a2a");
+    expect(captured.url).toBe("https://api.example.com/company/acme/a2a");
     const headers = new Headers(captured.init?.headers);
     expect(headers.get("A2A-Version")).toBe("1.0");
     expect(headers.get("X-Api-Key")).toBe("key-1");
@@ -489,6 +490,58 @@ describe("sendTask", () => {
     expect((task.status as { state: string }).state).toBe(
       "TASK_STATE_COMPLETED",
     );
+    expect(captured.url).toBe("https://api.example.com/a2a");
+  });
+
+  it("uses the typed person route for tenant requests", async () => {
+    await sendTask(
+      {
+        baseUrl: "https://api.example.com",
+        handle: "mark-macmahon",
+        subjectKind: "person",
+      },
+      buildTextTurnParams("hello"),
+    );
+
+    expect(captured.url).toBe(
+      "https://api.example.com/person/mark-macmahon/a2a",
+    );
+  });
+
+  it("refuses a handle mismatch instead of routing to a different tenant", async () => {
+    await expect(
+      sendTask(
+        { baseUrl: "https://api.example.com", handle: "acme" },
+        buildTextTurnParams("hello", { handle: "other-company" }),
+      ),
+    ).rejects.toThrow(/must match the configured organization handle/);
+    expect(captured.url).toBeUndefined();
+  });
+
+  it("fetches typed company/person cards without a legacy route fallback", async () => {
+    const originalFetch = globalThis.fetch;
+    const requested: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        requested.push(url);
+        return new Response("{}", { status: 200 });
+      }),
+    );
+    try {
+      await fetchAgentCard("https://api.example.com", "acme");
+      await fetchAgentCard(
+        "https://api.example.com",
+        "mark-macmahon",
+        "person",
+      );
+      expect(requested).toEqual([
+        "https://api.example.com/company/acme/agent-card.json",
+        "https://api.example.com/person/mark-macmahon/agent-card.json",
+      ]);
+    } finally {
+      vi.stubGlobal("fetch", originalFetch);
+    }
   });
 
   it("throws on JSON-RPC error envelopes", async () => {
@@ -523,6 +576,7 @@ describe("sendTask", () => {
     );
     expect(warn).toHaveBeenCalledTimes(1);
     const headers = new Headers(captured.init?.headers);
+    expect(captured.url).toBe("https://api.example.com/a2a");
     expect(headers.get("authorization")).toBeNull();
     warn.mockRestore();
   });

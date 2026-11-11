@@ -37,6 +37,7 @@ export type WidgetTransportState =
   | "failed";
 
 export type WidgetMode = "demo" | "live";
+export type WidgetSubjectKind = "company" | "person";
 
 /** Render types exposed by the current public-safe A2A JSON Render catalog. */
 export type WidgetDemoCard =
@@ -71,8 +72,10 @@ export interface WidgetConfig {
   apiBaseUrl?: string;
   /** `demo` is dependency-free; `live` calls the API from the browser. */
   mode: WidgetMode;
-  /** Public organization handle used by the A2A metadata contract. */
+  /** Public company or person handle used to bind A2A to one identity. */
   handle?: string;
+  /** Typed identity segment for the handle. Defaults to company. */
+  subjectKind?: WidgetSubjectKind;
   accentColor?: string;
   greeting?: string;
   title?: string;

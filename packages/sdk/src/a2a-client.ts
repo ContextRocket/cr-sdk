@@ -1,14 +1,15 @@
 import { AGENT_RESPONSE_CATALOG, parseAgentResponsePart } from "./json-render.js";
 import type { AgentResponseSpec } from "./json-render.js";
+import type { CRSubjectKind } from "./config.js";
 
 /**
  * A2A (Agent-to-Agent) protocol client for ContextRocket.
  *
  * Implements the A2A JSON-RPC 2.0 protocol (A2A-Version: 1.0) as defined in
  * the CR backend:
- * - POST /api/agent/a2a with method SendMessage (sync) or SendStreamingMessage (SSE)
+ * - POST /a2a for the platform agent or /{company|person}/{handle}/a2a for an identity
  * - GET /.well-known/agent-card.json for generic or verified-origin discovery
- * - GET /agent-card/{handle}.json for ContextRocket-hosted org discovery
+ * - GET /{company|person}/{handle}/agent-card.json for typed org discovery
  *
  * Wire format derived from:
  *   backend/app/modules/agent/a2a/current_contract.py
@@ -499,12 +500,14 @@ function buildJSONRPCRequest(
 // ── A2A client ────────────────────────────────────────────────────────────────
 
 export interface A2AClientOptions {
-  /** Base URL of the CR agent backend, e.g. https://api.example.com. */
+  /** Base URL of the ContextRocket API, e.g. https://api.example.com. */
   baseUrl: string;
   /** Website API key for anonymous browser A2A; never a server secret. */
   apiKey?: string;
   /** Public organization handle for anonymous browser A2A. */
   handle?: string;
+  /** Typed identity path segment for the configured handle. Defaults to company. */
+  subjectKind?: CRSubjectKind;
   /** JWT bearer token for authenticated requests. */
   bearerToken?: string;
   /**
@@ -515,9 +518,37 @@ export interface A2AClientOptions {
   guestSessionId?: string;
 }
 
-const A2A_ENDPOINT = "/api/agent/a2a";
+const PLATFORM_A2A_ENDPOINT = "/a2a";
 const AGENT_CARD_ENDPOINT = "/.well-known/agent-card.json";
 const A2A_PROTOCOL_VERSION = "1.0";
+
+function resolveTenantHandle(
+  opts: A2AClientOptions,
+  params: A2ATaskParams,
+): string | undefined {
+  const configuredHandle = opts.handle?.trim() || undefined;
+  const metadataHandle =
+    typeof params.metadata?.handle === "string"
+      ? params.metadata.handle.trim() || undefined
+      : undefined;
+  if (
+    configuredHandle &&
+    metadataHandle &&
+    configuredHandle !== metadataHandle
+  ) {
+    throw new TypeError(
+      "A2A handle metadata must match the configured organization handle.",
+    );
+  }
+  return configuredHandle ?? metadataHandle;
+}
+
+function a2aEndpoint(opts: A2AClientOptions, params: A2ATaskParams): string {
+  const handle = resolveTenantHandle(opts, params);
+  if (!handle) return PLATFORM_A2A_ENDPOINT;
+  const subjectKind = opts.subjectKind ?? "company";
+  return `/${subjectKind}/${encodeURIComponent(handle)}/a2a`;
+}
 
 let guestSessionIdWarned = false;
 
@@ -554,18 +585,18 @@ function buildHeaders(
 }
 
 /**
- * Fetch the generic agent card from /.well-known/agent-card.json.
- * Pass a handle to fetch the ContextRocket-hosted org card from
- * /agent-card/{handle}.json. A verified custom origin serves its org card at
- * that origin's /.well-known/agent-card.json path instead.
+ * Fetch the platform card from /.well-known/agent-card.json or a typed
+ * organization card from /{company|person}/{handle}/agent-card.json. A verified
+ * custom origin may serve its organization card at /.well-known/agent-card.json.
  * No auth required per A2A spec.
  */
 export async function fetchAgentCard(
   baseUrl: string,
   handle?: string,
+  subjectKind: CRSubjectKind = "company",
 ): Promise<unknown> {
   const endpoint = handle
-    ? `/agent-card/${encodeURIComponent(handle)}.json`
+    ? `/${subjectKind}/${encodeURIComponent(handle)}/agent-card.json`
     : AGENT_CARD_ENDPOINT;
   const resp = await fetch(`${baseUrl.replace(/\/$/, "")}${endpoint}`, {
     method: "GET",
@@ -587,7 +618,7 @@ export async function sendTask(
   params: A2ATaskParams,
 ): Promise<Record<string, unknown>> {
   if (opts.guestSessionId) warnGuestSessionIdIgnored();
-  const url = `${opts.baseUrl.replace(/\/$/, "")}${A2A_ENDPOINT}`;
+  const url = `${opts.baseUrl.replace(/\/$/, "")}${a2aEndpoint(opts, params)}`;
   const body = buildJSONRPCRequest("SendMessage", params);
 
   const resp = await fetch(url, {
@@ -629,7 +660,7 @@ export async function* streamTask(
   signal?: AbortSignal,
 ): AsyncGenerator<A2AEvent> {
   if (opts.guestSessionId) warnGuestSessionIdIgnored();
-  const url = `${opts.baseUrl.replace(/\/$/, "")}${A2A_ENDPOINT}`;
+  const url = `${opts.baseUrl.replace(/\/$/, "")}${a2aEndpoint(opts, params)}`;
   const body = buildJSONRPCRequest("SendStreamingMessage", params);
 
   const resp = await fetch(url, {

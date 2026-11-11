@@ -6,7 +6,11 @@ import {
   createInitialChatState,
   type WidgetChatState,
 } from "./chat-state";
-import { buildPoweredByHref, parseWidgetConfig } from "./config";
+import {
+  buildPoweredByHref,
+  buildWidgetAgentCardUrl,
+  parseWidgetConfig,
+} from "./config";
 import { renderMarkdown } from "./markdown";
 import { safeHref, escapeHtml } from "./safe-url";
 import { widgetStyles } from "./styles";
@@ -67,6 +71,7 @@ export class ContextRocketChatElement extends HTMLElement {
     return [
       "data-contextrocket-api-key",
       "data-contextrocket-handle",
+      "data-contextrocket-subject-kind",
       "data-contextrocket-mode",
       "data-contextrocket-api-base",
       "data-contextrocket-accent",
@@ -270,7 +275,8 @@ export class ContextRocketChatElement extends HTMLElement {
 
     const handle = config.handle;
     const apiBaseUrl = config.apiBaseUrl;
-    const discoveryKey = `${apiBaseUrl}\n${handle}`;
+    const subjectKind = config.subjectKind ?? "company";
+    const discoveryKey = `${apiBaseUrl}\n${subjectKind}\n${handle}`;
     if (this.#suggestionDiscoveryKey === discoveryKey) return;
     this.#suggestionDiscoveryKey = discoveryKey;
     const run = ++this.#suggestionDiscoveryRun;
@@ -279,12 +285,15 @@ export class ContextRocketChatElement extends HTMLElement {
     if (hadSuggestions && !this.#hasUserMessage()) this.#syncUi();
 
     try {
-      const response = await fetch(`${apiBaseUrl}/agent-card/${encodeURIComponent(handle)}.json`, {
-        method: "GET",
-        mode: "cors",
-        credentials: "omit",
-        headers: { accept: "application/json" },
-      });
+      const response = await fetch(
+        buildWidgetAgentCardUrl(apiBaseUrl, subjectKind, handle),
+        {
+          method: "GET",
+          mode: "cors",
+          credentials: "omit",
+          headers: { accept: "application/json" },
+        },
+      );
       if (run !== this.#suggestionDiscoveryRun) return;
       if (!response.ok) {
         this.#suggestionDiscoveryKey = null;

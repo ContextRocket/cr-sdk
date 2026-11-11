@@ -6,11 +6,15 @@
  *   BACKEND_ENABLED / BACKEND_URL (auth starters only)
  */
 
+export type CRSubjectKind = "company" | "person";
+
 export interface CRConfig {
-  /** Base URL of the ContextRocket A2A agent endpoint. */
+  /** Base URL of the ContextRocket API that serves A2A routes. */
   agentUrl: string;
   /** Public organization handle for anonymous browser A2A. */
   handle: string | undefined;
+  /** Typed identity path segment for the configured handle. */
+  subjectKind: CRSubjectKind;
   /** Publishable website API key; never a server-side secret. */
   apiKey: string | undefined;
   /** Whether the local fastapi-users backend is enabled. */
@@ -52,6 +56,12 @@ export function resolveCRConfig(overrides: Partial<CRConfig> = {}): CRConfig {
       "NEXT_PUBLIC_CONTEXTROCKET_HANDLE",
       "PUBLIC_CONTEXTROCKET_HANDLE",
     ) || "contextrocket";
+  const configuredSubjectKind = publicEnv(
+    "NEXT_PUBLIC_CONTEXTROCKET_SUBJECT_KIND",
+    "PUBLIC_CONTEXTROCKET_SUBJECT_KIND",
+  );
+  const subjectKind: CRSubjectKind =
+    configuredSubjectKind === "person" ? "person" : "company";
   const apiKey = publicEnv(
     "NEXT_PUBLIC_CONTEXTROCKET_API_KEY",
     "PUBLIC_CONTEXTROCKET_API_KEY",
@@ -66,6 +76,7 @@ export function resolveCRConfig(overrides: Partial<CRConfig> = {}): CRConfig {
   return {
     agentUrl: (overrides.agentUrl ?? agentUrl).replace(/\/$/, ""),
     handle: overrides.handle ?? (handle || undefined),
+    subjectKind: overrides.subjectKind ?? subjectKind,
     apiKey: overrides.apiKey ?? (apiKey || undefined),
     backendEnabled: overrides.backendEnabled ?? backendEnabled,
     backendUrl: (overrides.backendUrl ?? backendUrl).replace(/\/$/, ""),

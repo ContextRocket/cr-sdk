@@ -21,7 +21,7 @@ export type {
 } from "./json-render.js";
 
 export { resolveCRConfig } from "./config.js";
-export type { CRConfig } from "./config.js";
+export type { CRConfig, CRSubjectKind } from "./config.js";
 
 export {
   getStoredToken,
@@ -103,7 +103,14 @@ export interface CRClient {
 }
 
 export function createCRClient(config: CRConfig): CRClient {
-  const { agentUrl, backendEnabled, backendUrl, handle, apiKey } = config;
+  const {
+    agentUrl,
+    backendEnabled,
+    backendUrl,
+    handle,
+    subjectKind,
+    apiKey,
+  } = config;
 
   return {
     agentUrl,
@@ -121,7 +128,8 @@ export function createCRClient(config: CRConfig): CRClient {
       const token = await ensureToken(backendEnabled, backendUrl);
       const opts: A2AClientOptions = {
         baseUrl: agentUrl,
-        handle: token ? undefined : handle,
+        handle,
+        subjectKind,
         apiKey: token ? undefined : apiKey,
         bearerToken: token ?? undefined,
       };
@@ -130,7 +138,7 @@ export function createCRClient(config: CRConfig): CRClient {
 
     async agentCard() {
       if (!agentUrl) return null;
-      return fetchAgentCard(agentUrl, handle);
+      return fetchAgentCard(agentUrl, handle, subjectKind);
     },
   };
 }

@@ -18,7 +18,8 @@ Unknown event/content types fail closed to an accessible retry message.
 
 The empty conversation can show opening suggestions. A site may supply them with
 `data-contextrocket-suggestions` (a JSON array of strings); otherwise the widget
-discovers `skills[].examples` from the public handle-specific A2A AgentCard.
+discovers `skills[].examples` from the typed public Agent Card at
+`/{company|person}/{handle}/agent-card.json`.
 Discovery follows changes to the organization or API base and discards a late
 response from an earlier configuration; a failed lookup can be retried when a
 visitor reopens the chat. After a turn, context-sensitive follow-up suggestions
@@ -59,6 +60,7 @@ For a live site, configure the API base and organization handle:
   data-contextrocket-mode="live"
   data-contextrocket-api-base="https://api.contextrocket.com"
   data-contextrocket-handle="your-organization-handle"
+  data-contextrocket-subject-kind="company"
   data-contextrocket-api-key="publishable-api-key"
   data-contextrocket-background="#FAF9F6"
   data-contextrocket-foreground="#0E0F13"
@@ -75,6 +77,12 @@ For a live site, configure the API base and organization handle:
   defer
 ></script>
 ```
+
+Use `data-contextrocket-subject-kind="person"` for a Personal Brand. Its card
+and chat requests use `/person/{handle}/agent-card.json` and
+`/person/{handle}/a2a`; the default is `company`. Without a handle, the widget
+uses the platform `/a2a` endpoint. The widget does not try legacy organization
+routes.
 
 The widget is published at the versioned URL
 `https://contextrocket.cdn.contextrocket.com/embeds/chat/v0.1.1/widget.js`.

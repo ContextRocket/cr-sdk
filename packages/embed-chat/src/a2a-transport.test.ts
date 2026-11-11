@@ -204,7 +204,7 @@ describe("streamEmbedA2aSubscribe (request)", () => {
   it("POSTs SendStreamingMessage with ROLE_USER, typeless parts, and A2A-Version", async () => {
     const { port, captured } = capturePort();
     await collectEmbedA2aSubscribe(LIVE_CONFIG, { message: "hi" }, port);
-    expect(captured.url).toBe("https://api.example.com/api/agent/a2a");
+    expect(captured.url).toBe("https://api.example.com/company/acme/a2a");
     const headers = new Headers(captured.init?.headers);
     expect(headers.get("a2a-version")).toBe("1.0");
     expect(headers.get("content-type")).toBe("application/json");
@@ -216,6 +216,17 @@ describe("streamEmbedA2aSubscribe (request)", () => {
     expect(body.params.message.role).toBe("ROLE_USER");
     expect(body.params.message.parts).toEqual([{ text: "hi" }]);
     expect(body.params.metadata.handle).toBe("acme");
+  });
+
+  it("routes person traffic to the typed person endpoint", async () => {
+    const { port, captured } = capturePort();
+    await collectEmbedA2aSubscribe(
+      { ...LIVE_CONFIG, subjectKind: "person" },
+      { message: "hi" },
+      port,
+    );
+
+    expect(captured.url).toBe("https://api.example.com/person/acme/a2a");
   });
 
   it("carries a UUID threadId as message.contextId", async () => {
@@ -519,7 +530,7 @@ it("delivers streamed content through the real native browser fetch port", async
         });
       } else if (
         url.origin === "http://localhost:39991" &&
-        url.pathname === "/api/agent/a2a" &&
+        url.pathname === "/company/acme/a2a" &&
         request.method() === "POST"
       ) {
         guardedRequests += 1;
@@ -860,11 +871,11 @@ it("keeps host-resolved recovery UI localized without changing caller or partial
         if (url.origin === "http://localhost:39992" && url.pathname === "/") {
           await route.fulfill({
             contentType: "text/html",
-            body: `<html lang="${item.host}"><script>${bundle}</script><contextrocket-chat data-contextrocket-mode="live" data-contextrocket-api-base="http://localhost:39992" data-contextrocket-greeting="Caller greeting" ${item.locale ? `data-contextrocket-locale="${item.locale}"` : ""} ${item.custom ? 'data-contextrocket-title="Caller title"' : ""}></contextrocket-chat></html>`,
+            body: `<html lang="${item.host}"><script>${bundle}</script><contextrocket-chat data-contextrocket-mode="live" data-contextrocket-api-base="http://localhost:39992" data-contextrocket-handle="acme" data-contextrocket-greeting="Caller greeting" ${item.locale ? `data-contextrocket-locale="${item.locale}"` : ""} ${item.custom ? 'data-contextrocket-title="Caller title"' : ""}></contextrocket-chat></html>`,
           });
         } else if (
           url.origin === "http://localhost:39992" &&
-          url.pathname === "/api/agent/a2a" &&
+          url.pathname === "/company/acme/a2a" &&
           route.request().method() === "POST"
         ) {
           attempts += 1;
@@ -881,6 +892,11 @@ it("keeps host-resolved recovery UI localized without changing caller or partial
                   body: sseBody([WORKING_FRAME, ARTIFACT_FRAME, FAILED_FRAME]),
                 },
           );
+        } else if (
+          url.origin === "http://localhost:39992" &&
+          url.pathname === "/company/acme/agent-card.json"
+        ) {
+          await route.fulfill({ status: 404, body: "Not found" });
         } else if (url.pathname === "/brand/cr-icon-red.svg") {
           await route.fulfill({ status: 204, body: "" });
         } else {
@@ -988,9 +1004,9 @@ it("refreshes opening suggestions for a changed organization and ignores stale c
       } else if (url.pathname === "/") {
         await route.fulfill({
           contentType: "text/html",
-          body: `<script>${bundle}</script><contextrocket-chat data-contextrocket-mode="live" data-contextrocket-api-base="http://localhost:39996" data-contextrocket-handle="old-org"></contextrocket-chat>`,
+        body: `<script>${bundle}</script><contextrocket-chat data-contextrocket-mode="live" data-contextrocket-api-base="http://localhost:39996" data-contextrocket-handle="old-org" data-contextrocket-subject-kind="person"></contextrocket-chat>`,
         });
-      } else if (url.pathname === "/agent-card/old-org.json") {
+      } else if (url.pathname === "/person/old-org/agent-card.json") {
         oldRequestStarted = true;
         await oldRequestGate;
         await route.fulfill({
@@ -998,7 +1014,7 @@ it("refreshes opening suggestions for a changed organization and ignores stale c
           body: JSON.stringify({ skills: [{ examples: ["Old organization suggestion"] }] }),
         });
         oldRequestFinished = true;
-      } else if (url.pathname === "/agent-card/new-org.json") {
+      } else if (url.pathname === "/person/new-org/agent-card.json") {
         await route.fulfill({
           contentType: "application/json",
           body: JSON.stringify({ skills: [{ examples: ["New organization suggestion"] }] }),

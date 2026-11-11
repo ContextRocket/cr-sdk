@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseWidgetConfig } from "./config";
+import {
+  buildWidgetA2aUrl,
+  buildWidgetAgentCardUrl,
+  parseWidgetConfig,
+} from "./config";
 
 function widgetSource(attributes: Record<string, string> = {}): Element {
   return {
@@ -60,5 +64,43 @@ describe("parseWidgetConfig brand palette", () => {
       accentColor: "#0e0f13",
     });
     expect(config).not.toHaveProperty("theme");
+  });
+});
+
+describe("typed identity URL builders", () => {
+  it("routes tenant turns and cards through the selected typed identity", () => {
+    const config = parseWidgetConfig(
+      widgetSource({
+        "data-contextrocket-mode": "live",
+        "data-contextrocket-api-base": "https://api.example.com/",
+        "data-contextrocket-handle": "mark-macmahon",
+        "data-contextrocket-subject-kind": "person",
+      }),
+    )!;
+
+    expect(config.subjectKind).toBe("person");
+    expect(buildWidgetA2aUrl(config)).toBe(
+      "https://api.example.com/person/mark-macmahon/a2a",
+    );
+    expect(
+      buildWidgetAgentCardUrl(
+        config.apiBaseUrl!,
+        config.subjectKind!,
+        config.handle!,
+      ),
+    ).toBe(
+      "https://api.example.com/person/mark-macmahon/agent-card.json",
+    );
+  });
+
+  it("uses the platform A2A endpoint only when no tenant handle is configured", () => {
+    const config = parseWidgetConfig(
+      widgetSource({
+        "data-contextrocket-mode": "live",
+        "data-contextrocket-api-base": "https://api.example.com",
+      }),
+    )!;
+
+    expect(buildWidgetA2aUrl(config)).toBe("https://api.example.com/a2a");
   });
 });

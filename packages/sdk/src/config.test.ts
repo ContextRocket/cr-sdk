@@ -8,10 +8,12 @@ afterEach(() => {
 describe("resolveCRConfig", () => {
   it("reads statically exposed Next public variables", () => {
     vi.stubEnv("NEXT_PUBLIC_CONTEXTROCKET_HANDLE", "next-org");
+    vi.stubEnv("NEXT_PUBLIC_CONTEXTROCKET_SUBJECT_KIND", "person");
     vi.stubEnv("NEXT_PUBLIC_CONTEXTROCKET_API_KEY", "publishable-key");
 
     expect(resolveCRConfig()).toMatchObject({
       handle: "next-org",
+      subjectKind: "person",
       apiKey: "publishable-key",
     });
   });
@@ -23,10 +25,12 @@ describe("resolveCRConfig", () => {
     expect(resolveCRConfig({
       agentUrl: "https://api.example.test/",
       handle: "astro-org",
+      subjectKind: "person",
       apiKey: "astro-key",
     })).toMatchObject({
       agentUrl: "https://api.example.test",
       handle: "astro-org",
+      subjectKind: "person",
       apiKey: "astro-key",
     });
   });

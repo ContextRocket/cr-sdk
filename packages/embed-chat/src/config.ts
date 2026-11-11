@@ -1,5 +1,5 @@
 import { resolveWidgetLocale } from "./copy";
-import type { WidgetConfig } from "./types";
+import type { WidgetConfig, WidgetSubjectKind } from "./types";
 
 const DATA_PREFIX = "contextrocket";
 const MAX_TITLE_LENGTH = 120;
@@ -52,6 +52,9 @@ function safeAccent(value: string | undefined): string | undefined {
 export function parseWidgetConfig(source: Element): WidgetConfig | null {
   const apiKey = readAttr(source, `data-${DATA_PREFIX}-api-key`);
   const handle = readAttr(source, `data-${DATA_PREFIX}-handle`);
+  const rawSubjectKind = readAttr(source, `data-${DATA_PREFIX}-subject-kind`);
+  const subjectKind: WidgetSubjectKind =
+    rawSubjectKind === "person" ? "person" : "company";
   const apiBaseUrl = readAttr(source, `data-${DATA_PREFIX}-api-base`);
   const rawMode = readAttr(source, `data-${DATA_PREFIX}-mode`);
   const mode = rawMode === "live" ? "live" : "demo";
@@ -97,6 +100,7 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
     mode,
     ...(apiKey ? { apiKey } : {}),
     ...(handle ? { handle } : {}),
+    subjectKind,
     ...(safeAccent(accentColor)
       ? { accentColor: safeAccent(accentColor) }
       : {}),
@@ -129,6 +133,22 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
       source.ownerDocument.documentElement.lang,
     ),
   };
+}
+
+export function buildWidgetA2aUrl(config: WidgetConfig): string | null {
+  if (!config.apiBaseUrl) return null;
+  const base = config.apiBaseUrl.replace(/\/$/, "");
+  if (!config.handle) return `${base}/a2a`;
+  const subjectKind = config.subjectKind ?? "company";
+  return `${base}/${subjectKind}/${encodeURIComponent(config.handle)}/a2a`;
+}
+
+export function buildWidgetAgentCardUrl(
+  apiBaseUrl: string,
+  subjectKind: WidgetSubjectKind,
+  handle: string,
+): string {
+  return `${apiBaseUrl.replace(/\/$/, "")}/${subjectKind}/${encodeURIComponent(handle)}/agent-card.json`;
 }
 
 export function buildPoweredByHref(config: WidgetConfig): string {

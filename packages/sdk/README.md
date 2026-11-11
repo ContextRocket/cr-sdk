@@ -26,6 +26,7 @@ pass those public values explicitly:
 ```dotenv
 NEXT_PUBLIC_CR_AGENT_URL=https://api.contextrocket.com
 NEXT_PUBLIC_CONTEXTROCKET_HANDLE=your-organization-handle
+NEXT_PUBLIC_CONTEXTROCKET_SUBJECT_KIND=company
 NEXT_PUBLIC_CONTEXTROCKET_API_KEY=your-publishable-api-key
 ```
 
@@ -61,13 +62,17 @@ turn. Clients should treat the card as discovery, not as a grant of access. The
 A2A request and event wire contract is the same for these access tiers.
 
 `client.agentCard()` fetches the card for its configured handle from
-`https://api.contextrocket.com/agent-card/{handle}.json`. The generic
+`https://api.contextrocket.com/company/{handle}/agent-card.json` or
+`/person/{handle}/agent-card.json`, according to `subjectKind` (default:
+`company`). Organization turns use the matching typed endpoint
+`/{company|person}/{handle}/a2a`, including when authenticated with a bearer
+token. A handle-free platform call uses `/a2a`; the SDK does not fall back to
+the old `/api/agent/a2a` or `/agent-card/{handle}.json` paths. The generic
 `/.well-known/agent-card.json` endpoint describes the ContextRocket runtime and
 does not select an organization. When an organization's verified website
 origin is configured to proxy A2A, that site's own
 `/.well-known/agent-card.json` returns the organization card selected from the
-verified host. These are discovery routes; chat turns still use the direct
-`/api/agent/a2a` endpoint.
+verified host. Agent Cards are discovery documents, not authorization grants.
 
 ## Stream an A2A turn
 
@@ -95,6 +100,7 @@ In an Astro component or client module:
 ```dotenv
 PUBLIC_CR_AGENT_URL=https://api.contextrocket.com
 PUBLIC_CONTEXTROCKET_HANDLE=your-organization-handle
+PUBLIC_CONTEXTROCKET_SUBJECT_KIND=company
 PUBLIC_CONTEXTROCKET_API_KEY=your-publishable-api-key
 ```
 
@@ -103,6 +109,10 @@ const client = createCRClient(
   resolveCRConfig({
     agentUrl: import.meta.env.PUBLIC_CR_AGENT_URL,
     handle: import.meta.env.PUBLIC_CONTEXTROCKET_HANDLE,
+    subjectKind:
+      import.meta.env.PUBLIC_CONTEXTROCKET_SUBJECT_KIND === "person"
+        ? "person"
+        : "company",
     apiKey: import.meta.env.PUBLIC_CONTEXTROCKET_API_KEY,
   }),
 );
