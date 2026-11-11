@@ -18,12 +18,15 @@ After the npm release, install the package with:
 pnpm add @contextrocket/sdk
 ```
 
-For a static Astro site, configure public build-time variables in `.env`:
+For Next.js, `resolveCRConfig()` reads the statically referenced
+`NEXT_PUBLIC_*` variables from `.env.local`. Astro/Vite keeps `PUBLIC_*`
+variables on `import.meta.env` and does not expose them as `process.env`, so
+pass those public values explicitly:
 
 ```dotenv
-PUBLIC_CR_AGENT_URL=https://api.contextrocket.com
-PUBLIC_CONTEXTROCKET_HANDLE=your-organization-handle
-PUBLIC_CONTEXTROCKET_API_KEY=your-publishable-api-key
+NEXT_PUBLIC_CR_AGENT_URL=https://api.contextrocket.com
+NEXT_PUBLIC_CONTEXTROCKET_HANDLE=your-organization-handle
+NEXT_PUBLIC_CONTEXTROCKET_API_KEY=your-publishable-api-key
 ```
 
 The website API key is meant for browser use and must be publishable and
@@ -49,6 +52,27 @@ for await (const event of client.streamTurn(params)) {
   }
 }
 ```
+
+In an Astro component or client module:
+
+```dotenv
+PUBLIC_CR_AGENT_URL=https://api.contextrocket.com
+PUBLIC_CONTEXTROCKET_HANDLE=your-organization-handle
+PUBLIC_CONTEXTROCKET_API_KEY=your-publishable-api-key
+```
+
+```ts
+const client = createCRClient(
+  resolveCRConfig({
+    agentUrl: import.meta.env.PUBLIC_CR_AGENT_URL,
+    handle: import.meta.env.PUBLIC_CONTEXTROCKET_HANDLE,
+    apiKey: import.meta.env.PUBLIC_CONTEXTROCKET_API_KEY,
+  }),
+);
+```
+
+Explicit values passed to `resolveCRConfig()` override environment defaults.
+Only put publishable, origin-bound website API keys in browser variables.
 
 `streamTask` and `sendTask` are also exported for callers that need direct
 control of the A2A request options. Event types are normalized from the current

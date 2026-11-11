@@ -1,7 +1,7 @@
 /**
  * Configuration resolution for createCRClient.
  *
- * Env vars (Next NEXT_PUBLIC_* or Astro PUBLIC_*):
+ * Env vars (Next NEXT_PUBLIC_*):
  *   CR_AGENT_URL / CONTEXTROCKET_HANDLE / CONTEXTROCKET_API_KEY
  *   BACKEND_ENABLED / BACKEND_URL (auth starters only)
  */
@@ -26,7 +26,7 @@ function env(name: string): string | undefined {
   return process.env[name];
 }
 
-/** Read Next (NEXT_PUBLIC_*) or Astro (PUBLIC_*) env names. */
+/** Read environment variables from a build tool that exposes process.env. */
 function publicEnv(...names: string[]): string | undefined {
   for (const name of names) {
     const value = env(name);
@@ -36,10 +36,14 @@ function publicEnv(...names: string[]): string | undefined {
 }
 
 /**
- * Resolve the CR config from environment variables.
- * Safe to call at module scope or inside a component.
+ * Resolve configuration from process.env, then apply explicit public values.
+ *
+ * Next.js replaces NEXT_PUBLIC_* process.env references in browser bundles.
+ * Astro/Vite does not expose PUBLIC_* values through process.env, so pass
+ * import.meta.env.PUBLIC_* values explicitly from the Astro application.
+ * Explicit values win over process.env to keep the SDK bundler-agnostic.
  */
-export function resolveCRConfig(): CRConfig {
+export function resolveCRConfig(overrides: Partial<CRConfig> = {}): CRConfig {
   const agentUrl =
     publicEnv("NEXT_PUBLIC_CR_AGENT_URL", "PUBLIC_CR_AGENT_URL") ||
     "https://api.contextrocket.com";
@@ -60,10 +64,10 @@ export function resolveCRConfig(): CRConfig {
     DEFAULT_BACKEND_URL;
 
   return {
-    agentUrl: agentUrl.replace(/\/$/, ""),
-    handle: handle || undefined,
-    apiKey: apiKey || undefined,
-    backendEnabled,
-    backendUrl: backendUrl.replace(/\/$/, ""),
+    agentUrl: (overrides.agentUrl ?? agentUrl).replace(/\/$/, ""),
+    handle: overrides.handle ?? (handle || undefined),
+    apiKey: overrides.apiKey ?? (apiKey || undefined),
+    backendEnabled: overrides.backendEnabled ?? backendEnabled,
+    backendUrl: (overrides.backendUrl ?? backendUrl).replace(/\/$/, ""),
   };
 }
