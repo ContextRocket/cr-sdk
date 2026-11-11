@@ -6,6 +6,7 @@
   "packageManager": "pnpm@10.14.0",
   "scripts": {
     "build": "pnpm -r run build",
+    "prepare:cdn": "node scripts/prepare-cdn-artifacts.mjs",
     "test": "pnpm -r run test",
     "verify": "pnpm run build && pnpm --filter @contextrocket/embed-chat run typecheck && pnpm run test"
   },

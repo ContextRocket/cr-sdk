@@ -94,21 +94,37 @@ The contact-form bridge can use the same convention at
 chat URL with `PUBLIC_CONTEXTROCKET_CHAT_WIDGET_URL`; keep the checked-in local
 artifact available for offline demos and standalone builds.
 
-The existing operator CLI publishes a directory under an organization prefix.
-From the ContextRocket `backend/` checkout, validate an artifact without
-uploading it:
+Prepare only the standalone browser files (not the rest of the SDK package
+output) after building both packages:
+
+```bash
+pnpm build
+pnpm prepare:cdn
+```
+
+This stages one file per prefix under `scratchpad/cdn/embeds/`, using each
+source package's version. The existing operator CLI publishes a directory
+under an organization prefix. From the ContextRocket `backend/` checkout,
+validate each staged artifact without uploading it:
 
 ```bash
 uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \
-  ../../cr-sdk/packages/embed-chat/dist \
+  ../../cr-sdk/scratchpad/cdn/embeds/chat/v0.1.0 \
   --org contextrocket \
   --prefix embeds/chat/v0.1.0 \
   --dry-run
+
+uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \
+  ../../cr-sdk/scratchpad/cdn/embeds/contact-form/v0.1.0 \
+  --org contextrocket \
+  --prefix embeds/contact-form/v0.1.0 \
+  --dry-run
 ```
 
-After reviewing the dry run, repeat without `--dry-run` to publish. This is an
-operator task; customer sites only load the public URL and do not need an
-operator token. Do not publish a mutable `/latest` path.
+Review both dry runs and confirm the versioned paths have not been released
+before publishing. Repeat the relevant command without `--dry-run` to upload.
+This is an operator task; customer sites only load the public URL and do not
+need an operator token. Do not publish a mutable `/latest` path.
 
 ## License
 
