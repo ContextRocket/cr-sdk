@@ -277,6 +277,24 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+/** Normalize public-facing suggestion metadata before exposing it as typed data. */
+function normalizeEventMetadata(value: unknown): A2AEventMetadata | undefined {
+  if (!isRecord(value)) return undefined;
+  const metadata: A2AEventMetadata = { ...value };
+  if ("suggestions" in metadata) {
+    const suggestions = Array.isArray(metadata.suggestions)
+      ? metadata.suggestions
+          .filter((item): item is string => typeof item === "string")
+          .map((item) => item.trim().slice(0, 200))
+          .filter(Boolean)
+          .slice(0, 5)
+      : [];
+    if (suggestions.length) metadata.suggestions = suggestions;
+    else delete metadata.suggestions;
+  }
+  return metadata;
+}
+
 /** Map wire parts (typeless one-of `{text}`) to normalized TextParts. */
 function normalizeResponseParts(value: unknown): A2AResponsePart[] {
   if (!Array.isArray(value)) return [];
@@ -333,9 +351,7 @@ function mapStatusUpdate(update: Record<string, unknown>): A2AEvent | null {
       }
     : undefined;
 
-  const metadata = isRecord(update.metadata)
-    ? (update.metadata as A2AEventMetadata)
-    : undefined;
+  const metadata = normalizeEventMetadata(update.metadata);
 
   return {
     type: "TaskStatusUpdateEvent",
@@ -358,9 +374,7 @@ function mapArtifactUpdate(update: Record<string, unknown>): A2AEvent | null {
   if (parts.length === 0) return null;
 
   const artifactMeta = isRecord(artifact.metadata) ? artifact.metadata : {};
-  const metadata = isRecord(update.metadata)
-    ? (update.metadata as A2AEventMetadata)
-    : undefined;
+  const metadata = normalizeEventMetadata(update.metadata);
 
   return {
     type: "TaskArtifactUpdateEvent",
