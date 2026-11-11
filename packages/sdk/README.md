@@ -76,7 +76,36 @@ Only put publishable, origin-bound website API keys in browser variables.
 
 `streamTask` and `sendTask` are also exported for callers that need direct
 control of the A2A request options. Event types are normalized from the current
-ContextRocket A2A 1.0 contract.
+ContextRocket A2A 1.0 contract. Artifact events retain text parts and validated
+JSON Render v2 response cards; unsupported or malformed structured parts are
+omitted.
+
+```ts
+import { parseAgentResponsePart } from "@contextrocket/sdk/json-render";
+import type { AgentResponseSpec } from "@contextrocket/sdk/json-render";
+
+for await (const event of client.streamTurn(params)) {
+  if (event.type !== "TaskArtifactUpdateEvent") continue;
+  for (const part of event.artifact.parts) {
+    if (part.type === "data") {
+      renderResponse(part.data.spec);
+    }
+  }
+}
+
+function renderResponse(spec: AgentResponseSpec) {
+  // Bind these known components to the host site's own UI.
+  console.log(spec.elements.response.children);
+}
+
+const validated = parseAgentResponsePart(untrustedA2ADataPart);
+if (validated) renderResponse(validated);
+```
+
+`AgentUIDataPart` is the normalized response type. The validator is also
+exported for callers that receive A2A data parts outside `createCRClient()`.
+It accepts only the product's bounded `Response`, `Evidence`, `Progress`,
+`Question`, `ProposalBatch`, and `Representation` catalog.
 
 ## Submit a contact form
 

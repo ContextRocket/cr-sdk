@@ -208,6 +208,57 @@ describe("parseA2AEvent (current wire)", () => {
     expect(event.final).toBe(false);
   });
 
+  it("preserves validated JSON Render v2 cards and drops unknown data parts", () => {
+    const frame = structuredClone(ARTIFACT_FRAME) as unknown as {
+      result: { artifactUpdate: { artifact: { parts: unknown[] } } };
+    };
+    frame.result.artifactUpdate.artifact.parts = [
+      { text: "Here is the evidence." },
+      {
+        kind: "data",
+        metadata: {
+          "cr.catalog": "contextrocket.agent.response.v2",
+          "cr.component": "agent_ui",
+        },
+        data: {
+          component: "agent_ui",
+          spec: {
+            root: "response",
+            elements: {
+              response: { type: "Response", props: {}, children: ["evidence"] },
+              evidence: {
+                type: "Evidence",
+                props: { refs: [{ title: "Public source", excerpt: "A verified detail." }] },
+                children: [],
+              },
+            },
+          },
+        },
+      },
+      {
+        kind: "data",
+        metadata: {
+          "cr.catalog": "contextrocket.agent.response.v2",
+          "cr.component": "agent_ui",
+        },
+        data: { component: "agent_ui", html: "<script>unsafe()</script>" },
+      },
+    ];
+    const event = parseA2AEvent(dataLine(frame)) as Extract<
+      A2AEvent,
+      { type: "TaskArtifactUpdateEvent" }
+    >;
+    expect(event.artifact.parts).toHaveLength(2);
+    expect(event.artifact.parts[0]).toEqual({ type: "text", text: "Here is the evidence." });
+    expect(event.artifact.parts[1]).toMatchObject({
+      type: "data",
+      data: {
+        component: "agent_ui",
+        spec: { elements: { evidence: { type: "Evidence" } } },
+      },
+    });
+  });
+
   it("reads append/lastChunk from the update, not the artifact", () => {
     const event = parseA2AEvent(dataLine(FINAL_ARTIFACT_FRAME)) as Extract<
       A2AEvent,

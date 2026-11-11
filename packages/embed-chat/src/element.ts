@@ -733,18 +733,17 @@ export class ContextRocketChatElement extends HTMLElement {
       const element = spec.elements[id];
       const card = document.createElement("article");
       card.className = `cr-agent-card cr-agent-card-${element.type.toLowerCase()}`;
-      const props = element.props;
       if (element.type === "Progress") {
-        const heading = document.createElement("strong"); heading.textContent = String(props.stage); card.appendChild(heading);
-        if (typeof props.total === "number") { const count = document.createElement("span"); count.textContent = `${props.completed} / ${props.total}`; card.appendChild(count); }
+        const heading = document.createElement("strong"); heading.textContent = element.props.stage; card.appendChild(heading);
+        if (typeof element.props.total === "number") { const count = document.createElement("span"); count.textContent = `${element.props.completed} / ${element.props.total}`; card.appendChild(count); }
       } else if (element.type === "Evidence") {
         const heading = document.createElement("strong"); heading.textContent = copy.evidence; card.appendChild(heading);
-        for (const ref of props.refs as Array<{title: string; excerpt?: string}>) { const item = document.createElement("div"); item.className = "cr-agent-evidence"; const title = document.createElement("strong"); title.textContent = ref.title; item.appendChild(title); if (ref.excerpt) { const excerpt = document.createElement("p"); excerpt.textContent = ref.excerpt; item.appendChild(excerpt); } card.appendChild(item); }
+        for (const ref of element.props.refs) { const item = document.createElement("div"); item.className = "cr-agent-evidence"; const title = document.createElement("strong"); title.textContent = ref.title; item.appendChild(title); if (ref.excerpt) { const excerpt = document.createElement("p"); excerpt.textContent = ref.excerpt; item.appendChild(excerpt); } card.appendChild(item); }
       } else if (element.type === "Question") {
-        const heading = document.createElement("strong"); heading.textContent = copy.question; card.append(heading, document.createTextNode(String(props.question)));
+        const heading = document.createElement("strong"); heading.textContent = copy.question; card.append(heading, document.createTextNode(element.props.question));
       } else if (element.type === "ProposalBatch") {
         const heading = document.createElement("strong"); heading.textContent = copy.proposals; card.appendChild(heading);
-        for (const view of props.views as Array<{summary: string}>) { const item = document.createElement("p"); item.textContent = view.summary; card.appendChild(item); }
+        for (const view of element.props.views) { const item = document.createElement("p"); item.textContent = view.summary; card.appendChild(item); }
       } else if (element.type === "Representation") {
         const heading = document.createElement("strong"); heading.textContent = copy.representation; card.appendChild(heading);
       }

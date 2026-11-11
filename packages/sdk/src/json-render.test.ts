@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseAgentResponsePart } from "./agent-response";
+import { parseAgentResponsePart } from "./json-render.js";
 
 const responsePart = (props: Record<string, unknown> = { stage: "Searching", completed: 1, total: 2 }) => ({
   kind: "data",

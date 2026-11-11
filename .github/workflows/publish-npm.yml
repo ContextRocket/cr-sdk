@@ -49,4 +49,11 @@ jobs:
             *) echo "Unsupported package selection" >&2; exit 2 ;;
           esac
           cd "$package_path"
-          npm publish --access public
+          if [[ "$PACKAGE_TARGET" == "embed-chat" ]]; then
+            sdk_version=$(node -p 'require("../sdk/package.json").version')
+            npm view "@contextrocket/sdk@${sdk_version}" version >/dev/null
+          fi
+          package_version=$(node -p 'require("./package.json").version')
+          tarball="$RUNNER_TEMP/contextrocket-${PACKAGE_TARGET}-${package_version}.tgz"
+          pnpm pack --out "$tarball"
+          npm publish "$tarball" --access public

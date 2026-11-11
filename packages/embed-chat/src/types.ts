@@ -1,3 +1,6 @@
+import type { AgentResponseSpec } from "@contextrocket/sdk/json-render";
+export type { AgentResponseSpec } from "@contextrocket/sdk/json-render";
+
 export type WidgetChatStatus =
   | "idle"
   | "streaming"
@@ -16,15 +19,6 @@ export interface WidgetChatMessage {
   suggestions?: string[];
   responseSpec?: AgentResponseSpec;
   responseUnavailable?: boolean;
-}
-
-export interface AgentResponseSpec {
-  root: "response";
-  elements: Record<string, {
-    type: "Response" | "Evidence" | "Progress" | "Question" | "ProposalBatch" | "Representation";
-    props: Record<string, unknown>;
-    children: string[];
-  }>;
 }
 
 export interface WidgetSourceRef {

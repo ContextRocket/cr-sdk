@@ -9,6 +9,10 @@ importers:
   .: {}
 
   packages/embed-chat:
+    dependencies:
+      '@contextrocket/sdk':
+        specifier: workspace:*
+        version: link:../sdk
     devDependencies:
       esbuild:
         specifier: ^0.25.10

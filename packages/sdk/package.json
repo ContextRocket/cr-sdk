@@ -30,6 +30,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./json-render": {
+      "types": "./dist/json-render.d.ts",
+      "import": "./dist/json-render.js"
+    },
     "./contact-form": {
       "types": "./dist/contact-form.d.ts",
       "import": "./dist/contact-form.js"

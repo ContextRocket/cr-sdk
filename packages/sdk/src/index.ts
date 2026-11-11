@@ -7,6 +7,19 @@
 
 export { mockStreamTask } from "./adapters/a2a-mock.js";
 
+export {
+  AGENT_RESPONSE_CATALOG,
+  parseAgentResponsePart,
+} from "./json-render.js";
+export type {
+  AgentResponseChild,
+  AgentResponseDataPart,
+  AgentResponseEvidenceRef,
+  AgentResponseProposalView,
+  AgentResponseRoot,
+  AgentResponseSpec,
+} from "./json-render.js";
+
 export { resolveCRConfig } from "./config.js";
 export type { CRConfig } from "./config.js";
 
@@ -46,6 +59,8 @@ export type {
   A2AEvent,
   A2ATaskParams,
   A2AMessage,
+  A2AResponsePart,
+  AgentUIDataPart,
   MessagePart,
   TextPart,
   FileRefPart,

@@ -8,7 +8,7 @@ Agent-oriented rules and day-to-day commands live in [AGENTS.md](./AGENTS.md).
 
 | Package | Name | Role |
 | --- | --- | --- |
-| `packages/sdk` | `@contextrocket/sdk` | A2A wire client + `createCRClient`, credentials, config, and contact form submissions |
+| `packages/sdk` | `@contextrocket/sdk` | A2A wire client + `createCRClient`, typed JSON Render responses, contact forms, credentials, and config |
 | `packages/embed-chat` | `@contextrocket/embed-chat` | Standalone chat widget IIFE (`dist/widget.js`) |
 | `packages/site-publisher` | `@contextrocket/site-publisher` | Node-only static CDN publishing API + TypeScript CLI |
 
@@ -31,12 +31,13 @@ pnpm install
 pnpm build
 ```
 
-Each publishable package runs its build automatically during npm packing. Check
-the exact package contents without publishing from the package directory:
+Each publishable package runs its build automatically when packed. `pnpm pack`
+also rewrites workspace protocol dependencies in the archive, so use it to
+inspect the exact package that the release workflow publishes:
 
 ```bash
-cd packages/sdk && npm pack --dry-run
-cd ../embed-chat && npm pack --dry-run
+cd packages/sdk && pnpm pack --out /tmp/contextrocket-sdk-%v.tgz
+cd ../embed-chat && pnpm pack --out /tmp/contextrocket-embed-chat-%v.tgz
 ```
 
 For a local application prototype that imports the TypeScript SDK, use local
@@ -72,24 +73,26 @@ sets `publishConfig.access` to `public`, includes its README and MIT license,
 and publishes only its built `dist/` output. The root workspace remains
 private. Before a first release, confirm the npm organization owns the
 `@contextrocket` scope and that the exact package versions are still
-unpublished. Build and inspect each tarball with `npm pack --dry-run` from its
-package directory.
+unpublished. Build and inspect each tarball with `pnpm pack --out` from its
+package directory; this also rewrites workspace protocol dependencies.
 
 The repository already has a manual GitHub Actions release workflow at
 `.github/workflows/publish-npm.yml`. Configure npm trusted publishing for each
 package using the `ContextRocket/cr-sdk` repository and that exact workflow
 path. The workflow runs on `main`, verifies the workspace, and publishes only
-the selected package from a GitHub-hosted runner with `id-token: write`. This
-avoids a long-lived npm token and provides npm provenance. The first trusted
-publish validates npm's publisher configuration; complete it within two days
-of creating that configuration. See
+the selected package from a GitHub-hosted runner with `id-token: write`. It
+creates a pnpm tarball before asking npm to publish it, so workspace protocol
+dependencies are rewritten to released package versions. Publish `sdk` before
+`embed-chat`, which depends on the SDK. This avoids a long-lived npm token and
+provides npm provenance. The first trusted publish validates npm's publisher
+configuration; complete it within two days of creating that configuration. See
 [npm's trusted publishing guide](https://docs.npmjs.com/trusted-publishers/).
 
 Before dispatching a release, review the package tarball and confirm its exact
 version is not already in the registry:
 
 ```bash
-cd packages/sdk && npm pack --dry-run
+cd packages/sdk && pnpm pack --out /tmp/contextrocket-sdk-%v.tgz
 npm view @contextrocket/sdk@0.1.0 version
 ```
 

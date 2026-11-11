@@ -1,3 +1,6 @@
+import { AGENT_RESPONSE_CATALOG, parseAgentResponsePart } from "./json-render.js";
+import type { AgentResponseSpec } from "./json-render.js";
+
 /**
  * A2A (Agent-to-Agent) protocol client for ContextRocket.
  *
@@ -29,6 +32,22 @@ export interface TextPart {
   type?: "text";
   text: string;
 }
+
+/** A validated ContextRocket JSON Render v2 response part. */
+export interface AgentUIDataPart {
+  type: "data";
+  metadata: {
+    "cr.catalog": typeof AGENT_RESPONSE_CATALOG;
+    "cr.component": "agent_ui";
+  };
+  data: {
+    component: "agent_ui";
+    spec: AgentResponseSpec;
+  };
+}
+
+/** Parts returned by A2A response events. */
+export type A2AResponsePart = TextPart | AgentUIDataPart;
 
 export interface FileRefPart {
   type: "file_ref";
@@ -84,7 +103,7 @@ export interface TaskStatusUpdateEvent {
     timestamp?: string;
     message?: {
       role: "agent";
-      parts: TextPart[];
+      parts: A2AResponsePart[];
     };
   };
   final: boolean;
@@ -105,7 +124,7 @@ export interface TaskArtifactUpdateEvent {
   id: string;
   artifact: {
     name?: string;
-    parts: TextPart[];
+    parts: A2AResponsePart[];
     index: number;
     append: boolean;
     lastChunk: boolean;
@@ -257,13 +276,23 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /** Map wire parts (typeless one-of `{text}`) to normalized TextParts. */
-function normalizeTextParts(value: unknown): TextPart[] {
+function normalizeResponseParts(value: unknown): A2AResponsePart[] {
   if (!Array.isArray(value)) return [];
-  return value.flatMap((part): TextPart[] => {
-    if (!isRecord(part) || typeof part.text !== "string" || !part.text) {
-      return [];
+  return value.flatMap((part): A2AResponsePart[] => {
+    if (!isRecord(part)) return [];
+    if (typeof part.text === "string" && part.text) {
+      return [{ type: "text", text: part.text }];
     }
-    return [{ type: "text", text: part.text }];
+    const spec = parseAgentResponsePart(part);
+    if (!spec) return [];
+    return [{
+      type: "data",
+      metadata: {
+        "cr.catalog": AGENT_RESPONSE_CATALOG,
+        "cr.component": "agent_ui",
+      },
+      data: { component: "agent_ui", spec },
+    }];
   });
 }
 
@@ -298,7 +327,7 @@ function mapStatusUpdate(update: Record<string, unknown>): A2AEvent | null {
   const message = isRecord(status.message)
     ? {
         role: "agent" as const,
-        parts: normalizeTextParts(status.message.parts),
+        parts: normalizeResponseParts(status.message.parts),
       }
     : undefined;
 
@@ -323,7 +352,7 @@ function mapStatusUpdate(update: Record<string, unknown>): A2AEvent | null {
 
 function mapArtifactUpdate(update: Record<string, unknown>): A2AEvent | null {
   const artifact = isRecord(update.artifact) ? update.artifact : {};
-  const parts = normalizeTextParts(artifact.parts);
+  const parts = normalizeResponseParts(artifact.parts);
   if (parts.length === 0) return null;
 
   const artifactMeta = isRecord(artifact.metadata) ? artifact.metadata : {};
