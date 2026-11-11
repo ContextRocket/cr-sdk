@@ -82,10 +82,12 @@ package using the `ContextRocket/cr-sdk` repository and that exact workflow
 path. The workflow runs on `main`, verifies the workspace, and publishes only
 the selected package from a GitHub-hosted runner with `id-token: write`. It
 creates a pnpm tarball before asking npm to publish it, so workspace protocol
-dependencies are rewritten to released package versions. Publish `sdk` before
-`embed-chat`, which depends on the SDK. This avoids a long-lived npm token and
-provides npm provenance. The first trusted publish validates npm's publisher
-configuration; complete it within two days of creating that configuration. See
+dependencies are rewritten in the archive. The chat widget uses the SDK while
+building its standalone IIFE, but the published widget has no runtime package
+dependency; packages can be released independently. This avoids a long-lived
+npm token and provides npm provenance. The first trusted publish validates
+npm's publisher configuration; complete it within two days of creating that
+configuration. See
 [npm's trusted publishing guide](https://docs.npmjs.com/trusted-publishers/).
 
 Before dispatching a release, review the package tarball and confirm its exact

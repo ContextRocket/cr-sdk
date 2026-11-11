@@ -41,8 +41,10 @@ closes the drawer.
 
 The widget source, tests, build, versioning, and release workflow are owned by
 this SDK repository. Build it locally as part of the starter; do not add a
-second widget implementation to a customer fork. The starter demonstrates the
-installation snippet and can copy a local bundle for demos.
+second widget implementation to a customer fork. Its source uses the SDK's
+JSON Render validator at build time, then bundles that code into the standalone
+IIFE. Installing the published widget does not install `@contextrocket/sdk` as
+a runtime dependency.
 
 ```html
 <script
@@ -106,8 +108,15 @@ pnpm run build:widget
 
 The package is designed to be standalone, but has not yet been published to
 npm. After release, Astro sites can load the built IIFE from their public
-folder or a versioned CDN URL. The widget source and reusable embed
-capabilities stay in `cr-sdk` packages.
+folder or a versioned CDN URL. Install it and copy the artifact into a static
+site's public directory:
+
+```bash
+npm install --save-dev @contextrocket/embed-chat
+cp node_modules/@contextrocket/embed-chat/dist/widget.js public/embed/widget.js
+```
+
+The widget source and reusable embed capabilities stay in `cr-sdk` packages.
 
 Operators publish new versions of the built `dist/` directory with the
 ContextRocket `sites publish` CLI; see the SDK repository README for the dry-run

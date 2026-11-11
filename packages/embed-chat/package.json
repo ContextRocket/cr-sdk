@@ -37,14 +37,12 @@
     "verify": "pnpm run typecheck && node build.mjs && node -e \"const{statSync}=require('node:fs');const p='dist/widget.js';const s=statSync(p);if(s.size<1000){console.error('widget.js too small: '+s.size+' bytes');process.exit(1)}console.log('OK '+p+' ('+s.size+' bytes)')\""
   },
   "devDependencies": {
+    "@contextrocket/sdk": "workspace:*",
     "esbuild": "^0.25.10",
     "playwright": "1.62.1",
     "typescript": "^5.9.2",
     "vite": "^7.3.7",
     "vitest": "^5.0.5"
-  },
-  "dependencies": {
-    "@contextrocket/sdk": "workspace:*"
   },
   "engines": {
     "node": ">=22"
