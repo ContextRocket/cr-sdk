@@ -52,6 +52,14 @@ handle or credential's organization binding alone is not authorization: the API
 checks authentication, membership or credential scope, origin, and current
 organization policy before resolving capabilities.
 
+Capability scopes are resolved by the server from the authenticated principal
+and interface; they are not caller-supplied A2A metadata or OAuth scopes. The
+organization's validated Brand Agent policy then gates each supported
+capability. Agent Card skills describe the capabilities currently exposed to
+that caller, but the API checks policy and authorization again when handling a
+turn. Clients should treat the card as discovery, not as a grant of access. The
+A2A request and event wire contract is the same for these access tiers.
+
 ## Stream an A2A turn
 
 ```ts
