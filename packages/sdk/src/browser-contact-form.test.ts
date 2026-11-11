@@ -2,12 +2,12 @@ import { buildSync } from "esbuild";
 import { runInNewContext } from "node:vm";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
-import type { ContextRocketBrowserSDK } from "./lead-capture.js";
+import type { ContextRocketBrowserSDK } from "./contact-form.js";
 
-describe("static browser lead-capture bridge", () => {
+describe("static browser contact-form bridge", () => {
   it("installs a read-only browser API that uses the tested org-scoped client", async () => {
     const bundle = buildSync({
-      entryPoints: [fileURLToPath(new URL("./browser-lead-capture.ts", import.meta.url))],
+      entryPoints: [fileURLToPath(new URL("./browser-contact-form.ts", import.meta.url))],
       bundle: true,
       write: false,
       format: "iife",
@@ -34,10 +34,10 @@ describe("static browser lead-capture bridge", () => {
       follow_up_state: "human_follow_up",
     }), { status: 201, headers: { "content-type": "application/json" } }));
 
-    const receipt = await api!.submitPublicLead({
+    const receipt = await api!.submitContactForm({
       apiBaseUrl: "https://api.contextrocket.com",
       orgHandle: "Kleos",
-      lead: { name: "Ada Lovelace", consent: true },
+      form: { name: "Ada Lovelace", consent: true },
       fetcher,
     });
 

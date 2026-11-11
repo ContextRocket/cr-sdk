@@ -1,13 +1,13 @@
-/** Public, browser-safe client for an organization's website lead form. */
+/** Public, browser-safe client for an organization's website contact form. */
 
-export type LeadIntent = "contact" | "appointment" | "demo" | "support" | "other";
+export type ContactIntent = "contact" | "appointment" | "demo" | "support" | "other";
 
-export interface PublicLeadInput {
+export interface ContactFormData {
   name: string;
   email?: string;
   phone?: string;
   message?: string;
-  intent?: LeadIntent;
+  intent?: ContactIntent;
   source_channel?: string;
   consent: true;
   source_url?: string;
@@ -19,14 +19,14 @@ export interface PublicLeadInput {
   utm_term?: string;
 }
 
-export interface PublicLeadReceipt {
+export interface ContactFormReceipt {
   lead_id: string;
   status: "captured";
   delivery_state: "queued" | "duplicate";
   follow_up_state: "human_follow_up";
 }
 
-export interface PublicLeadAttribution {
+export interface ContactAttribution {
   source_url?: string;
   referrer_origin?: string;
   utm_source?: string;
@@ -37,20 +37,20 @@ export interface PublicLeadAttribution {
 }
 
 /**
- * Runtime surface exposed by the dependency-free `lead-capture.browser.js`
+ * Runtime surface exposed by the dependency-free `contact-form.browser.js`
  * artifact on `window.ContextRocketSDK`.
  */
 export interface ContextRocketBrowserSDK {
-  readonly LeadCaptureError: typeof LeadCaptureError;
-  readonly createPublicLeadSubmissionController: typeof createPublicLeadSubmissionController;
-  readonly extractLeadAttribution: typeof extractLeadAttribution;
-  readonly submitPublicLead: typeof submitPublicLead;
-  readonly submitPublicLeadWithAttribution: typeof submitPublicLeadWithAttribution;
+  readonly ContactFormError: typeof ContactFormError;
+  readonly createContactFormController: typeof createContactFormController;
+  readonly extractContactAttribution: typeof extractContactAttribution;
+  readonly submitContactForm: typeof submitContactForm;
+  readonly submitContactFormWithAttribution: typeof submitContactFormWithAttribution;
 }
 
 declare global {
   interface Window {
-    /** Present after the static lead-capture browser artifact has loaded. */
+    /** Present after the static contact-form browser artifact has loaded. */
     ContextRocketSDK?: ContextRocketBrowserSDK;
   }
 }
@@ -58,13 +58,13 @@ declare global {
 const UTM_KEYS = ["source", "medium", "campaign", "content", "term"] as const;
 
 /**
- * Extract bounded attribution for a public lead without forwarding arbitrary
+ * Extract bounded attribution for a contact form without forwarding arbitrary
  * query parameters or fragments (which can contain tokens or personal data).
  */
-export function extractLeadAttribution(
+export function extractContactAttribution(
   pageUrl: string | URL,
   referrerUrl?: string,
-): PublicLeadAttribution {
+): ContactAttribution {
   let page: URL;
   try {
     page = new URL(pageUrl);
@@ -73,7 +73,7 @@ export function extractLeadAttribution(
   }
   if (page.protocol !== "http:" && page.protocol !== "https:") return {};
 
-  const attribution: PublicLeadAttribution = {};
+  const attribution: ContactAttribution = {};
   const sourceUrl = `${page.origin}${page.pathname}`;
   if (sourceUrl.length <= 2048) attribution.source_url = sourceUrl;
 
@@ -98,41 +98,41 @@ export function extractLeadAttribution(
   return attribution;
 }
 
-export class LeadCaptureError extends Error {
+export class ContactFormError extends Error {
   constructor(
     message: string,
     readonly status: number,
     readonly code: string,
   ) {
     super(message);
-    this.name = "LeadCaptureError";
+    this.name = "ContactFormError";
   }
 }
 
-export interface SubmitPublicLeadOptions {
+export interface SubmitContactFormOptions {
   apiBaseUrl: string;
   orgHandle: string;
-  lead: PublicLeadInput;
+  form: ContactFormData;
   idempotencyKey?: string;
   signal?: AbortSignal;
   fetcher?: typeof fetch;
 }
 
-export interface SubmitPublicLeadWithAttributionOptions
-  extends SubmitPublicLeadOptions {
+export interface SubmitContactFormWithAttributionOptions
+  extends SubmitContactFormOptions {
   /** Current page URL; the SDK strips fragments and all but bounded UTMs. */
   pageUrl: string | URL;
   referrerUrl?: string;
 }
 
-export interface PublicLeadSubmissionController {
+export interface ContactFormController {
   /** Submit a form payload, reusing its idempotency key for unchanged retries. */
-  submit(options: SubmitPublicLeadWithAttributionOptions): Promise<PublicLeadReceipt>;
+  submit(options: SubmitContactFormWithAttributionOptions): Promise<ContactFormReceipt>;
   /** Mark the next submission as a new attempt, such as after editing fields. */
   reset(): void;
 }
 
-function isPublicLeadReceipt(payload: unknown): payload is PublicLeadReceipt {
+function isContactFormReceipt(payload: unknown): payload is ContactFormReceipt {
   if (!payload || typeof payload !== "object") return false;
   const receipt = payload as Record<string, unknown>;
   return (
@@ -145,21 +145,21 @@ function isPublicLeadReceipt(payload: unknown): payload is PublicLeadReceipt {
 }
 
 /**
- * Submit one consented lead to the org-scoped public capture endpoint.
+ * Submit one consented contact form to the org-scoped public capture endpoint.
  * This endpoint does not use a browser API key; the server binds the handle to
- * that organization's canonical Lead Capture App and checks the request origin.
+ * that organization's lead record and checks the request origin.
  */
-export async function submitPublicLead({
+export async function submitContactForm({
   apiBaseUrl,
   orgHandle,
-  lead,
+  form,
   idempotencyKey,
   signal,
   fetcher = fetch,
-}: SubmitPublicLeadOptions): Promise<PublicLeadReceipt> {
+}: SubmitContactFormOptions): Promise<ContactFormReceipt> {
   const handle = orgHandle.trim().replace(/^@/, "").toLowerCase();
   if (!handle) throw new TypeError("An organization handle is required.");
-  if (!lead.consent) throw new TypeError("Explicit consent is required.");
+  if (!form.consent) throw new TypeError("Explicit consent is required.");
 
   const endpoint = new URL("/api/apps/leads/capture", apiBaseUrl);
   endpoint.searchParams.set("org_handle", handle);
@@ -177,12 +177,12 @@ export async function submitPublicLead({
       credentials: "omit",
       cache: "no-store",
       headers,
-      body: JSON.stringify({ ...lead, org_handle: handle }),
+      body: JSON.stringify({ ...form, org_handle: handle }),
       signal,
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") throw error;
-    throw new LeadCaptureError("The lead could not be submitted.", 0, "NETWORK_ERROR");
+    throw new ContactFormError("The contact form could not be submitted.", 0, "NETWORK_ERROR");
   }
 
   const payload: unknown = await response.json().catch(() => null);
@@ -195,30 +195,30 @@ export async function submitPublicLead({
       : detail && typeof detail === "object" && typeof (detail as Record<string, unknown>).code === "string"
         ? String((detail as Record<string, unknown>).code)
         : "LEAD_CAPTURE_FAILED";
-    throw new LeadCaptureError("The lead could not be submitted.", response.status, code);
+    throw new ContactFormError("The contact form could not be submitted.", response.status, code);
   }
 
-  if (!isPublicLeadReceipt(payload)) {
-    throw new LeadCaptureError("The lead response was invalid.", response.status, "INVALID_RESPONSE");
+  if (!isContactFormReceipt(payload)) {
+    throw new ContactFormError("The contact form response was invalid.", response.status, "INVALID_RESPONSE");
   }
   return payload;
 }
 
 /**
- * Submit a lead with first-party page/referrer attribution assembled in one
+ * Submit a contact form with first-party page/referrer attribution assembled in one
  * shared path for static forms and framework-specific form components.
  */
-export function submitPublicLeadWithAttribution({
+export function submitContactFormWithAttribution({
   pageUrl,
   referrerUrl,
-  lead,
+  form,
   ...options
-}: SubmitPublicLeadWithAttributionOptions): Promise<PublicLeadReceipt> {
-  return submitPublicLead({
+}: SubmitContactFormWithAttributionOptions): Promise<ContactFormReceipt> {
+  return submitContactForm({
     ...options,
-    lead: {
-      ...lead,
-      ...extractLeadAttribution(pageUrl, referrerUrl),
+    form: {
+      ...form,
+      ...extractContactAttribution(pageUrl, referrerUrl),
     },
   });
 }
@@ -229,15 +229,15 @@ export function submitPublicLeadWithAttribution({
  * receive a fresh key. The controller owns request identity, while each site
  * remains responsible for its form fields and presentation.
  */
-export function createPublicLeadSubmissionController(
-  submitter: typeof submitPublicLeadWithAttribution = submitPublicLeadWithAttribution,
+export function createContactFormController(
+  submitter: typeof submitContactFormWithAttribution = submitContactFormWithAttribution,
   createKey: () => string = () => globalThis.crypto.randomUUID(),
-): PublicLeadSubmissionController {
+): ContactFormController {
   let pendingFingerprint: string | undefined;
   let pendingKey: string | undefined;
   let inFlight: {
     fingerprint: string;
-    promise: Promise<PublicLeadReceipt>;
+    promise: Promise<ContactFormReceipt>;
   } | undefined;
 
   const reset = () => {
@@ -251,7 +251,7 @@ export function createPublicLeadSubmissionController(
       const fingerprint = JSON.stringify({
         apiBaseUrl: options.apiBaseUrl,
         orgHandle: options.orgHandle.trim().replace(/^@/, "").toLowerCase(),
-        lead: options.lead,
+        form: options.form,
         pageUrl: String(options.pageUrl),
         referrerUrl: options.referrerUrl,
       });

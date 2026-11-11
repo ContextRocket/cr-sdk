@@ -4,11 +4,11 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const outFile = resolve(root, "dist/lead-capture.browser.js");
+const outFile = resolve(root, "dist/contact-form.browser.js");
 mkdirSync(dirname(outFile), { recursive: true });
 
 await build({
-  entryPoints: [resolve(root, "src/browser-lead-capture.ts")],
+  entryPoints: [resolve(root, "src/browser-contact-form.ts")],
   bundle: true,
   format: "iife",
   platform: "browser",

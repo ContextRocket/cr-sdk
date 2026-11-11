@@ -14,16 +14,16 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./lead-capture": {
-      "types": "./dist/lead-capture.d.ts",
-      "import": "./dist/lead-capture.js"
+    "./contact-form": {
+      "types": "./dist/contact-form.d.ts",
+      "import": "./dist/contact-form.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && node scripts/build-browser.mjs",
+    "build": "node scripts/clean-dist.mjs && tsc -p tsconfig.json && node scripts/build-browser.mjs",
     "test": "vitest run"
   },
   "devDependencies": {

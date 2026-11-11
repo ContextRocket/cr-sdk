@@ -1,7 +1,7 @@
 # ContextRocket browser SDK
 
 `@contextrocket/sdk` provides typed browser clients for ContextRocket's A2A
-agent endpoint and organization-scoped public inquiry capture.
+agent endpoint and organization-scoped contact form submissions.
 
 ## Install status
 
@@ -54,22 +54,24 @@ for await (const event of client.streamTurn(params)) {
 control of the A2A request options. Event types are normalized from the current
 ContextRocket A2A 1.0 contract.
 
-## Capture an inquiry
+## Submit a contact form
 
-The `@contextrocket/sdk/lead-capture` subpath exposes typed submission helpers.
-The server resolves the organization from its public handle and validates the
-request origin; no browser API key is sent to this endpoint.
+The `@contextrocket/sdk/contact-form` subpath exposes typed form submission
+helpers. The server resolves the organization from its public handle and
+validates the request origin; no browser API key is sent to this endpoint.
+ContextRocket records these submissions as leads, so the SDK keeps that term
+only in backend receipts and protocol fields.
 
 ```ts
-import { createPublicLeadSubmissionController } from "@contextrocket/sdk/lead-capture";
+import { createContactFormController } from "@contextrocket/sdk/contact-form";
 
-const submission = createPublicLeadSubmissionController();
+const submission = createContactFormController();
 const receipt = await submission.submit({
   apiBaseUrl: "https://api.contextrocket.com",
   orgHandle: "your-organization-handle",
   pageUrl: window.location.href,
   referrerUrl: document.referrer,
-  lead: {
+  form: {
     name: "Alex Example",
     email: "alex@example.com",
     message: "I'd like to learn more.",
@@ -87,9 +89,9 @@ artifact exposes the same controller on `window.ContextRocketSDK`; form layout,
 validation, and status UI remain under the site's control.
 
 Attribution omits fragments and arbitrary query parameters, and keeps only
-bounded `utm_*` values. The `lead-capture.browser.js` artifact is also built for
+bounded `utm_*` values. The `contact-form.browser.js` artifact is also built for
 static sites that load a script rather than bundle npm modules; it is emitted
-to `dist/lead-capture.browser.js` by the package build.
+to `dist/contact-form.browser.js` by the package build.
 TypeScript consumers of the static bridge can import the
 `ContextRocketBrowserSDK` type from `@contextrocket/sdk`; it also makes
 `window.ContextRocketSDK` available as an optional, accurately typed property

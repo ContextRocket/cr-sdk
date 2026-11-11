@@ -24,22 +24,22 @@ export {
 export type { CredentialsPort } from "./credentials-port.js";
 
 export {
-  createPublicLeadSubmissionController,
-  LeadCaptureError,
-  extractLeadAttribution,
-  submitPublicLead,
-  submitPublicLeadWithAttribution,
-} from "./lead-capture.js";
+  createContactFormController,
+  ContactFormError,
+  extractContactAttribution,
+  submitContactForm,
+  submitContactFormWithAttribution,
+} from "./contact-form.js";
 export type {
   ContextRocketBrowserSDK,
-  LeadIntent,
-  PublicLeadSubmissionController,
-  PublicLeadAttribution,
-  PublicLeadInput,
-  PublicLeadReceipt,
-  SubmitPublicLeadOptions,
-  SubmitPublicLeadWithAttributionOptions,
-} from "./lead-capture.js";
+  ContactIntent,
+  ContactFormController,
+  ContactAttribution,
+  ContactFormData,
+  ContactFormReceipt,
+  SubmitContactFormOptions,
+  SubmitContactFormWithAttributionOptions,
+} from "./contact-form.js";
 
 export type {
   A2AClientOptions,
