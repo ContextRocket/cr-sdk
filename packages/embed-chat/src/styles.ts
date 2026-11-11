@@ -92,6 +92,23 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
   align-items: flex-start;
 }
 
+@media (max-width: 30rem) {
+  .cr-root {
+    right: max(1rem, env(safe-area-inset-right, 0px));
+    bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .cr-root[data-position="bottom-left"] {
+    right: auto;
+    left: max(1rem, env(safe-area-inset-left, 0px));
+  }
+
+  .cr-launcher {
+    width: 3rem;
+    height: 3rem;
+  }
+}
+
 .cr-root[data-fullscreen="true"] .cr-launcher {
   display: none;
 }
