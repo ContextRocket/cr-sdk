@@ -89,9 +89,13 @@ ContextRocket CDN origin is `https://contextrocket.cdn.contextrocket.com`;
 embed releases live under `/embeds/`, separate from the shared `/brand/` kit.
 
 Publish each package version to a versioned prefix and never overwrite a
-published prefix. The publishing backend does not enforce immutability, so this
-is a release-process rule. For example, `@contextrocket/embed-chat` version
-`0.1.0` should publish `dist/widget.js` to:
+published prefix. The publishing backend does not enforce version immutability:
+publishing to the same prefix activates a new release at that public path. The
+current CDN gives files outside `/_next/static/` a five-minute public cache;
+only `/_next/static/` assets receive a one-year immutable cache. Treat versioned
+embed URLs as stable by release discipline, not as an immutable storage
+guarantee. For example, `@contextrocket/embed-chat` version `0.1.0` should
+publish `dist/widget.js` to:
 
 ```text
 https://contextrocket.cdn.contextrocket.com/embeds/chat/v0.1.0/widget.js
@@ -132,7 +136,9 @@ uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \
 Review both dry runs and confirm the versioned paths have not been released
 before publishing. Repeat the relevant command without `--dry-run` to upload.
 This is an operator task; customer sites only load the public URL and do not
-need an operator token. Do not publish a mutable `/latest` path.
+need an operator token. After the first release, fetch the public URLs and
+confirm their JavaScript content type and response body. Do not publish a
+mutable `/latest` path.
 
 ## License
 

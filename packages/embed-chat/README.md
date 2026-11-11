@@ -80,8 +80,13 @@ generated IIFE into the consuming site's `public/embed/widget.js` for now. The
 operator release convention is to publish each package version under a unique
 prefix; version `0.1.0` maps to
 `https://contextrocket.cdn.contextrocket.com/embeds/chat/v0.1.0/widget.js`.
-The publishing backend does not prevent overwriting a prefix, so never reuse a
-published version path.
+The publishing backend activates a new release if the same prefix is published
+again, so never reuse a published version path. The current CDN applies a
+five-minute public cache to these paths; one-year immutable caching is reserved
+for `/_next/static/` assets. Versioned widget URLs are therefore stable by
+release discipline, not by a server-enforced immutability guarantee. After the
+first upload, verify the public URL returns the JavaScript bundle with a
+JavaScript content type.
 
 Build and copy the browser artifact into the starter public directory:
 
