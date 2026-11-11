@@ -158,11 +158,11 @@ publishing to the same prefix activates a new release at that public path. The
 current CDN gives files outside `/_next/static/` a five-minute public cache;
 only `/_next/static/` assets receive a one-year immutable cache. Treat versioned
 embed URLs as stable by release discipline, not as an immutable storage
-guarantee. The published `@contextrocket/embed-chat` version `0.1.0` is
+guarantee. The published `@contextrocket/embed-chat` version `0.1.1` is
 available at:
 
 ```text
-https://contextrocket.cdn.contextrocket.com/embeds/chat/v0.1.0/widget.js
+https://contextrocket.cdn.contextrocket.com/embeds/chat/v0.1.1/widget.js
 ```
 
 The published contact-form browser bridge version `0.1.0` is available at:
@@ -190,9 +190,9 @@ validate each staged artifact without uploading it:
 
 ```bash
 uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \
-  ../../cr-sdk/scratchpad/cdn/embeds/chat/v0.1.0 \
+  ../../cr-sdk/scratchpad/cdn/embeds/chat/v0.1.1 \
   --org contextrocket \
-  --prefix embeds/chat/v0.1.0 \
+  --prefix embeds/chat/v0.1.1 \
   --dry-run
 
 uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \
@@ -207,8 +207,10 @@ not been released before publishing. Repeat the relevant command without
 `--dry-run` to upload. This is an operator task; customer sites only load the
 public URL and do not need an operator token. After publishing, fetch the public
 URLs and confirm the JavaScript content type and response body. Do not publish
-a mutable `/latest` path. The `v0.1.0` chat and contact-form URLs above were
-published and verified on 2026-11-11.
+a mutable `/latest` path. The `v0.1.1` chat URL and `v0.1.0` contact-form URL
+above were published and verified on 2026-11-11. An immediate CDN request can
+briefly return a cached 403 while a new object propagates; verify the URL again
+after publication.
 
 ## License
 

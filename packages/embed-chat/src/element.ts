@@ -19,6 +19,7 @@ import logoWhite from "./logo-h-spark-white.svg";
 const rocketImage = `data:image/svg+xml,${encodeURIComponent(rocketSpark.replaceAll("currentColor", "#ECEDF1"))}`;
 const logoDataUri = (svg: string) => `data:image/svg+xml,${encodeURIComponent(svg)}`;
 const poweredByLogos = { ink: logoDataUri(logoInk), white: logoDataUri(logoWhite) };
+const CHAT_SCROLL_BOTTOM_THRESHOLD = 48;
 const demoCards = new Set<WidgetDemoCard>([
   "Evidence",
   "Progress",
@@ -48,6 +49,7 @@ export class ContextRocketChatElement extends HTMLElement {
   #suggestionDiscoveryKey: string | null = null;
   #suggestionDiscoveryRun = 0;
   #fullscreen = false;
+  #forceMessagesToBottom = false;
 
   #launcher!: HTMLButtonElement;
   #fullscreenButton!: HTMLButtonElement;
@@ -500,6 +502,7 @@ export class ContextRocketChatElement extends HTMLElement {
     const started = beginSend(this.#state, this.#lastUserMessage);
     this.#state = started.state;
     this.#assistantMessageId = started.assistantMessageId;
+    this.#forceMessagesToBottom = true;
     const runId = ++this.#runId;
     const controller = new AbortController();
     this.#abortController = controller;
@@ -565,6 +568,15 @@ export class ContextRocketChatElement extends HTMLElement {
   #syncUi(): void {
     if (!this.#config) return;
     const copy = copyFor(this.#config);
+    const previousScrollTop = this.#messages.scrollTop;
+    const distanceFromBottom =
+      this.#messages.scrollHeight -
+      this.#messages.clientHeight -
+      previousScrollTop;
+    const shouldFollowOutput =
+      this.#forceMessagesToBottom ||
+      distanceFromBottom <= CHAT_SCROLL_BOTTOM_THRESHOLD;
+    this.#forceMessagesToBottom = false;
     this.#messages.replaceChildren();
 
     const hasUserMessage = this.#hasUserMessage();
@@ -634,9 +646,9 @@ export class ContextRocketChatElement extends HTMLElement {
       this.#messages.appendChild(this.#renderOpeningSuggestions(copy));
     }
 
-    this.#messages.scrollTop = this.#state.messages.length
+    this.#messages.scrollTop = shouldFollowOutput
       ? this.#messages.scrollHeight
-      : 0;
+      : previousScrollTop;
     const errorCopy =
       this.#state.status === "error"
         ? this.#state.errorReason === "interrupted"

@@ -622,6 +622,74 @@ it("keeps the compact demo showcase visible and renders a JSON response card", a
   }
 }, 15000);
 
+it("keeps reading position during streamed answers and follows output near the bottom", async () => {
+  const bundle = buildSync({
+    entryPoints: [fileURLToPath(new URL("./index.ts", import.meta.url))],
+    bundle: true,
+    write: false,
+    format: "iife",
+    globalName: "ContextRocketWidget",
+    platform: "browser",
+    target: "es2020",
+    loader: { ".svg": "text" },
+  }).outputFiles[0]!.text;
+  const browser = await chromium.launch();
+  const page = await browser.newPage({ viewport: { width: 390, height: 480 } });
+  try {
+    await page.route("**/*", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.origin === "http://localhost:39992" && url.pathname === "/") {
+        await route.fulfill({
+          contentType: "text/html",
+          body: `<script>${bundle}</script><contextrocket-chat data-contextrocket-mode="demo"></contextrocket-chat>`,
+        });
+      } else {
+        await route.abort();
+      }
+    });
+    await page.goto("http://localhost:39992");
+    const host = page.locator("contextrocket-chat");
+    await host.locator(".cr-launcher").click();
+    await host.evaluate((element) => {
+      const messages = element.shadowRoot!.querySelector<HTMLElement>(".cr-messages")!;
+      messages.style.height = "100px";
+      messages.style.flex = "0 0 100px";
+    });
+    await host.locator('[data-suggestion="What can you help me find?"]').click();
+
+    await expect.poll(() => host.evaluate((element) => {
+      const messages = element.shadowRoot!.querySelector<HTMLElement>(".cr-messages")!;
+      return messages.scrollHeight - messages.clientHeight;
+    })).toBeGreaterThan(60);
+
+    const assistant = host.locator('.cr-message[data-role="assistant"]');
+    const lengthBeforePause = (await assistant.textContent())?.length ?? 0;
+    await host.evaluate((element) => {
+      element.shadowRoot!.querySelector<HTMLElement>(".cr-messages")!.scrollTop = 0;
+    });
+    await expect.poll(async () => (await assistant.textContent())?.length ?? 0)
+      .toBeGreaterThan(lengthBeforePause + 4);
+    expect(await host.evaluate((element) =>
+      element.shadowRoot!.querySelector<HTMLElement>(".cr-messages")!.scrollTop,
+    )).toBe(0);
+
+    await host.evaluate((element) => {
+      const messages = element.shadowRoot!.querySelector<HTMLElement>(".cr-messages")!;
+      messages.scrollTop = messages.scrollHeight;
+    });
+    const lengthBeforeFollow = (await assistant.textContent())?.length ?? 0;
+    await expect.poll(async () => (await assistant.textContent())?.length ?? 0)
+      .toBeGreaterThan(lengthBeforeFollow + 4);
+    const scroll = await host.evaluate((element) => {
+      const messages = element.shadowRoot!.querySelector<HTMLElement>(".cr-messages")!;
+      return messages.scrollHeight - messages.clientHeight - messages.scrollTop;
+    });
+    expect(scroll).toBeLessThanOrEqual(1);
+  } finally {
+    await browser.close();
+  }
+}, 15000);
+
 it("opens full-screen on load, supports resizing, and can be closed and reopened", async () => {
   const bundle = buildSync({
     entryPoints: [fileURLToPath(new URL("./index.ts", import.meta.url))],

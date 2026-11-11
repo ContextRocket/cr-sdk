@@ -11,9 +11,10 @@ passive cards. It does not execute response-provided markup, URLs, or actions.
 
 The renderer is deliberately bounded rather than a second application surface:
 it supports safe Markdown, typed citations and suggestions, honest working and
-interrupted states, retry, keyboard focus management, and the same `handle` /
-`api-key` browser contract as the React ChatFab. Unknown event/content types
-fail closed to an accessible retry message.
+interrupted states, retry, keyboard focus management, and reader-aware scrolling
+that keeps following a response only while the visitor is already near the end.
+It uses the same `handle` / `api-key` browser contract as the React ChatFab.
+Unknown event/content types fail closed to an accessible retry message.
 
 The empty conversation can show opening suggestions. A site may supply them with
 `data-contextrocket-suggestions` (a JSON array of strings); otherwise the widget
@@ -76,7 +77,7 @@ For a live site, configure the API base and organization handle:
 ```
 
 The widget is published at the versioned URL
-`https://contextrocket.cdn.contextrocket.com/embeds/chat/v0.1.0/widget.js`.
+`https://contextrocket.cdn.contextrocket.com/embeds/chat/v0.1.1/widget.js`.
 You can use that URL directly or copy the generated IIFE into a consuming
 site's `public/embed/widget.js` for offline demos. Publish each package version
 under a unique prefix.
@@ -85,7 +86,7 @@ again, so never reuse a published version path. The current CDN applies a
 five-minute public cache to these paths; one-year immutable caching is reserved
 for `/_next/static/` assets. Versioned widget URLs are therefore stable by
 release discipline, not by a server-enforced immutability guarantee. The
-version `0.1.0` URL was verified to return the bundle with a JavaScript content
+version `0.1.1` URL was verified to return the bundle with a JavaScript content
 type on 2026-11-11.
 
 Build and copy the browser artifact into the starter public directory:
