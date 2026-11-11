@@ -110,6 +110,7 @@ dispatching. A registry `E404` means the requested package/version is not
 currently available there; still confirm that the `@contextrocket` scope is
 owned by the release account before the first publish.
 
+```
 Use the GitHub Actions **Publish npm package** workflow on `main` and select
 `sdk`, `embed-chat`, or `site-publisher`. After it succeeds, check the exact
 published version with `npm view`. Do not add an npm token to the repository,
