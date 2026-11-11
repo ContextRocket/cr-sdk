@@ -42,6 +42,7 @@ export interface PublicLeadAttribution {
  */
 export interface ContextRocketBrowserSDK {
   readonly LeadCaptureError: typeof LeadCaptureError;
+  readonly createPublicLeadSubmissionController: typeof createPublicLeadSubmissionController;
   readonly extractLeadAttribution: typeof extractLeadAttribution;
   readonly submitPublicLead: typeof submitPublicLead;
   readonly submitPublicLeadWithAttribution: typeof submitPublicLeadWithAttribution;
@@ -122,6 +123,13 @@ export interface SubmitPublicLeadWithAttributionOptions
   /** Current page URL; the SDK strips fragments and all but bounded UTMs. */
   pageUrl: string | URL;
   referrerUrl?: string;
+}
+
+export interface PublicLeadSubmissionController {
+  /** Submit a form payload, reusing its idempotency key for unchanged retries. */
+  submit(options: SubmitPublicLeadWithAttributionOptions): Promise<PublicLeadReceipt>;
+  /** Mark the next submission as a new attempt, such as after editing fields. */
+  reset(): void;
 }
 
 function isPublicLeadReceipt(payload: unknown): payload is PublicLeadReceipt {
@@ -213,4 +221,60 @@ export function submitPublicLeadWithAttribution({
       ...extractLeadAttribution(pageUrl, referrerUrl),
     },
   });
+}
+
+/**
+ * Keep form retry behavior consistent across static and framework-specific
+ * sites. Failed submissions retain their key; successful or edited attempts
+ * receive a fresh key. The controller owns request identity, while each site
+ * remains responsible for its form fields and presentation.
+ */
+export function createPublicLeadSubmissionController(
+  submitter: typeof submitPublicLeadWithAttribution = submitPublicLeadWithAttribution,
+  createKey: () => string = () => globalThis.crypto.randomUUID(),
+): PublicLeadSubmissionController {
+  let pendingFingerprint: string | undefined;
+  let pendingKey: string | undefined;
+  let inFlight: {
+    fingerprint: string;
+    promise: Promise<PublicLeadReceipt>;
+  } | undefined;
+
+  const reset = () => {
+    pendingFingerprint = undefined;
+    pendingKey = undefined;
+  };
+
+  return {
+    reset,
+    submit(options) {
+      const fingerprint = JSON.stringify({
+        apiBaseUrl: options.apiBaseUrl,
+        orgHandle: options.orgHandle.trim().replace(/^@/, "").toLowerCase(),
+        lead: options.lead,
+        pageUrl: String(options.pageUrl),
+        referrerUrl: options.referrerUrl,
+      });
+
+      if (inFlight?.fingerprint === fingerprint) return inFlight.promise;
+      if (pendingFingerprint !== fingerprint || !pendingKey) {
+        pendingFingerprint = fingerprint;
+        pendingKey = createKey();
+      }
+
+      const requestKey = pendingKey;
+      const request = submitter({ ...options, idempotencyKey: requestKey }).then(
+        (receipt) => {
+          if (pendingKey === requestKey) reset();
+          return receipt;
+        },
+      );
+      const current = { fingerprint, promise: request };
+      inFlight = current;
+      void request.finally(() => {
+        if (inFlight === current) inFlight = undefined;
+      }).catch(() => undefined);
+      return request;
+    },
+  };
 }

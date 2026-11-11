@@ -24,6 +24,7 @@ export {
 export type { CredentialsPort } from "./credentials-port.js";
 
 export {
+  createPublicLeadSubmissionController,
   LeadCaptureError,
   extractLeadAttribution,
   submitPublicLead,
@@ -32,6 +33,7 @@ export {
 export type {
   ContextRocketBrowserSDK,
   LeadIntent,
+  PublicLeadSubmissionController,
   PublicLeadAttribution,
   PublicLeadInput,
   PublicLeadReceipt,

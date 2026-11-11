@@ -61,9 +61,10 @@ The server resolves the organization from its public handle and validates the
 request origin; no browser API key is sent to this endpoint.
 
 ```ts
-import { submitPublicLeadWithAttribution } from "@contextrocket/sdk/lead-capture";
+import { createPublicLeadSubmissionController } from "@contextrocket/sdk/lead-capture";
 
-const receipt = await submitPublicLeadWithAttribution({
+const submission = createPublicLeadSubmissionController();
+const receipt = await submission.submit({
   apiBaseUrl: "https://api.contextrocket.com",
   orgHandle: "your-organization-handle",
   pageUrl: window.location.href,
@@ -77,6 +78,13 @@ const receipt = await submitPublicLeadWithAttribution({
   },
 });
 ```
+
+For interactive forms, call `submission.submit(options)` instead of the
+one-shot helper. It reuses an idempotency key after a failed retry, creates a
+new key when the payload changes, and shares an unchanged request while it is
+in flight. Call `submission.reset()` when the user edits the form. The browser
+artifact exposes the same controller on `window.ContextRocketSDK`; form layout,
+validation, and status UI remain under the site's control.
 
 Attribution omits fragments and arbitrary query parameters, and keeps only
 bounded `utm_*` values. The `lead-capture.browser.js` artifact is also built for

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  createPublicLeadSubmissionController,
   LeadCaptureError,
   submitPublicLead,
   submitPublicLeadWithAttribution,
@@ -116,5 +117,60 @@ describe("submitPublicLeadWithAttribution", () => {
     });
     expect(String(init?.body)).not.toContain("secret");
     expect(String(init?.body)).not.toContain("private");
+  });
+});
+
+describe("createPublicLeadSubmissionController", () => {
+  const options = {
+    apiBaseUrl: "https://api.contextrocket.com",
+    orgHandle: "kleos",
+    pageUrl: "https://kleos.example/contact",
+    lead: { name: "Ada", email: "ada@example.com", consent: true as const },
+  };
+  const receipt = {
+    lead_id: "lead-1",
+    status: "captured" as const,
+    delivery_state: "queued" as const,
+    follow_up_state: "human_follow_up" as const,
+  };
+
+  it("reuses a retry key after failure and rotates it when the payload changes", async () => {
+    const submitter = vi.fn<typeof submitPublicLeadWithAttribution>()
+      .mockRejectedValueOnce(new Error("network"))
+      .mockResolvedValue(receipt);
+    const controller = createPublicLeadSubmissionController(
+      submitter,
+      vi.fn().mockReturnValueOnce("key-1").mockReturnValueOnce("key-2"),
+    );
+
+    await expect(controller.submit(options)).rejects.toThrow("network");
+    await controller.submit(options);
+    await controller.submit({ ...options, lead: { ...options.lead, name: "Ada Byron" } });
+
+    expect(submitter.mock.calls.map(([request]) => request.idempotencyKey)).toEqual([
+      "key-1", "key-1", "key-2",
+    ]);
+  });
+
+  it("shares a concurrent unchanged request and starts a fresh attempt after success", async () => {
+    let resolveRequest!: (value: typeof receipt) => void;
+    const submitter = vi.fn<typeof submitPublicLeadWithAttribution>(() => new Promise<typeof receipt>((resolve) => {
+      resolveRequest = resolve;
+    }));
+    const controller = createPublicLeadSubmissionController(
+      submitter,
+      vi.fn().mockReturnValueOnce("key-1").mockReturnValueOnce("key-2"),
+    );
+
+    const first = controller.submit(options);
+    const duplicate = controller.submit(options);
+    expect(duplicate).toBe(first);
+    resolveRequest(receipt);
+    await first;
+    await controller.submit(options);
+
+    expect(submitter.mock.calls.map(([request]) => request.idempotencyKey)).toEqual([
+      "key-1", "key-2",
+    ]);
   });
 });

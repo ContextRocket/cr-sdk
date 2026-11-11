@@ -1,4 +1,5 @@
 import {
+  createPublicLeadSubmissionController,
   LeadCaptureError,
   extractLeadAttribution,
   submitPublicLead,
@@ -8,6 +9,7 @@ import type { ContextRocketBrowserSDK } from "./lead-capture.js";
 
 /** Narrow browser entry for static sites that consume a built SDK artifact. */
 const browserSdk: ContextRocketBrowserSDK = Object.freeze({
+  createPublicLeadSubmissionController,
   LeadCaptureError,
   extractLeadAttribution,
   submitPublicLead,
