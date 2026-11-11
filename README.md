@@ -205,8 +205,9 @@ uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \
 For a new release, review both dry runs and confirm the versioned paths have
 not been released before publishing. Repeat the relevant command without
 `--dry-run` to upload. This is an operator task; customer sites only load the
-public URL and do not need an operator token. After publishing, fetch the public
-URLs and confirm the JavaScript content type and response body. Do not publish
+public URL and do not need an operator token. After publishing, run
+`pnpm verify:cdn` from the SDK checkout. It checks status, JavaScript content
+type, byte count, and SHA-256 against the local package builds. Do not publish
 a mutable `/latest` path. The `v0.1.3` chat URL and `v0.1.0` contact-form URL
 above were published and verified on 2026-11-11. An immediate CDN request can
 briefly return a cached 403 while a new object propagates; verify the URL again
