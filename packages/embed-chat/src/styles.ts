@@ -591,7 +591,7 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
   }
 
   .cr-empty .cr-suggestion-items[data-view="cards"] {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
