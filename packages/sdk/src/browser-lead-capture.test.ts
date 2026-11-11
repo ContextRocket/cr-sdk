@@ -2,15 +2,7 @@ import { buildSync } from "esbuild";
 import { runInNewContext } from "node:vm";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
-
-type BrowserLeadCaptureApi = {
-  submitPublicLead: typeof import("./lead-capture.js").submitPublicLead;
-  submitPublicLeadWithAttribution:
-    typeof import("./lead-capture.js").submitPublicLeadWithAttribution;
-  extractLeadAttribution:
-    typeof import("./lead-capture.js").extractLeadAttribution;
-  LeadCaptureError: typeof import("./lead-capture.js").LeadCaptureError;
-};
+import type { ContextRocketBrowserSDK } from "./lead-capture.js";
 
 describe("static browser lead-capture bridge", () => {
   it("installs a read-only browser API that uses the tested org-scoped client", async () => {
@@ -26,7 +18,7 @@ describe("static browser lead-capture bridge", () => {
     const sandbox: Record<string, unknown> = { URL, Headers };
     runInNewContext(bundle, sandbox);
 
-    const api = sandbox.ContextRocketSDK as BrowserLeadCaptureApi | undefined;
+    const api = sandbox.ContextRocketSDK as ContextRocketBrowserSDK | undefined;
     expect(api).toBeDefined();
     expect(Object.isFrozen(api)).toBe(true);
     expect(Object.getOwnPropertyDescriptor(sandbox, "ContextRocketSDK")).toMatchObject({

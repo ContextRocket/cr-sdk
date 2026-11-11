@@ -4,9 +4,10 @@ import {
   submitPublicLead,
   submitPublicLeadWithAttribution,
 } from "./lead-capture.js";
+import type { ContextRocketBrowserSDK } from "./lead-capture.js";
 
 /** Narrow browser entry for static sites that consume a built SDK artifact. */
-const browserSdk = Object.freeze({
+const browserSdk: ContextRocketBrowserSDK = Object.freeze({
   LeadCaptureError,
   extractLeadAttribution,
   submitPublicLead,
@@ -19,9 +20,3 @@ Object.defineProperty(globalThis, "ContextRocketSDK", {
   value: browserSdk,
   writable: false,
 });
-
-declare global {
-  // The full typed SDK remains available through the npm package. This global
-  // is only for the generated, dependency-free starter artifact.
-  var ContextRocketSDK: typeof browserSdk;
-}

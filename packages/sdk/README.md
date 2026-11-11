@@ -73,6 +73,10 @@ Attribution omits fragments and arbitrary query parameters, and keeps only
 bounded `utm_*` values. The `lead-capture.browser.js` artifact is also built for
 static sites that load a script rather than bundle npm modules; it is emitted
 to `dist/lead-capture.browser.js` by the package build.
+TypeScript consumers of the static bridge can import the
+`ContextRocketBrowserSDK` type from `@contextrocket/sdk`; it also makes
+`window.ContextRocketSDK` available as an optional, accurately typed property
+after referencing the package types.
 
 ## Development
 

@@ -30,6 +30,7 @@ export {
   submitPublicLeadWithAttribution,
 } from "./lead-capture.js";
 export type {
+  ContextRocketBrowserSDK,
   LeadIntent,
   PublicLeadAttribution,
   PublicLeadInput,

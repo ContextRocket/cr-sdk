@@ -36,6 +36,24 @@ export interface PublicLeadAttribution {
   utm_term?: string;
 }
 
+/**
+ * Runtime surface exposed by the dependency-free `lead-capture.browser.js`
+ * artifact on `window.ContextRocketSDK`.
+ */
+export interface ContextRocketBrowserSDK {
+  readonly LeadCaptureError: typeof LeadCaptureError;
+  readonly extractLeadAttribution: typeof extractLeadAttribution;
+  readonly submitPublicLead: typeof submitPublicLead;
+  readonly submitPublicLeadWithAttribution: typeof submitPublicLeadWithAttribution;
+}
+
+declare global {
+  interface Window {
+    /** Present after the static lead-capture browser artifact has loaded. */
+    ContextRocketSDK?: ContextRocketBrowserSDK;
+  }
+}
+
 const UTM_KEYS = ["source", "medium", "campaign", "content", "term"] as const;
 
 /**
