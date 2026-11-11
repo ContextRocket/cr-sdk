@@ -665,6 +665,7 @@ export class ContextRocketChatElement extends HTMLElement {
     this.#status.textContent = statusText;
 
     const sending = this.#state.status === "streaming";
+    this.#messages.setAttribute("aria-busy", String(sending));
     this.#input.disabled = sending;
     this.#send.disabled = !sending && !canSend(this.#state);
     // Visual is CSS (::before arrow/stop); keep label for a11y only.

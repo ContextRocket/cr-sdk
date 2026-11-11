@@ -225,7 +225,20 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
   vertical-align: middle;
   color: var(--cr-text);
 }
-.cr-probe svg { width: 100%; height: 100%; overflow: visible; }
+.cr-probe svg { position: relative; z-index: 1; width: 100%; height: 100%; overflow: visible; }
+.cr-probe[data-working="true"]::before {
+  content: "";
+  position: absolute;
+  inset: -0.2rem;
+  border: 1px solid color-mix(in srgb, var(--cr-accent) 38%, transparent);
+  border-radius: 9999px;
+  animation: cr-probe-pulse 1.8s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes cr-probe-pulse {
+  0% { transform: scale(.78); opacity: .65; }
+  100% { transform: scale(1.38); opacity: 0; }
+}
 .cr-probe-large { width: 4rem; height: 4rem; margin: 0 0 1rem; padding: .65rem; border-radius: 9999px; background: #0e0f13; color: #ecedf1; }
 .cr-empty { display: flex; flex: 1; min-height: 12rem; flex-direction: column; align-items: center; justify-content: safe center; padding: 2rem; text-align: center; }
 .cr-empty[data-suggestions-view="cards"] { justify-content: flex-start; padding: .75rem 1rem; }
@@ -438,6 +451,21 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
   color: var(--cr-muted);
   font-size: var(--tw-text-xs);
   line-height: var(--tw-leading-xs);
+}
+
+.cr-status:not([hidden])::before {
+  content: "";
+  display: inline-block;
+  width: .375rem;
+  height: .375rem;
+  margin: 0 .5rem .05rem 0;
+  border-radius: 9999px;
+  background: var(--cr-accent);
+  animation: cr-status-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes cr-status-pulse {
+  50% { opacity: .4; transform: scale(.82); }
 }
 
 /* rounded-full border px-3 py-1.5 text-sm font-semibold */
