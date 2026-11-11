@@ -75,14 +75,40 @@ here.
 
 ## CDN distribution
 
-The chat widget does not yet have a published CDN URL or release workflow.
-Serve the built IIFE from the consuming site (`/embed/widget.js`) until the
-operator publishing contract defines and verifies an immutable CDN path. The
-existing ContextRocket site publisher supports prefixed static files; the
-versioned embed prefix and release convention have not been selected. The
-ContextRocket CDN origin is `https://contextrocket.cdn.contextrocket.com`, but
-do not infer a widget URL from the origin or from the `/brand/` namespace used
-for shared brand assets.
+Use the CDN for standalone browser artifacts that a site loads with a script
+tag. Keep the typed SDK on npm for sites that bundle TypeScript modules. The
+ContextRocket CDN origin is `https://contextrocket.cdn.contextrocket.com`;
+embed releases live under `/embeds/`, separate from the shared `/brand/` kit.
+
+Publish each package version to a versioned prefix and never overwrite a
+published prefix. The publishing backend does not enforce immutability, so this
+is a release-process rule. For example, `@contextrocket/embed-chat` version
+`0.1.0` should publish `dist/widget.js` to:
+
+```text
+https://contextrocket.cdn.contextrocket.com/embeds/chat/v0.1.0/widget.js
+```
+
+The contact-form bridge can use the same convention at
+`/embeds/contact-form/v<version>/contact-form.browser.js`. A site can pin the
+chat URL with `PUBLIC_CONTEXTROCKET_CHAT_WIDGET_URL`; keep the checked-in local
+artifact available for offline demos and standalone builds.
+
+The existing operator CLI publishes a directory under an organization prefix.
+From the ContextRocket `backend/` checkout, validate an artifact without
+uploading it:
+
+```bash
+uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \
+  ../../cr-sdk/packages/embed-chat/dist \
+  --org contextrocket \
+  --prefix embeds/chat/v0.1.0 \
+  --dry-run
+```
+
+After reviewing the dry run, repeat without `--dry-run` to publish. This is an
+operator task; customer sites only load the public URL and do not need an
+operator token. Do not publish a mutable `/latest` path.
 
 ## License
 
