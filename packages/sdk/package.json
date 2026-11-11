@@ -4,6 +4,22 @@
   "description": "ContextRocket browser SDK (A2A client + createCRClient)",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ContextRocket/cr-sdk.git",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://github.com/ContextRocket/cr-sdk/tree/main/packages/sdk#readme",
+  "bugs": {
+    "url": "https://github.com/ContextRocket/cr-sdk/issues"
+  },
+  "keywords": [
+    "contextrocket",
+    "a2a",
+    "agent",
+    "browser-sdk",
+    "contact-form"
+  ],
   "publishConfig": {
     "access": "public"
   },

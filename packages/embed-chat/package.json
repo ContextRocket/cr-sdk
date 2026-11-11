@@ -4,6 +4,22 @@
   "description": "ContextRocket embeddable chat widget (standalone IIFE)",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ContextRocket/cr-sdk.git",
+    "directory": "packages/embed-chat"
+  },
+  "homepage": "https://github.com/ContextRocket/cr-sdk/tree/main/packages/embed-chat#readme",
+  "bugs": {
+    "url": "https://github.com/ContextRocket/cr-sdk/issues"
+  },
+  "keywords": [
+    "contextrocket",
+    "chat-widget",
+    "a2a",
+    "agent",
+    "embed"
+  ],
   "publishConfig": {
     "access": "public"
   },
