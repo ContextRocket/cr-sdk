@@ -5,9 +5,9 @@ export interface PlacementRect {
   left: number;
 }
 
-/** Ordinary in-flow links and fields are content, not launcher obstacles. */
-export function isViewportAnchoredPosition(position: string): boolean {
-  return position === "fixed" || position === "sticky";
+/** Only fixed or sticky ancestors can obstruct the viewport independently. */
+export function hasViewportAnchoredAncestor(positions: readonly string[]): boolean {
+  return positions.some((position) => position === "fixed" || position === "sticky");
 }
 
 /** Return the smallest upward offset that clears all overlapping page controls. */

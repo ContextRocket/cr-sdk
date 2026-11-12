@@ -1,15 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
-  isViewportAnchoredPosition,
+  hasViewportAnchoredAncestor,
   launcherBottomLift,
 } from "./launcher-placement";
 
-describe("isViewportAnchoredPosition", () => {
-  it("only treats sticky or fixed UI as a launcher placement obstacle", () => {
-    expect(isViewportAnchoredPosition("fixed")).toBe(true);
-    expect(isViewportAnchoredPosition("sticky")).toBe(true);
-    expect(isViewportAnchoredPosition("static")).toBe(false);
-    expect(isViewportAnchoredPosition("relative")).toBe(false);
+describe("hasViewportAnchoredAncestor", () => {
+  it("ignores ordinary in-flow content", () => {
+    expect(hasViewportAnchoredAncestor(["static", "relative"])).toBe(false);
+  });
+
+  it("detects fixed or sticky chrome around a control", () => {
+    expect(hasViewportAnchoredAncestor(["static", "fixed"])).toBe(true);
+    expect(hasViewportAnchoredAncestor(["sticky", "static"])).toBe(true);
   });
 });
 

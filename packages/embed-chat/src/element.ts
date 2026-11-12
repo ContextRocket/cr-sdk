@@ -17,7 +17,7 @@ import { widgetStyles } from "./styles";
 import type { WidgetConfig, WidgetDemoCard } from "./types";
 import { copyFor, type WidgetCopy } from "./copy";
 import {
-  isViewportAnchoredPosition,
+  hasViewportAnchoredAncestor,
   launcherBottomLift,
   type PlacementRect,
 } from "./launcher-placement";
@@ -210,17 +210,12 @@ export class ContextRocketChatElement extends HTMLElement {
       // Long in-content navigation lists must not lift the launcher through
       // article headings. Only sticky/fixed chrome can obstruct the viewport.
       let ancestor: HTMLElement | null = control;
-      let viewportAnchored = false;
+      const ancestorPositions: string[] = [];
       while (ancestor && ancestor !== document.body) {
-        if (
-          isViewportAnchoredPosition(window.getComputedStyle(ancestor).position)
-        ) {
-          viewportAnchored = true;
-          break;
-        }
+        ancestorPositions.push(window.getComputedStyle(ancestor).position);
         ancestor = ancestor.parentElement;
       }
-      if (!viewportAnchored) return [];
+      if (!hasViewportAnchoredAncestor(ancestorPositions)) return [];
       const controlRect = control.getBoundingClientRect();
       const label = control.closest("label");
       const parent = control.parentElement;
