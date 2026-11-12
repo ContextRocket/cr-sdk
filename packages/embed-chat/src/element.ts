@@ -16,6 +16,7 @@ import { safeHref, escapeHtml } from "./safe-url";
 import { widgetStyles } from "./styles";
 import type { WidgetConfig, WidgetDemoCard } from "./types";
 import { copyFor, type WidgetCopy } from "./copy";
+import { launcherBottomLift, type PlacementRect } from "./launcher-placement";
 import rocketSpark from "./rocket-spark.svg";
 import logoInk from "./logo-h-spark-ink.svg";
 import logoWhite from "./logo-h-spark-white.svg";
@@ -54,6 +55,7 @@ export class ContextRocketChatElement extends HTMLElement {
   #suggestionDiscoveryRun = 0;
   #fullscreen = false;
   #forceMessagesToBottom = false;
+  #launcherPlacementFrame = 0;
 
   #launcher!: HTMLButtonElement;
   #fullscreenButton!: HTMLButtonElement;
@@ -107,9 +109,81 @@ export class ContextRocketChatElement extends HTMLElement {
     this.#render();
     this.#bindEvents();
     this.#syncUi();
+    this.#scheduleLauncherPlacement();
+    window.addEventListener("scroll", this.#scheduleLauncherPlacement, true);
+    window.addEventListener("resize", this.#scheduleLauncherPlacement);
+    window.visualViewport?.addEventListener("scroll", this.#scheduleLauncherPlacement);
+    window.visualViewport?.addEventListener("resize", this.#scheduleLauncherPlacement);
     this.#setFullscreen(this.#config.fullscreenOnLoad === true);
     this.#setOpen(this.#config.fullscreenOnLoad === true);
     void this.#loadSuggestions();
+  }
+
+  disconnectedCallback(): void {
+    window.removeEventListener("scroll", this.#scheduleLauncherPlacement, true);
+    window.removeEventListener("resize", this.#scheduleLauncherPlacement);
+    window.visualViewport?.removeEventListener("scroll", this.#scheduleLauncherPlacement);
+    window.visualViewport?.removeEventListener("resize", this.#scheduleLauncherPlacement);
+    if (this.#launcherPlacementFrame)
+      window.cancelAnimationFrame(this.#launcherPlacementFrame);
+  }
+
+  #scheduleLauncherPlacement = (): void => {
+    if (this.#launcherPlacementFrame) return;
+    this.#launcherPlacementFrame = window.requestAnimationFrame(() => {
+      this.#launcherPlacementFrame = 0;
+      this.#updateLauncherPlacement();
+    });
+  };
+
+  #updateLauncherPlacement(): void {
+    const root = this.#shadow.querySelector<HTMLElement>(".cr-root");
+    if (!root || !this.#launcher) return;
+    if (this.#launcher.hidden) {
+      root.style.removeProperty("--cr-fab-lift");
+      return;
+    }
+    if (!window.matchMedia("(max-width: 30rem)").matches) {
+      root.style.removeProperty("--cr-fab-lift");
+      return;
+    }
+    // Measure the configured edge position each time so the previous lift
+    // does not make the launcher appear clear and cause it to bounce back.
+    root.style.removeProperty("--cr-fab-lift");
+    const launcherRect = this.#launcher.getBoundingClientRect();
+    const controls = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        'input:not([type="hidden"]), select, textarea, button, a[href], [role="button"], [tabindex="0"]',
+      ),
+    ).flatMap((control): PlacementRect[] => {
+      const style = window.getComputedStyle(control);
+      if (style.display === "none" || style.visibility === "hidden") return [];
+      const controlRect = control.getBoundingClientRect();
+      const label = control.closest("label");
+      const parent = control.parentElement;
+      const parentRect = parent?.getBoundingClientRect();
+      const rect = label?.getBoundingClientRect() ?? (
+        parent && parent !== document.body && parentRect &&
+        parentRect.height <= controlRect.height + 64 &&
+        parentRect.width >= controlRect.width
+          ? parentRect
+          : controlRect
+      );
+      return rect.width > 0 && rect.height > 0
+        ? [{ top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left }]
+        : [];
+    });
+    const lift = launcherBottomLift(
+      {
+        top: launcherRect.top,
+        right: launcherRect.right,
+        bottom: launcherRect.bottom,
+        left: launcherRect.left,
+      },
+      controls,
+    );
+    if (lift > 0) root.style.setProperty("--cr-fab-lift", `${lift}px`);
+    else root.style.removeProperty("--cr-fab-lift");
   }
 
   attributeChangedCallback(): void {
@@ -155,6 +229,7 @@ export class ContextRocketChatElement extends HTMLElement {
     this.#shadow
       .querySelector<HTMLElement>(".cr-root")
       ?.setAttribute("data-position", next.position ?? "bottom-right");
+    this.#scheduleLauncherPlacement();
     if (next.suggestions) this.#suggestions = next.suggestions;
     void this.#loadSuggestions();
   }
@@ -446,6 +521,7 @@ export class ContextRocketChatElement extends HTMLElement {
     const copy = copyFor(this.#config!);
     this.#launcher.setAttribute("aria-label", open ? copy.close : copy.open);
     if (open) {
+      this.#shadow.querySelector<HTMLElement>(".cr-root")?.style.removeProperty("--cr-fab-lift");
       void this.#loadSuggestions();
       this.#panel.removeAttribute("inert");
       this.#launcher.setAttribute("aria-expanded", "true");
@@ -453,6 +529,7 @@ export class ContextRocketChatElement extends HTMLElement {
     } else {
       this.#panel.setAttribute("inert", "");
       this.#launcher.setAttribute("aria-expanded", "false");
+      this.#scheduleLauncherPlacement();
       if (wasOpen) this.#launcher.focus();
     }
   }
@@ -488,6 +565,7 @@ export class ContextRocketChatElement extends HTMLElement {
       collapseIcon?.setAttribute("hidden", "");
     }
     this.#launcher.hidden = this.#fullscreen;
+    this.#scheduleLauncherPlacement();
   }
 
   async #handleSend(): Promise<void> {

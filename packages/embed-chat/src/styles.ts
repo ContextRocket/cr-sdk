@@ -94,8 +94,8 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
 
 @media (max-width: 30rem) {
   .cr-root {
-    right: max(1rem, env(safe-area-inset-right, 0px));
-    bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+    right: max(0.5rem, env(safe-area-inset-right, 0px));
+    bottom: calc(max(0.5rem, env(safe-area-inset-bottom, 0px)) + var(--cr-fab-lift, 0px));
   }
 
   .cr-root .cr-panel {
@@ -108,9 +108,9 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
     left: max(1rem, env(safe-area-inset-left, 0px));
   }
 
-  .cr-launcher {
-    width: 3rem;
-    height: 3rem;
+  .cr-root .cr-launcher {
+    width: 2.75rem;
+    height: 2.75rem;
   }
 }
 
