@@ -99,6 +99,21 @@ describe("parseWidgetConfig launcher color", () => {
     });
   });
 
+  it("switches the rocket color at the white 3:1 contrast boundary", () => {
+    expect(parseWidgetConfig(widgetSource({
+      "data-contextrocket-launcher-color": "#949494",
+    }))).toMatchObject({
+      launcherColor: "#949494",
+      launcherForeground: "#FFFFFF",
+    });
+    expect(parseWidgetConfig(widgetSource({
+      "data-contextrocket-launcher-color": "#959595",
+    }))).toMatchObject({
+      launcherColor: "#959595",
+      launcherForeground: "#0E0F13",
+    });
+  });
+
   it("falls back to Ink for an invalid custom color", () => {
     expect(parseWidgetConfig(widgetSource({
       "data-contextrocket-launcher-color": "url(javascript:alert(1))",
