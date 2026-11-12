@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createContactFormController,
   ContactFormError,
+  mapContactFormData,
   submitContactForm,
   submitContactFormWithAttribution,
 } from "./contact-form.js";
@@ -88,6 +89,70 @@ describe("submitContactForm", () => {
       fetcher,
     })).rejects.toThrow(/consent/);
     expect(fetcher).not.toHaveBeenCalled();
+  });
+});
+
+describe("mapContactFormData", () => {
+  it("maps and trims standard fields while preserving selected consent", () => {
+    const values = new FormData();
+    values.set("name", " Ada Lovelace ");
+    values.set("email", " ada@example.com ");
+    values.set("phone", " +44 20 0000 0000 ");
+    values.set("intent", "appointment");
+    values.set("message", " Please call me. ");
+    values.set("consent", "on");
+
+    expect(mapContactFormData(values, { sourceChannel: " website " })).toEqual({
+      name: "Ada Lovelace",
+      email: "ada@example.com",
+      phone: "+44 20 0000 0000",
+      intent: "appointment",
+      message: "Please call me.",
+      source_channel: "website",
+      consent: true,
+    });
+  });
+
+  it("supports mapped split-name fields and a default intent", () => {
+    const values = new FormData();
+    values.set("first-name", "Ada");
+    values.set("last-name", "Lovelace");
+    values.set("your-email", "ada@example.com");
+    values.set("consent", "1");
+
+    expect(
+      mapContactFormData(values, {
+        fields: {
+          name: "",
+          firstName: "first-name",
+          lastName: "last-name",
+          email: "your-email",
+          phone: "",
+          message: "",
+          intent: "",
+        },
+        defaultIntent: "contact",
+      }),
+    ).toEqual({
+      name: "Ada Lovelace",
+      email: "ada@example.com",
+      phone: undefined,
+      message: undefined,
+      intent: "contact",
+      consent: true,
+    });
+  });
+
+  it("does not infer consent or silently accept unsupported intents", () => {
+    const unchecked = new FormData();
+    unchecked.set("name", "Ada");
+    expect(() => mapContactFormData(unchecked)).toThrow(/consent/i);
+
+    const invalidIntent = new FormData();
+    invalidIntent.set("name", "Ada");
+    invalidIntent.set("intent", "immigration-advice");
+    invalidIntent.set("consent", "yes");
+    expect(() => mapContactFormData(invalidIntent)).toThrow(/intent/i);
   });
 });
 

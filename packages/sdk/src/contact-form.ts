@@ -19,6 +19,26 @@ export interface ContactFormData {
   utm_term?: string;
 }
 
+export interface ContactFormFieldNames {
+  name: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  message: string;
+  intent: string;
+  consent: string;
+}
+
+export interface MapContactFormDataOptions {
+  /** HTML field names; empty strings disable optional fields. */
+  fields?: Partial<ContactFormFieldNames>;
+  /** Used when the form has no intent field, such as a general inquiry. */
+  defaultIntent?: ContactIntent;
+  /** Site-specific attribution channel, for example "website" or "form". */
+  sourceChannel?: string;
+}
+
 export interface ContactFormReceipt {
   lead_id: string;
   status: "captured";
@@ -43,6 +63,7 @@ export interface ContactAttribution {
 export interface ContextRocketBrowserSDK {
   readonly ContactFormError: typeof ContactFormError;
   readonly createContactFormController: typeof createContactFormController;
+  readonly mapContactFormData: typeof mapContactFormData;
   readonly extractContactAttribution: typeof extractContactAttribution;
   readonly submitContactForm: typeof submitContactForm;
   readonly submitContactFormWithAttribution: typeof submitContactFormWithAttribution;
@@ -56,6 +77,74 @@ declare global {
 }
 
 const UTM_KEYS = ["source", "medium", "campaign", "content", "term"] as const;
+const CONTACT_INTENTS: readonly ContactIntent[] = [
+  "contact",
+  "appointment",
+  "demo",
+  "support",
+  "other",
+];
+
+const DEFAULT_CONTACT_FIELDS: ContactFormFieldNames = {
+  name: "name",
+  firstName: "",
+  lastName: "",
+  email: "email",
+  phone: "phone",
+  message: "message",
+  intent: "intent",
+  consent: "consent",
+};
+
+function formText(values: FormData, fieldName: string): string {
+  if (!fieldName) return "";
+  const value = values.get(fieldName);
+  return typeof value === "string" ? value.trim() : "";
+}
+
+/**
+ * Map native form values to the shared contact API shape. Site markup and
+ * validation remain site-owned; this helper only normalizes common fields and
+ * refuses to invent the explicit consent required by the API.
+ */
+export function mapContactFormData(
+  values: FormData,
+  options: MapContactFormDataOptions = {},
+): ContactFormData {
+  const fields = { ...DEFAULT_CONTACT_FIELDS, ...options.fields };
+  const consent = formText(values, fields.consent).toLowerCase();
+  if (!["1", "true", "yes", "on", "checked"].includes(consent)) {
+    throw new TypeError("Explicit consent is required.");
+  }
+
+  const directName = formText(values, fields.name);
+  const splitName = [
+    formText(values, fields.firstName),
+    formText(values, fields.lastName),
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const name = directName || splitName;
+  const rawIntent = formText(values, fields.intent);
+  if (rawIntent && !CONTACT_INTENTS.includes(rawIntent as ContactIntent)) {
+    throw new TypeError("The contact form intent is not supported.");
+  }
+  const intentValue = rawIntent
+    ? (rawIntent as ContactIntent)
+    : options.defaultIntent;
+
+  return {
+    name,
+    email: formText(values, fields.email) || undefined,
+    phone: formText(values, fields.phone) || undefined,
+    message: formText(values, fields.message) || undefined,
+    ...(intentValue ? { intent: intentValue } : {}),
+    ...(options.sourceChannel?.trim()
+      ? { source_channel: options.sourceChannel.trim() }
+      : {}),
+    consent: true,
+  };
+}
 
 /**
  * Extract bounded attribution for a contact form without forwarding arbitrary

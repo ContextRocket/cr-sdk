@@ -39,6 +39,7 @@ export type { CredentialsPort } from "./credentials-port.js";
 export {
   createContactFormController,
   ContactFormError,
+  mapContactFormData,
   extractContactAttribution,
   submitContactForm,
   submitContactFormWithAttribution,
@@ -48,8 +49,10 @@ export type {
   ContactIntent,
   ContactFormController,
   ContactAttribution,
+  ContactFormFieldNames,
   ContactFormData,
   ContactFormReceipt,
+  MapContactFormDataOptions,
   SubmitContactFormOptions,
   SubmitContactFormWithAttributionOptions,
 } from "./contact-form.js";

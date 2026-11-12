@@ -191,6 +191,13 @@ const receipt = await submission.submit({
 });
 ```
 
+For native HTML forms, `mapContactFormData(new FormData(form), options)` maps
+site-selected field names to the shared payload, trims common values, and only
+sets `consent: true` when the configured consent control was submitted with an
+affirmative value. It supports split first/last name fields and a site-provided
+default intent. Keep labels, validation, custom answers, and form presentation
+in the site; do not use this helper to flatten sensitive uploads into a message.
+
 For interactive forms, call `submission.submit(options)` instead of the
 one-shot helper. It reuses an idempotency key after a failed retry, creates a
 new key when the payload changes, and shares an unchanged request while it is
