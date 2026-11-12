@@ -13,6 +13,6 @@ describe("widget locale copy", () => {
   it("provides localized fullscreen controls and suggestions", () => {
     expect(COPY.zh.expand).toBe("展开聊天");
     expect(COPY.zh.collapse).toBe("退出全屏");
-    expect(COPY.zh.suggestionGroup).toBe("对话建议");
+    expect(COPY.zh.suggestionGroup).toBe("开场建议");
   });
 });

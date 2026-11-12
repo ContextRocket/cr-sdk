@@ -4,15 +4,21 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const outFile = resolve(root, "dist/contact-form.browser.js");
-mkdirSync(dirname(outFile), { recursive: true });
+const artifacts = [
+  ["src/browser-contact-form.ts", "dist/contact-form.browser.js"],
+  ["src/browser-site-behaviors.ts", "dist/site-behaviors.browser.js"],
+];
 
-await build({
-  entryPoints: [resolve(root, "src/browser-contact-form.ts")],
-  bundle: true,
-  format: "iife",
-  platform: "browser",
-  target: ["es2020"],
-  outfile: outFile,
-  legalComments: "none",
-});
+for (const [entry, output] of artifacts) {
+  const outFile = resolve(root, output);
+  mkdirSync(dirname(outFile), { recursive: true });
+  await build({
+    entryPoints: [resolve(root, entry)],
+    bundle: true,
+    format: "iife",
+    platform: "browser",
+    target: ["es2020"],
+    outfile: outFile,
+    legalComments: "none",
+  });
+}

@@ -54,6 +54,27 @@ export type {
   SubmitContactFormWithAttributionOptions,
 } from "./contact-form.js";
 
+export {
+  CONSENT_CHANGE_EVENT,
+  CONSENT_STORAGE_KEY,
+  OPEN_SETTINGS_EVENT,
+  emptyConsentPreferences,
+  readConsentPreferences,
+  saveConsentPreferences,
+} from "./site-consent.js";
+export type {
+  ConsentCategory,
+  ConsentChoice,
+  ConsentPreferences,
+} from "./site-consent.js";
+export {
+  initializeSiteIntegrations,
+} from "./site-integrations.js";
+export type {
+  SiteIntegrationConfig,
+  SiteIntegrationsConfig,
+} from "./site-integrations.js";
+
 export type {
   A2AClientOptions,
   A2AEvent,

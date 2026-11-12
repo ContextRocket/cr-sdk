@@ -508,6 +508,21 @@ describe("sendTask", () => {
     );
   });
 
+  it("encodes reserved handle characters as one typed path segment", async () => {
+    await sendTask(
+      {
+        baseUrl: "https://api.example.com",
+        handle: "acme/team?region=eu#support",
+        subjectKind: "company",
+      },
+      buildTextTurnParams("hello"),
+    );
+
+    expect(captured.url).toBe(
+      "https://api.example.com/company/acme%2Fteam%3Fregion%3Deu%23support/a2a",
+    );
+  });
+
   it("refuses a handle mismatch instead of routing to a different tenant", async () => {
     await expect(
       sendTask(
@@ -538,6 +553,30 @@ describe("sendTask", () => {
       expect(requested).toEqual([
         "https://api.example.com/company/acme/agent-card.json",
         "https://api.example.com/person/mark-macmahon/agent-card.json",
+      ]);
+    } finally {
+      vi.stubGlobal("fetch", originalFetch);
+    }
+  });
+
+  it("keeps reserved handle characters inside the agent-card path segment", async () => {
+    const originalFetch = globalThis.fetch;
+    const requested: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        requested.push(url);
+        return new Response("{}", { status: 200 });
+      }),
+    );
+    try {
+      await fetchAgentCard(
+        "https://api.example.com",
+        "acme/team?region=eu#support",
+        "company",
+      );
+      expect(requested).toEqual([
+        "https://api.example.com/company/acme%2Fteam%3Fregion%3Deu%23support/agent-card.json",
       ]);
     } finally {
       vi.stubGlobal("fetch", originalFetch);

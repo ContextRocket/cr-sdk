@@ -37,6 +37,14 @@
     "./contact-form": {
       "types": "./dist/contact-form.d.ts",
       "import": "./dist/contact-form.js"
+    },
+    "./site-integrations": {
+      "types": "./dist/site-integrations.d.ts",
+      "import": "./dist/site-integrations.js"
+    },
+    "./site-consent": {
+      "types": "./dist/site-consent.d.ts",
+      "import": "./dist/site-consent.js"
     }
   },
   "files": [

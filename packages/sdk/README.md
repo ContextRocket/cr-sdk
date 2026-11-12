@@ -63,8 +63,10 @@ A2A request and event wire contract is the same for these access tiers.
 
 `client.agentCard()` fetches the card for its configured handle from
 `https://api.contextrocket.com/company/{handle}/agent-card.json` or
-`/person/{handle}/agent-card.json`, according to `subjectKind` (default:
-`company`). Organization turns use the matching typed endpoint
+`/person/{handle}/agent-card.json`, according to the explicitly selected
+`subjectKind` (`company` or `person`; default: `company`). Personal-brand
+integrations must set `subjectKind: "person"`; the SDK never infers identity
+kind from the handle. Organization turns use the matching typed endpoint
 `/{company|person}/{handle}/a2a`, including when authenticated with a bearer
 token. A handle-free platform call uses `/a2a`; the SDK does not fall back to
 the old `/api/agent/a2a` or `/agent-card/{handle}.json` paths. The generic
@@ -204,6 +206,20 @@ TypeScript consumers of the static bridge can import the
 `ContextRocketBrowserSDK` type from `@contextrocket/sdk`; it also makes
 `window.ContextRocketSDK` available as an optional, accurately typed property
 after referencing the package types.
+
+## Site consent and browser integrations
+
+The `@contextrocket/sdk/site-consent` subpath owns the versioned consent
+preference contract, storage migration, and consent-change event. The
+`@contextrocket/sdk/site-integrations` subpath owns consent-aware loading for
+Google Tag Manager, Google Analytics, PostHog, and explicitly configured HTTPS
+scripts. These modules do not own a site's banner copy or page styling.
+
+Static sites can load the generated `site-behaviors.browser.js` artifact. It
+binds the starter's translated banner markup and reads the integration
+configuration emitted by the site. The SDK build emits this bundle alongside
+`contact-form.browser.js`; `cr-starter` checks in a generated local copy for
+offline builds. The site-behaviors bundle is not yet published to the CDN.
 
 ## Development
 
