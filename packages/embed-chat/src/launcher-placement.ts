@@ -5,6 +5,11 @@ export interface PlacementRect {
   left: number;
 }
 
+/** Ordinary in-flow links and fields are content, not launcher obstacles. */
+export function isViewportAnchoredPosition(position: string): boolean {
+  return position === "fixed" || position === "sticky";
+}
+
 /** Return the smallest upward offset that clears all overlapping page controls. */
 export function launcherBottomLift(
   launcher: PlacementRect,

@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { launcherBottomLift } from "./launcher-placement";
+import {
+  isViewportAnchoredPosition,
+  launcherBottomLift,
+} from "./launcher-placement";
+
+describe("isViewportAnchoredPosition", () => {
+  it("only treats sticky or fixed UI as a launcher placement obstacle", () => {
+    expect(isViewportAnchoredPosition("fixed")).toBe(true);
+    expect(isViewportAnchoredPosition("sticky")).toBe(true);
+    expect(isViewportAnchoredPosition("static")).toBe(false);
+    expect(isViewportAnchoredPosition("relative")).toBe(false);
+  });
+});
 
 describe("launcherBottomLift", () => {
   it("lifts the launcher clear of an overlapping page control", () => {
