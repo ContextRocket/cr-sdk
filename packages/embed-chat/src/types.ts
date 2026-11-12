@@ -100,6 +100,8 @@ export interface WidgetConfig {
   fullscreenOnLoad?: boolean;
   /** Auto/omitted uses supported host document language (including regional tags), else English. */
   locale?: "auto" | "en" | "es" | "de" | "zh";
+  /** Keep the widget hidden until the host site's consent prompt is resolved. */
+  consentGate?: boolean;
 }
 
 export interface WidgetSendRequest {

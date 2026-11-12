@@ -39,6 +39,8 @@ function isWidgetDemoCard(value: string | undefined): value is WidgetDemoCard {
 }
 
 const ELEMENT_TAG = "contextrocket-chat";
+const CONSENT_STORAGE_KEY = "cr_cookie_consent";
+const CONSENT_CHANGE_EVENT = "cr:consent-change";
 
 export class ContextRocketChatElement extends HTMLElement {
   #config: WidgetConfig | null = null;
@@ -57,6 +59,7 @@ export class ContextRocketChatElement extends HTMLElement {
   #fullscreen = false;
   #forceMessagesToBottom = false;
   #launcherPlacementFrame = 0;
+  #consentResolved = false;
 
   #launcher!: HTMLButtonElement;
   #fullscreenButton!: HTMLButtonElement;
@@ -109,10 +112,12 @@ export class ContextRocketChatElement extends HTMLElement {
     this.lang = this.#config.locale!;
     this.#state = createInitialChatState(this.#config.greeting);
     this.#render();
+    this.#syncConsentGate();
     this.#bindEvents();
     this.#syncUi();
     this.#scheduleLauncherPlacement();
     window.addEventListener("scroll", this.#scheduleLauncherPlacement, true);
+    window.addEventListener(CONSENT_CHANGE_EVENT, this.#handleConsentChange);
     window.addEventListener("resize", this.#scheduleLauncherPlacement);
     window.visualViewport?.addEventListener("scroll", this.#scheduleLauncherPlacement);
     window.visualViewport?.addEventListener("resize", this.#scheduleLauncherPlacement);
@@ -125,6 +130,7 @@ export class ContextRocketChatElement extends HTMLElement {
   }
 
   disconnectedCallback(): void {
+    window.removeEventListener(CONSENT_CHANGE_EVENT, this.#handleConsentChange);
     window.removeEventListener("scroll", this.#scheduleLauncherPlacement, true);
     window.removeEventListener("resize", this.#scheduleLauncherPlacement);
     window.visualViewport?.removeEventListener("scroll", this.#scheduleLauncherPlacement);
@@ -135,6 +141,31 @@ export class ContextRocketChatElement extends HTMLElement {
     if (this.#launcherPlacementFrame)
       window.cancelAnimationFrame(this.#launcherPlacementFrame);
   }
+
+  #hasSavedConsent(): boolean {
+    try {
+      const saved: unknown = JSON.parse(localStorage.getItem(CONSENT_STORAGE_KEY) || "null");
+      if (!saved || typeof saved !== "object") return false;
+      const record = saved as { version?: unknown; choice?: unknown; preferences?: unknown };
+      return (record.version === 2 && !!record.preferences && typeof record.preferences === "object") ||
+        (record.version === 1 && typeof record.choice === "string");
+    } catch {
+      return false;
+    }
+  }
+
+  #syncConsentGate(): void {
+    if (!this.#config?.consentGate) return;
+    this.#consentResolved = this.#hasSavedConsent();
+    const root = this.#shadow.querySelector<HTMLElement>(".cr-root");
+    if (root) root.hidden = !this.#consentResolved;
+  }
+
+  #handleConsentChange = (): void => {
+    this.#consentResolved = true;
+    const root = this.#shadow.querySelector<HTMLElement>(".cr-root");
+    if (root) root.hidden = false;
+  };
 
   #scheduleLauncherPlacement = (): void => {
     if (this.#launcherPlacementFrame) return;

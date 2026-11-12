@@ -118,6 +118,7 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
   const rawPosition = readAttr(source, `data-${DATA_PREFIX}-position`);
   const rawLocale = readAttr(source, `data-${DATA_PREFIX}-locale`);
   const rawPoweredByLogo = readAttr(source, `data-${DATA_PREFIX}-powered-by-logo`);
+  const consentGate = readBooleanAttr(source, `data-${DATA_PREFIX}-consent-gate`);
   const rawSuggestions = readAttr(source, `data-${DATA_PREFIX}-suggestions`);
   let suggestions: string[] | undefined;
   if (rawSuggestions) {
@@ -163,6 +164,7 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
       : {}),
     ...Object.fromEntries(Object.entries(themeColors).flatMap(([key, value]) => safeAccent(value) ? [[key, safeAccent(value)]] : [])),
     ...(rawPoweredByLogo === "ink" || rawPoweredByLogo === "white" ? { poweredByLogo: rawPoweredByLogo } : {}),
+    ...(consentGate ? { consentGate: true } : {}),
     ...(suggestions ? { suggestions } : {}),
     ...(rawPosition === "bottom-right" || rawPosition === "bottom-left"
       ? { position: rawPosition }
