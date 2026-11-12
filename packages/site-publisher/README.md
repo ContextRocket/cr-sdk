@@ -53,6 +53,8 @@ the release is live by default.
 Options:
 
 - `--prefix <path>` publishes to a path under the org CDN root; omit it for the root.
+- `--manifest <path>` sends the publication contract with the built archive. The API reads declared local sitemaps and indexes to derive the exact public URLs. Missing or unsafe children reject the upload.
+- `--reviewed` approves that generic publication as the authenticated authority. The server records the actual actor kind; this does not claim a human review. Grounding Pages use their separate review flow.
 - `--exclude <glob>` excludes a relative path or basename; repeat as needed.
 - `--timeout <seconds>` sets the upload and status wait limit (default: 600).
 - `--dry-run` packages locally and reports file/archive sizes without a token or upload.
@@ -60,8 +62,9 @@ Options:
 - `--help` prints the full usage.
 
 The current API requires an organization machine token with admin scope. An
-org owner can mint one with the ContextRocket credential tooling. Use a
-dedicated token for publishing and rotate or revoke it when no longer needed.
+org owner can obtain the existing org machine credential with
+`contextrocket credentials ensure`. Keep it in `CR_API_TOKEN`; use the same
+credential for publishing.
 Do not use the publishable browser website API key for this command, and never
 put an org machine token in a `PUBLIC_*` variable, frontend source, static file,
 or chat embed. A narrower site-publish credential and a Node/TypeScript
@@ -84,6 +87,12 @@ const receipt = await publishStaticSite({
 
 console.log(receipt.publicUrl);
 ```
+
+For a discoverable generic release, pass `publicationManifest` and `reviewed: true`.
+The manifest declares canonical origin, routes, visibility and sitemap paths;
+`public_urls` is populated by the API from uploaded sitemap bytes. A call without
+a manifest keeps the private/noindex upload behavior. A supplied invalid manifest
+never falls back to a private upload.
 
 The API accepts an injected `fetcher` for deterministic tests and supports
 `noWait`, `timeoutMs`, `pollIntervalMs`, `exclude`, and status callbacks. Keep

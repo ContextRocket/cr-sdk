@@ -4,12 +4,41 @@ import type { PreparedSiteArchive } from "./archive.js";
 const DEFAULT_API_BASE = "https://api.contextrocket.com";
 const HANDLE_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
+export interface SitePublicationVisibility {
+  indexable: boolean;
+  sitemap: boolean;
+  noindex: boolean;
+}
+
+/** The API validates the complete publication contract and reads built sitemaps. */
+export interface SitePublicationManifest {
+  publication_id: string;
+  kind: "site" | "content" | "page" | "document" | "representation" | "feed" | "dataset";
+  canonical_origin: string;
+  renderer: { id: string; version?: string | null };
+  archive_root?: string;
+  routes: readonly {
+    public_path: string;
+    cdn_path?: string | null;
+    mount_type?: "prefix" | "exact" | "proxy";
+    sitemap?: string | null;
+    visibility?: SitePublicationVisibility | null;
+    [key: string]: unknown;
+  }[];
+  visibility?: SitePublicationVisibility;
+  review?: { required: boolean; policy?: "owner" | "editorial" | "compliance" | "operator" | "none" };
+  [key: string]: unknown;
+}
+
 export interface SitePublishOptions {
   sourcePath: string;
   orgHandle: string;
   token: string;
   apiBase?: string;
   pathPrefix?: string;
+  publicationManifest?: SitePublicationManifest;
+  /** Approve this generic publication as the authenticated authority; no human review is implied. */
+  reviewed?: boolean;
   exclude?: readonly string[];
   noWait?: boolean;
   timeoutMs?: number;
@@ -231,6 +260,10 @@ export async function publishPreparedSiteArchive(
   form.set("tarball", new Blob([new Uint8Array(archive.tarball)]), "site.tar.gz");
   form.set("path_prefix", pathPrefix);
   form.set("async", "true");
+  if (options.publicationManifest !== undefined) {
+    form.set("publication_manifest", JSON.stringify(options.publicationManifest));
+    form.set("reviewed", options.reviewed === true ? "true" : "false");
+  }
 
   let response: Response;
   try {

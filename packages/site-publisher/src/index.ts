@@ -8,6 +8,8 @@ export {
   SitePublisherError,
 } from "./client.js";
 export type {
+  SitePublicationManifest,
+  SitePublicationVisibility,
   SitePublishOptions,
   SitePublishReceipt,
 } from "./client.js";

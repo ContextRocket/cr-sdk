@@ -64,6 +64,17 @@ describe("publish target normalization", () => {
 describe("publishStaticSite", () => {
   it("uploads a multipart archive with private bearer auth and polls the org release", async () => {
     const sourcePath = await siteDirectory();
+    await writeFile(path.join(sourcePath, "sitemap.xml"),
+      '<urlset><url><loc>https://example.test/blog/podcast</loc></url></urlset>');
+    const publicationManifest = {
+      publication_id: "example-site",
+      kind: "site" as const,
+      canonical_origin: "https://example.test",
+      renderer: { id: "static" },
+      routes: [{ public_path: "/blog", cdn_path: "blog", sitemap: "/blog/sitemap.xml" }],
+      visibility: { indexable: true, sitemap: true, noindex: false },
+      review: { required: true },
+    };
     const calls: Array<{ url: URL; init: RequestInit }> = [];
     const fetcher: typeof fetch = vi.fn(async (input, init = {}) => {
       const url = input instanceof URL ? input : new URL(String(input));
@@ -74,6 +85,8 @@ describe("publishStaticSite", () => {
         const form = init.body as FormData;
         expect(form.get("path_prefix")).toBe("blog");
         expect(form.get("async")).toBe("true");
+        expect(JSON.parse(String(form.get("publication_manifest")))).toEqual(publicationManifest);
+        expect(form.get("reviewed")).toBe("true");
         expect(form.get("tarball")).toBeInstanceOf(Blob);
         return Response.json({
           release_id: "release-1",
@@ -96,6 +109,8 @@ describe("publishStaticSite", () => {
       sourcePath,
       orgHandle: "Kleos",
       pathPrefix: "blog",
+      publicationManifest,
+      reviewed: true,
       apiBase: "https://api.example.test",
       token: "crk_private-test",
       fetcher,

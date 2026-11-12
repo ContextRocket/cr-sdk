@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 import { resolve } from "node:path";
+import { readFile } from "node:fs/promises";
+import type { SitePublicationManifest } from "./client.js";
 import { config as loadDotEnv } from "dotenv";
 import { prepareSiteArchive } from "./archive.js";
 import { resolveOrgHandle } from "./config.js";
@@ -17,6 +19,8 @@ interface CliOptions {
   pathPrefix?: string;
   apiBase?: string;
   envFile?: string;
+  manifestPath?: string;
+  reviewed: boolean;
   timeoutSeconds: number;
   exclude: string[];
   dryRun: boolean;
@@ -33,6 +37,8 @@ Options:
   --org <handle>       Target organization handle (defaults to CR_ORG_HANDLE,
                        PUBLIC_CONTEXTROCKET_HANDLE, or config/site.json)
   --prefix <path>      CDN path prefix; omit to publish at the org root
+  --manifest <path>   Publication manifest; API derives URLs from the built sitemaps
+  --reviewed          Approve this generic publication as the authenticated authority
   --exclude <glob>     Exclude a relative path or basename (repeatable)
   --api-base <url>     API origin (default: https://api.contextrocket.com)
   --env-file <path>    Load CR_API_TOKEN and optional CR_API_BASE from a dotenv file
@@ -54,6 +60,7 @@ function parseArgs(args: readonly string[]): CliOptions {
     dryRun: false,
     noWait: false,
     help: false,
+    reviewed: false,
   };
   const valueOptions = new Set([
     "--org",
@@ -62,11 +69,16 @@ function parseArgs(args: readonly string[]): CliOptions {
     "--env-file",
     "--timeout",
     "--exclude",
+    "--manifest",
   ]);
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
     if (argument === "-h" || argument === "--help") {
       options.help = true;
+      continue;
+    }
+    if (argument === "--reviewed") {
+      options.reviewed = true;
       continue;
     }
     if (argument === "--dry-run") {
@@ -95,6 +107,9 @@ function parseArgs(args: readonly string[]): CliOptions {
           break;
         case "--env-file":
           options.envFile = value;
+          break;
+        case "--manifest":
+          options.manifestPath = value;
           break;
         case "--exclude":
           options.exclude.push(value);
@@ -161,7 +176,14 @@ async function main(): Promise<void> {
   }
   const target = `https://${orgHandle}.cdn.contextrocket.com/${prefix ? `${prefix}/` : ""}`;
   let archive;
+  let publicationManifest: SitePublicationManifest | undefined;
   try {
+    if (options.manifestPath) {
+      publicationManifest = JSON.parse(await readFile(resolve(options.manifestPath), "utf8"));
+      if (!publicationManifest || typeof publicationManifest !== "object" || Array.isArray(publicationManifest)) {
+        throw new TypeError("The publication manifest must be a JSON object.");
+      }
+    }
     archive = await prepareSiteArchive(options.sourcePath!, { exclude: options.exclude });
   } catch (error) {
     console.error(error instanceof Error ? error.message : "Could not prepare the site archive.");
@@ -188,6 +210,8 @@ async function main(): Promise<void> {
     const receipt = await publishPreparedSiteArchive(archive, {
       orgHandle,
       pathPrefix: prefix,
+      publicationManifest,
+      reviewed: options.reviewed,
       token,
       apiBase: options.apiBase ?? process.env.CR_API_BASE,
       exclude: options.exclude,
