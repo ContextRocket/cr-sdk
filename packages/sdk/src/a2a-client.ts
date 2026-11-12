@@ -1,6 +1,10 @@
 import { AGENT_RESPONSE_CATALOG, parseAgentResponsePart } from "./json-render.js";
 import type { AgentResponseSpec } from "./json-render.js";
 import type { CRSubjectKind } from "./config.js";
+import {
+  contextRocketIdentityPath,
+  contextRocketIdentityUrl,
+} from "./identity-urls.js";
 
 /**
  * A2A (Agent-to-Agent) protocol client for ContextRocket.
@@ -547,7 +551,7 @@ function a2aEndpoint(opts: A2AClientOptions, params: A2ATaskParams): string {
   const handle = resolveTenantHandle(opts, params);
   if (!handle) return PLATFORM_A2A_ENDPOINT;
   const subjectKind = opts.subjectKind ?? "company";
-  return `/${subjectKind}/${encodeURIComponent(handle)}/a2a`;
+  return contextRocketIdentityPath(subjectKind, handle, "a2a");
 }
 
 let guestSessionIdWarned = false;
@@ -596,9 +600,9 @@ export async function fetchAgentCard(
   subjectKind: CRSubjectKind = "company",
 ): Promise<unknown> {
   const endpoint = handle
-    ? `/${subjectKind}/${encodeURIComponent(handle)}/agent-card.json`
-    : AGENT_CARD_ENDPOINT;
-  const resp = await fetch(`${baseUrl.replace(/\/$/, "")}${endpoint}`, {
+    ? contextRocketIdentityUrl(baseUrl, subjectKind, handle, "agent-card.json")
+    : `${baseUrl.replace(/\/+$/, "")}${AGENT_CARD_ENDPOINT}`;
+  const resp = await fetch(endpoint, {
     method: "GET",
     headers: { Accept: "application/json" },
   });

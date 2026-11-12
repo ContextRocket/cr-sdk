@@ -76,6 +76,23 @@ origin is configured to proxy A2A, that site's own
 `/.well-known/agent-card.json` returns the organization card selected from the
 verified host. Agent Cards are discovery documents, not authorization grants.
 
+Use `@contextrocket/sdk/identity-urls` when a static build needs canonical
+typed MCP, A2A, or agent-card URLs without creating a live client:
+
+```ts
+import { contextRocketIdentityUrl } from "@contextrocket/sdk/identity-urls";
+
+const agentCardUrl = contextRocketIdentityUrl(
+  "https://api.contextrocket.com",
+  "person",
+  "mark-macmahon",
+  "agent-card.json",
+);
+```
+
+Pass the selected identity kind explicitly. The helper encodes the handle as a
+single path segment and does not construct platform-discovery URLs.
+
 ## Stream an A2A turn
 
 ```ts
