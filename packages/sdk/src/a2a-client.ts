@@ -2,8 +2,8 @@ import { AGENT_RESPONSE_CATALOG, parseAgentResponsePart } from "./json-render.js
 import type { AgentResponseSpec } from "./json-render.js";
 import type { CRSubjectKind } from "./config.js";
 import {
-  contextRocketIdentityPath,
-  contextRocketIdentityUrl,
+  crIdentityPath,
+  crIdentityUrl,
 } from "./identity-urls.js";
 
 /**
@@ -551,7 +551,7 @@ function a2aEndpoint(opts: A2AClientOptions, params: A2ATaskParams): string {
   const handle = resolveTenantHandle(opts, params);
   if (!handle) return PLATFORM_A2A_ENDPOINT;
   const subjectKind = opts.subjectKind ?? "company";
-  return contextRocketIdentityPath(subjectKind, handle, "a2a");
+  return crIdentityPath(subjectKind, handle, "a2a");
 }
 
 let guestSessionIdWarned = false;
@@ -600,7 +600,7 @@ export async function fetchAgentCard(
   subjectKind: CRSubjectKind = "company",
 ): Promise<unknown> {
   const endpoint = handle
-    ? contextRocketIdentityUrl(baseUrl, subjectKind, handle, "agent-card.json")
+    ? crIdentityUrl(baseUrl, subjectKind, handle, "agent-card.json")
     : `${baseUrl.replace(/\/+$/, "")}${AGENT_CARD_ENDPOINT}`;
   const resp = await fetch(endpoint, {
     method: "GET",

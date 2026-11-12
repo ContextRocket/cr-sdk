@@ -24,10 +24,10 @@ export { resolveCRConfig } from "./config.js";
 export type { CRConfig, CRSubjectKind } from "./config.js";
 
 export {
-  contextRocketIdentityPath,
-  contextRocketIdentityUrl,
+  crIdentityPath,
+  crIdentityUrl,
 } from "./identity-urls.js";
-export type { ContextRocketIdentityResource } from "./identity-urls.js";
+export type { CRIdentityResource } from "./identity-urls.js";
 
 export {
   getStoredToken,

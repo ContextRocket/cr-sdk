@@ -80,9 +80,9 @@ Use `@contextrocket/sdk/identity-urls` when a static build needs canonical
 typed MCP, A2A, or agent-card URLs without creating a live client:
 
 ```ts
-import { contextRocketIdentityUrl } from "@contextrocket/sdk/identity-urls";
+import { crIdentityUrl } from "@contextrocket/sdk/identity-urls";
 
-const agentCardUrl = contextRocketIdentityUrl(
+const agentCardUrl = crIdentityUrl(
   "https://api.contextrocket.com",
   "person",
   "mark-macmahon",
