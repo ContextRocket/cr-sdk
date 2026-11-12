@@ -156,7 +156,7 @@ export function mapCustomContactAnswers(
   values: FormData,
   fields: Record<string, ContactFormCustomAnswerField>,
 ): Record<string, ContactFormJsonValue> {
-  const answers: Record<string, ContactFormJsonValue> = {};
+  const answers = Object.create(null) as Record<string, ContactFormJsonValue>;
   for (const [key, field] of Object.entries(fields)) {
     if (!key || !field.name) {
       throw new TypeError("A custom contact answer field mapping is invalid.");
