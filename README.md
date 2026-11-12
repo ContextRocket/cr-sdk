@@ -167,10 +167,10 @@ available at:
 https://contextrocket.cdn.contextrocket.com/embeds/chat/v0.1.3/widget.js
 ```
 
-The published contact-form browser bridge version `0.1.0` is available at:
+The published contact-form browser bridge version `0.1.1` is available at:
 
 ```text
-https://contextrocket.cdn.contextrocket.com/embeds/contact-form/v0.1.0/contact-form.browser.js
+https://contextrocket.cdn.contextrocket.com/embeds/contact-form/v0.1.1/contact-form.browser.js
 ```
 
 A site can pin these URLs with `PUBLIC_CONTEXTROCKET_CHAT_WIDGET_URL` and
@@ -198,9 +198,9 @@ uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \
   --dry-run
 
 uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \
-  ../../cr-sdk/scratchpad/cdn/embeds/contact-form/v0.1.0 \
+  ../../cr-sdk/scratchpad/cdn/embeds/contact-form/v0.1.1 \
   --org contextrocket \
-  --prefix embeds/contact-form/v0.1.0 \
+  --prefix embeds/contact-form/v0.1.1 \
   --dry-run
 ```
 
@@ -210,10 +210,10 @@ not been released before publishing. Repeat the relevant command without
 public URL and do not need an operator token. After publishing, run
 `pnpm verify:cdn` from the SDK checkout. It checks status, JavaScript content
 type, byte count, and SHA-256 against the local package builds. Do not publish
-a mutable `/latest` path. The `v0.1.3` chat URL and `v0.1.0` contact-form URL
-above were published and verified on 2026-11-11. An immediate CDN request can
-briefly return a cached 403 while a new object propagates; verify the URL again
-after publication.
+a mutable `/latest` path. The `v0.1.3` chat URL was published and verified on
+2026-11-11; the `v0.1.1` contact-form URL was published and verified on
+2026-11-12. An immediate CDN request can briefly return a cached 403 while a
+new object propagates; verify the URL again after publication.
 
 `v0.1.2` remains published. A fresh local build differed byte-for-byte from
 that artifact, so the reproducible source build was released under `v0.1.3`
