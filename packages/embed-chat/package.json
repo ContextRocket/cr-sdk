@@ -1,6 +1,6 @@
 {
   "name": "@contextrocket/embed-chat",
-  "version": "0.1.6",
+  "version": "0.0.1",
   "description": "ContextRocket embeddable chat widget (standalone IIFE)",
   "type": "module",
   "license": "MIT",

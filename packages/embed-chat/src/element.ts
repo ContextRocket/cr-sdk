@@ -116,6 +116,9 @@ export class ContextRocketChatElement extends HTMLElement {
     window.addEventListener("resize", this.#scheduleLauncherPlacement);
     window.visualViewport?.addEventListener("scroll", this.#scheduleLauncherPlacement);
     window.visualViewport?.addEventListener("resize", this.#scheduleLauncherPlacement);
+    document.addEventListener("input", this.#scheduleLauncherPlacement, true);
+    document.addEventListener("change", this.#scheduleLauncherPlacement, true);
+    document.addEventListener("toggle", this.#scheduleLauncherPlacement, true);
     this.#setFullscreen(this.#config.fullscreenOnLoad === true);
     this.#setOpen(this.#config.fullscreenOnLoad === true);
     void this.#loadSuggestions();
@@ -126,6 +129,9 @@ export class ContextRocketChatElement extends HTMLElement {
     window.removeEventListener("resize", this.#scheduleLauncherPlacement);
     window.visualViewport?.removeEventListener("scroll", this.#scheduleLauncherPlacement);
     window.visualViewport?.removeEventListener("resize", this.#scheduleLauncherPlacement);
+    document.removeEventListener("input", this.#scheduleLauncherPlacement, true);
+    document.removeEventListener("change", this.#scheduleLauncherPlacement, true);
+    document.removeEventListener("toggle", this.#scheduleLauncherPlacement, true);
     if (this.#launcherPlacementFrame)
       window.cancelAnimationFrame(this.#launcherPlacementFrame);
   }
