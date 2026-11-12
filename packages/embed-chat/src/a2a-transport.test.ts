@@ -633,6 +633,55 @@ it("keeps the compact demo showcase visible and renders a JSON response card", a
   }
 }, 15000);
 
+it("keeps chat hidden until the site's consent choice is resolved", async () => {
+  const bundle = buildSync({
+    entryPoints: [fileURLToPath(new URL("./index.ts", import.meta.url))],
+    bundle: true,
+    write: false,
+    format: "iife",
+    globalName: "ContextRocketWidget",
+    platform: "browser",
+    target: "es2020",
+    loader: { ".svg": "text" },
+  }).outputFiles[0]!.text;
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  try {
+    await page.route("**/*", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.origin === "http://localhost:39995" && url.pathname === "/") {
+        await route.fulfill({
+          contentType: "text/html",
+          body: `<script>${bundle}</script><contextrocket-chat data-contextrocket-mode="demo" data-contextrocket-consent-gate="true"></contextrocket-chat>`,
+        });
+      } else {
+        await route.abort();
+      }
+    });
+    await page.goto("http://localhost:39995");
+    const host = page.locator("contextrocket-chat");
+    expect(await host.locator(".cr-root").isVisible()).toBe(false);
+
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent("cr:consent-change", {
+        detail: {
+          preferences: {
+            necessary: true,
+            functional: false,
+            analytics: false,
+            marketing: false,
+          },
+        },
+      }));
+    });
+
+    expect(await host.locator(".cr-root").isVisible()).toBe(true);
+    expect(await host.locator(".cr-launcher").isVisible()).toBe(true);
+  } finally {
+    await browser.close();
+  }
+}, 15000);
+
 it("keeps reading position during streamed answers and follows output near the bottom", async () => {
   const bundle = buildSync({
     entryPoints: [fileURLToPath(new URL("./index.ts", import.meta.url))],
