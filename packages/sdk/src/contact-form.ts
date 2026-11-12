@@ -2,6 +2,14 @@
 
 export type ContactIntent = "contact" | "appointment" | "demo" | "support" | "other";
 
+export type ContactFormJsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | ContactFormJsonValue[]
+  | { [key: string]: ContactFormJsonValue };
+
 export interface ContactFormData {
   name: string;
   email?: string;
@@ -10,6 +18,8 @@ export interface ContactFormData {
   intent?: ContactIntent;
   source_channel?: string;
   consent: true;
+  /** Answers keyed by configured, non-system fields in the org's Leads table. */
+  custom_answers?: Record<string, ContactFormJsonValue>;
   source_url?: string;
   referrer_origin?: string;
   utm_source?: string;
@@ -37,6 +47,8 @@ export interface MapContactFormDataOptions {
   defaultIntent?: ContactIntent;
   /** Site-specific attribution channel, for example "website" or "form". */
   sourceChannel?: string;
+  /** Explicitly mapped values keyed by the org's configured Leads field keys. */
+  customAnswers?: Record<string, ContactFormJsonValue>;
 }
 
 export interface ContactFormReceipt {
@@ -96,6 +108,29 @@ const DEFAULT_CONTACT_FIELDS: ContactFormFieldNames = {
   consent: "consent",
 };
 
+function validateCustomAnswers(
+  answers: Record<string, ContactFormJsonValue> | undefined,
+): Record<string, ContactFormJsonValue> | undefined {
+  if (!answers || Object.keys(answers).length === 0) return undefined;
+  const entries = Object.entries(answers);
+  if (entries.length > 50) {
+    throw new TypeError("At most 50 custom contact answers are allowed.");
+  }
+  for (const [key, value] of entries) {
+    if (!key || key.length > 64) {
+      throw new TypeError("A custom contact answer key is invalid.");
+    }
+    const serialized = JSON.stringify(value);
+    if (serialized === undefined || serialized.length > 4096) {
+      throw new TypeError("A custom contact answer is invalid or too large.");
+    }
+  }
+  if (JSON.stringify(answers).length > 16_384) {
+    throw new TypeError("Custom contact answers exceed the allowed size.");
+  }
+  return answers;
+}
+
 function formText(values: FormData, fieldName: string): string {
   if (!fieldName) return "";
   const value = values.get(fieldName);
@@ -111,6 +146,7 @@ export function mapContactFormData(
   values: FormData,
   options: MapContactFormDataOptions = {},
 ): ContactFormData {
+  const customAnswers = validateCustomAnswers(options.customAnswers);
   const fields = { ...DEFAULT_CONTACT_FIELDS, ...options.fields };
   const consent = formText(values, fields.consent).toLowerCase();
   if (!["1", "true", "yes", "on", "checked"].includes(consent)) {
@@ -142,6 +178,7 @@ export function mapContactFormData(
     ...(options.sourceChannel?.trim()
       ? { source_channel: options.sourceChannel.trim() }
       : {}),
+    ...(customAnswers ? { custom_answers: customAnswers } : {}),
     consent: true,
   };
 }

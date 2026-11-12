@@ -215,6 +215,31 @@ affirmative value. It supports split first/last name fields and a site-provided
 default intent. Keep labels, validation, custom answers, and form presentation
 in the site; do not use this helper to flatten sensitive uploads into a message.
 
+Organization-configured extra answers can be passed as typed JSON under
+`custom_answers`. Keys must match active, non-system, non-computed fields in
+that organization's Leads table; the API validates the key and value against
+the organization's field schema. Unknown keys, absent schemas, unsupported
+value shapes, and oversized answers are rejected instead of being dropped.
+Map browser field names to the configured organization field keys in the site
+adapter, and pass the structured values through `customAnswers`:
+
+```ts
+const form = mapContactFormData(new FormData(htmlForm), {
+  fields: { name: "your-name", email: "your-email", consent: "consent" },
+  defaultIntent: "contact",
+  customAnswers: {
+    residence_type: "Digital Nomad Visa",
+    contact_preferences: ["Email", "WhatsApp"],
+  },
+});
+```
+
+The helper bounds the payload to 50 answer keys, 64 characters per key, 4,096
+serialized characters per answer, and 16,384 serialized characters total.
+The server remains authoritative and also validates values against the org's
+current field definitions. A same-key retry that changes only custom answers
+replays the original stored submission; reset the controller for a new enquiry.
+
 For interactive forms, call `submission.submit(options)` instead of the
 one-shot helper. It reuses an idempotency key after a failed retry, creates a
 new key when the payload changes, and shares an unchanged request while it is

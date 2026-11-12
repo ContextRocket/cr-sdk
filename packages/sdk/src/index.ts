@@ -57,6 +57,7 @@ export type {
   ContactAttribution,
   ContactFormFieldNames,
   ContactFormData,
+  ContactFormJsonValue,
   ContactFormReceipt,
   MapContactFormDataOptions,
   SubmitContactFormOptions,
