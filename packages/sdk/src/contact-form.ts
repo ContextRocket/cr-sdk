@@ -40,6 +40,19 @@ export interface ContactFormFieldNames {
   consent: string;
 }
 
+export type ContactFormCustomAnswerType =
+  | "text"
+  | "number"
+  | "boolean"
+  | "multi_select";
+
+export interface ContactFormCustomAnswerField {
+  /** Native form control name. Repeated checkbox/select values share a name. */
+  name: string;
+  /** Defaults to text; multi-select and boolean answers should be explicit. */
+  type?: ContactFormCustomAnswerType;
+}
+
 export interface MapContactFormDataOptions {
   /** HTML field names; empty strings disable optional fields. */
   fields?: Partial<ContactFormFieldNames>;
@@ -76,6 +89,7 @@ export interface ContextRocketBrowserSDK {
   readonly ContactFormError: typeof ContactFormError;
   readonly createContactFormController: typeof createContactFormController;
   readonly mapContactFormData: typeof mapContactFormData;
+  readonly mapCustomContactAnswers: typeof mapCustomContactAnswers;
   readonly extractContactAttribution: typeof extractContactAttribution;
   readonly submitContactForm: typeof submitContactForm;
   readonly submitContactFormWithAttribution: typeof submitContactFormWithAttribution;
@@ -135,6 +149,53 @@ function formText(values: FormData, fieldName: string): string {
   if (!fieldName) return "";
   const value = values.get(fieldName);
   return typeof value === "string" ? value.trim() : "";
+}
+
+/** Map explicitly configured HTML fields to organization Leads field keys. */
+export function mapCustomContactAnswers(
+  values: FormData,
+  fields: Record<string, ContactFormCustomAnswerField>,
+): Record<string, ContactFormJsonValue> {
+  const answers: Record<string, ContactFormJsonValue> = {};
+  for (const [key, field] of Object.entries(fields)) {
+    if (!key || !field.name) {
+      throw new TypeError("A custom contact answer field mapping is invalid.");
+    }
+    const selected = values
+      .getAll(field.name)
+      .filter((value): value is string => typeof value === "string")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const type = field.type ?? "text";
+
+    if (type === "boolean") {
+      if (selected.length > 1) {
+        throw new TypeError(`Boolean contact answer ${key} has multiple values.`);
+      }
+      const value = selected[0]?.toLowerCase();
+      if (value && !["1", "true", "yes", "on", "checked", "0", "false", "no", "off"].includes(value)) {
+        throw new TypeError(`Boolean contact answer ${key} is invalid.`);
+      }
+      answers[key] = value ? !["0", "false", "no", "off"].includes(value) : false;
+    } else if (type === "number") {
+      if (!selected.length) continue;
+      if (selected.length !== 1 || !Number.isFinite(Number(selected[0]))) {
+        throw new TypeError(`Numeric contact answer ${key} is invalid.`);
+      }
+      answers[key] = Number(selected[0]);
+    } else if (type === "multi_select") {
+      if (selected.length) answers[key] = selected;
+    } else if (type === "text") {
+      if (!selected.length) continue;
+      if (selected.length !== 1) {
+        throw new TypeError(`Text contact answer ${key} has multiple values.`);
+      }
+      answers[key] = selected[0]!;
+    } else {
+      throw new TypeError(`Custom contact answer ${key} has an unsupported type.`);
+    }
+  }
+  return validateCustomAnswers(answers) ?? {};
 }
 
 /**

@@ -2,6 +2,7 @@ import {
   createContactFormController,
   ContactFormError,
   mapContactFormData,
+  mapCustomContactAnswers,
   extractContactAttribution,
   submitContactForm,
   submitContactFormWithAttribution,
@@ -12,6 +13,7 @@ import type { ContextRocketBrowserSDK } from "./contact-form.js";
 const browserSdk: ContextRocketBrowserSDK = Object.freeze({
   createContactFormController,
   mapContactFormData,
+  mapCustomContactAnswers,
   ContactFormError,
   extractContactAttribution,
   submitContactForm,

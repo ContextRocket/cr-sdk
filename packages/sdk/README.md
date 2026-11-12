@@ -220,17 +220,24 @@ Organization-configured extra answers can be passed as typed JSON under
 that organization's Leads table; the API validates the key and value against
 the organization's field schema. Unknown keys, absent schemas, unsupported
 value shapes, and oversized answers are rejected instead of being dropped.
-Map browser field names to the configured organization field keys in the site
-adapter, and pass the structured values through `customAnswers`:
+Map browser field names to the configured organization field keys with
+`mapCustomContactAnswers`, then pass the structured values through
+`customAnswers`:
 
 ```ts
+import {
+  mapContactFormData,
+  mapCustomContactAnswers,
+} from "@contextrocket/sdk/contact-form";
+
 const form = mapContactFormData(new FormData(htmlForm), {
   fields: { name: "your-name", email: "your-email", consent: "consent" },
   defaultIntent: "contact",
-  customAnswers: {
-    residence_type: "Digital Nomad Visa",
-    contact_preferences: ["Email", "WhatsApp"],
-  },
+  customAnswers: mapCustomContactAnswers(new FormData(htmlForm), {
+    residence_type: { name: "residence-type" },
+    monthly_income: { name: "monthly-income", type: "number" },
+    contact_preferences: { name: "contact-preferences", type: "multi_select" },
+  }),
 });
 ```
 
