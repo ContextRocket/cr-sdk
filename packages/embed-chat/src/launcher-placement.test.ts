@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { launcherBottomLift } from "./launcher-placement";
+import {
+  hasViewportAnchoredAncestor,
+  launcherBottomLift,
+} from "./launcher-placement";
+
+describe("hasViewportAnchoredAncestor", () => {
+  it("ignores ordinary in-flow content", () => {
+    expect(hasViewportAnchoredAncestor(["static", "relative"])).toBe(false);
+  });
+
+  it("detects fixed or sticky chrome around a control", () => {
+    expect(hasViewportAnchoredAncestor(["static", "fixed"])).toBe(true);
+    expect(hasViewportAnchoredAncestor(["sticky", "static"])).toBe(true);
+  });
+});
 
 describe("launcherBottomLift", () => {
   it("lifts the launcher clear of an overlapping page control", () => {

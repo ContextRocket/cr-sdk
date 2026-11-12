@@ -5,6 +5,11 @@ export interface PlacementRect {
   left: number;
 }
 
+/** Only fixed or sticky ancestors can obstruct the viewport independently. */
+export function hasViewportAnchoredAncestor(positions: readonly string[]): boolean {
+  return positions.some((position) => position === "fixed" || position === "sticky");
+}
+
 /** Return the smallest upward offset that clears all overlapping page controls. */
 export function launcherBottomLift(
   launcher: PlacementRect,

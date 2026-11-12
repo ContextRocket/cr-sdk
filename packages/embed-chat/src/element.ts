@@ -16,7 +16,11 @@ import { safeHref, escapeHtml } from "./safe-url";
 import { widgetStyles } from "./styles";
 import type { WidgetConfig, WidgetDemoCard } from "./types";
 import { copyFor, type WidgetCopy } from "./copy";
-import { launcherBottomLift, type PlacementRect } from "./launcher-placement";
+import {
+  hasViewportAnchoredAncestor,
+  launcherBottomLift,
+  type PlacementRect,
+} from "./launcher-placement";
 import rocketSpark from "./rocket-spark.svg";
 import logoInk from "./logo-h-spark-ink.svg";
 import logoWhite from "./logo-h-spark-white.svg";
@@ -203,6 +207,15 @@ export class ContextRocketChatElement extends HTMLElement {
     ).flatMap((control): PlacementRect[] => {
       const style = window.getComputedStyle(control);
       if (style.display === "none" || style.visibility === "hidden") return [];
+      // Long in-content navigation lists must not lift the launcher through
+      // article headings. Only sticky/fixed chrome can obstruct the viewport.
+      let ancestor: HTMLElement | null = control;
+      const ancestorPositions: string[] = [];
+      while (ancestor && ancestor !== document.body) {
+        ancestorPositions.push(window.getComputedStyle(ancestor).position);
+        ancestor = ancestor.parentElement;
+      }
+      if (!hasViewportAnchoredAncestor(ancestorPositions)) return [];
       const controlRect = control.getBoundingClientRect();
       const label = control.closest("label");
       const parent = control.parentElement;
