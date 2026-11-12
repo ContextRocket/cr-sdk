@@ -77,10 +77,14 @@ origin is configured to proxy A2A, that site's own
 verified host. Agent Cards are discovery documents, not authorization grants.
 
 Use `@contextrocket/sdk/identity-urls` when a static build needs canonical
-typed MCP, A2A, or agent-card URLs without creating a live client:
+typed MCP, A2A, agent-card, or public Grounding Page URLs without creating a
+live client:
 
 ```ts
-import { crIdentityUrl } from "@contextrocket/sdk/identity-urls";
+import {
+  crGroundingPageUrl,
+  crIdentityUrl,
+} from "@contextrocket/sdk/identity-urls";
 
 const agentCardUrl = crIdentityUrl(
   "https://api.contextrocket.com",
@@ -88,10 +92,15 @@ const agentCardUrl = crIdentityUrl(
   "mark-macmahon",
   "agent-card.json",
 );
+const groundingPageUrl = crGroundingPageUrl("person", "mark-macmahon");
 ```
 
 Pass the selected identity kind explicitly. The helper encodes the handle as a
 single path segment and does not construct platform-discovery URLs.
+`crGroundingPageUrl` uses `https://contextrocket.com` by default and accepts a
+verified customer web origin when the same typed identity path is served via
+reverse proxy. Grounding Page links use the web origin; MCP, A2A, and Agent
+Card URLs use the API origin.
 
 ## Stream an A2A turn
 

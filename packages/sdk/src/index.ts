@@ -24,6 +24,7 @@ export { resolveCRConfig } from "./config.js";
 export type { CRConfig, CRSubjectKind } from "./config.js";
 
 export {
+  crGroundingPageUrl,
   crIdentityPath,
   crIdentityUrl,
 } from "./identity-urls.js";
