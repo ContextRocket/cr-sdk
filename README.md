@@ -95,8 +95,20 @@ version is not already in the registry:
 
 ```bash
 cd packages/sdk && pnpm pack --out /tmp/contextrocket-sdk-%v.tgz
-npm view @contextrocket/sdk@0.1.0 version
+npm view @contextrocket/sdk@0.1.2 version
+
+cd ../embed-chat && pnpm pack --out /tmp/contextrocket-embed-chat-%v.tgz
+npm view @contextrocket/embed-chat@0.0.2 version
+
+cd ../site-publisher && pnpm pack --out /tmp/contextrocket-site-publisher-%v.tgz
+npm view @contextrocket/site-publisher@0.1.0 version
 ```
+
+These version numbers must match the package manifests. If `npm view` returns a
+version, that release is already published; select a new package version before
+dispatching. A registry `E404` means the requested package/version is not
+currently available there; still confirm that the `@contextrocket` scope is
+owned by the release account before the first publish.
 
 Use the GitHub Actions **Publish npm package** workflow on `main` and select
 `sdk`, `embed-chat`, or `site-publisher`. After it succeeds, check the exact
