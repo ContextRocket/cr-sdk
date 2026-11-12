@@ -67,6 +67,48 @@ describe("parseWidgetConfig brand palette", () => {
   });
 });
 
+describe("parseWidgetConfig launcher color", () => {
+  it("defaults to the Rocket Pink rounded-square palette", () => {
+    expect(parseWidgetConfig(widgetSource())).toMatchObject({
+      launcherColor: "#FF2B67",
+      launcherForeground: "#FFFFFF",
+    });
+  });
+
+  it("uses the Ink background and white rocket when requested", () => {
+    expect(parseWidgetConfig(widgetSource({
+      "data-contextrocket-launcher-color": "ink",
+    }))).toMatchObject({
+      launcherColor: "#0E0F13",
+      launcherForeground: "#FFFFFF",
+    });
+  });
+
+  it("selects a contrasting rocket color for a customer's color", () => {
+    expect(parseWidgetConfig(widgetSource({
+      "data-contextrocket-launcher-color": "#123456",
+    }))).toMatchObject({
+      launcherColor: "#123456",
+      launcherForeground: "#FFFFFF",
+    });
+    expect(parseWidgetConfig(widgetSource({
+      "data-contextrocket-launcher-color": "#FAF9F6",
+    }))).toMatchObject({
+      launcherColor: "#FAF9F6",
+      launcherForeground: "#0E0F13",
+    });
+  });
+
+  it("falls back to Ink for an invalid custom color", () => {
+    expect(parseWidgetConfig(widgetSource({
+      "data-contextrocket-launcher-color": "url(javascript:alert(1))",
+    }))).toMatchObject({
+      launcherColor: "#0E0F13",
+      launcherForeground: "#FFFFFF",
+    });
+  });
+});
+
 describe("typed identity URL builders", () => {
   it("routes tenant turns and cards through the selected typed identity", () => {
     const config = parseWidgetConfig(
