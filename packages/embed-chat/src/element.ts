@@ -158,13 +158,19 @@ export class ContextRocketChatElement extends HTMLElement {
     if (!this.#config?.consentGate) return;
     this.#consentResolved = this.#hasSavedConsent();
     const root = this.#shadow.querySelector<HTMLElement>(".cr-root");
-    if (root) root.hidden = !this.#consentResolved;
+    if (root) {
+      root.hidden = !this.#consentResolved;
+      root.style.display = this.#consentResolved ? "" : "none";
+    }
   }
 
   #handleConsentChange = (): void => {
     this.#consentResolved = true;
     const root = this.#shadow.querySelector<HTMLElement>(".cr-root");
-    if (root) root.hidden = false;
+    if (root) {
+      root.hidden = false;
+      root.style.removeProperty("display");
+    }
   };
 
   #scheduleLauncherPlacement = (): void => {
