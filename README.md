@@ -173,9 +173,17 @@ The published contact-form browser bridge version `0.1.1` is available at:
 https://contextrocket.cdn.contextrocket.com/embeds/contact-form/v0.1.1/contact-form.browser.js
 ```
 
-A site can pin these URLs with `PUBLIC_CONTEXTROCKET_CHAT_WIDGET_URL` and
-`PUBLIC_CONTEXTROCKET_CONTACT_FORM_SCRIPT_URL`; keep the checked-in local
-artifacts available for offline demos and standalone builds.
+The published consent and site-integrations browser bundle version `0.1.1` is
+available at:
+
+```text
+https://contextrocket.cdn.contextrocket.com/embeds/site-behaviors/v0.1.1/site-behaviors.browser.js
+```
+
+A site can pin these URLs with `PUBLIC_CONTEXTROCKET_CHAT_WIDGET_URL`,
+`PUBLIC_CONTEXTROCKET_CONTACT_FORM_SCRIPT_URL`, and
+`PUBLIC_CONTEXTROCKET_SITE_BEHAVIORS_URL`; keep the checked-in local artifacts
+available for offline demos and standalone builds.
 
 Prepare only the standalone browser files (not the rest of the SDK package
 output) after building both packages:
@@ -202,18 +210,25 @@ uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \
   --org contextrocket \
   --prefix embeds/contact-form/v0.1.1 \
   --dry-run
+
+uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \
+  ../../cr-sdk/scratchpad/cdn/embeds/site-behaviors/v0.1.1 \
+  --org contextrocket \
+  --prefix embeds/site-behaviors/v0.1.1 \
+  --dry-run
 ```
 
-For a new release, review both dry runs and confirm the versioned paths have
-not been released before publishing. Repeat the relevant command without
+For a new release, review all three dry runs and confirm the versioned paths
+have not been released before publishing. Repeat the relevant command without
 `--dry-run` to upload. This is an operator task; customer sites only load the
 public URL and do not need an operator token. After publishing, run
 `pnpm verify:cdn` from the SDK checkout. It checks status, JavaScript content
 type, byte count, and SHA-256 against the local package builds. Do not publish
 a mutable `/latest` path. The `v0.1.3` chat URL was published and verified on
-2026-11-11; the `v0.1.1` contact-form URL was published and verified on
-2026-11-12. An immediate CDN request can briefly return a cached 403 while a
-new object propagates; verify the URL again after publication.
+2026-11-11; the `v0.1.1` contact-form and site-behaviors URLs were published
+and verified on 2026-11-12. An immediate CDN request can briefly return a
+cached 403 while a new object propagates; verify the URL again after
+publication.
 
 `v0.1.2` remains published. A fresh local build differed byte-for-byte from
 that artifact, so the reproducible source build was released under `v0.1.3`

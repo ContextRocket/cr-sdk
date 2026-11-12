@@ -23,6 +23,12 @@ const artifacts = [
     prefix: "contact-form",
     filename: "contact-form.browser.js",
   },
+  {
+    packageJson: "packages/sdk/package.json",
+    output: "packages/sdk/dist/site-behaviors.browser.js",
+    prefix: "site-behaviors",
+    filename: "site-behaviors.browser.js",
+  },
 ];
 
 function sha256(bytes) {

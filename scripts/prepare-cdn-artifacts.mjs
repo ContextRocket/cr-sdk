@@ -32,6 +32,13 @@ const artifacts = [
     prefix: "contact-form",
     filename: "contact-form.browser.js",
   },
+  {
+    name: "site behaviors browser bundle",
+    packageJson: "packages/sdk/package.json",
+    source: "packages/sdk/dist/site-behaviors.browser.js",
+    prefix: "site-behaviors",
+    filename: "site-behaviors.browser.js",
+  },
 ];
 
 for (const artifact of artifacts) {
