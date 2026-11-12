@@ -5,6 +5,9 @@ const DATA_PREFIX = "contextrocket";
 const MAX_TITLE_LENGTH = 120;
 const MAX_GREETING_LENGTH = 400;
 const MAX_REF_LENGTH = 100;
+const ROCKET_PINK = "#FF2B67";
+const INK = "#0E0F13";
+const WHITE = "#FFFFFF";
 
 function readAttr(element: Element, ...names: string[]): string | undefined {
   for (const name of names) {
@@ -43,6 +46,46 @@ function safeAccent(value: string | undefined): string | undefined {
     : undefined;
 }
 
+function normalizedHex(value: string): string | undefined {
+  const hex = value.trim();
+  if (/^#[0-9a-f]{3}$/i.test(hex))
+    return `#${hex.slice(1).split("").map((part) => part + part).join("").toUpperCase()}`;
+  if (/^#[0-9a-f]{6}$/i.test(hex)) return hex.toUpperCase();
+  return undefined;
+}
+
+function luminance(hex: string): number {
+  const channels = [1, 3, 5].map((offset) => {
+    const channel = Number.parseInt(hex.slice(offset, offset + 2), 16) / 255;
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+}
+
+function contrastRatio(first: string, second: string): number {
+  const values = [luminance(first), luminance(second)].sort((a, b) => b - a);
+  return (values[0] + 0.05) / (values[1] + 0.05);
+}
+
+function resolveLauncherPalette(value: string | undefined): {
+  background: string;
+  foreground: string;
+} {
+  const normalized = value?.trim();
+  if (!normalized || normalized.toLowerCase() === "pink")
+    return { background: ROCKET_PINK, foreground: WHITE };
+  if (normalized.toLowerCase() === "ink")
+    return { background: INK, foreground: WHITE };
+
+  const custom = normalizedHex(normalized);
+  if (!custom) return { background: INK, foreground: WHITE };
+  if (contrastRatio(custom, WHITE) >= 3)
+    return { background: custom, foreground: WHITE };
+  if (contrastRatio(custom, INK) >= 3)
+    return { background: custom, foreground: INK };
+  return { background: INK, foreground: WHITE };
+}
+
 /**
  * Parse widget configuration from a script tag or host element.
  *
@@ -66,6 +109,9 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
   }
 
   const accentColor = readAttr(source, `data-${DATA_PREFIX}-accent`);
+  const launcherPalette = resolveLauncherPalette(
+    readAttr(source, `data-${DATA_PREFIX}-launcher-color`),
+  );
   const greeting = readAttr(source, `data-${DATA_PREFIX}-greeting`);
   const title = readAttr(source, `data-${DATA_PREFIX}-title`);
   const ref = readAttr(source, `data-${DATA_PREFIX}-ref`);
@@ -104,6 +150,8 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
     ...(safeAccent(accentColor)
       ? { accentColor: safeAccent(accentColor) }
       : {}),
+    launcherColor: launcherPalette.background,
+    launcherForeground: launcherPalette.foreground,
     ...(boundedText(greeting, MAX_GREETING_LENGTH)
       ? { greeting: boundedText(greeting, MAX_GREETING_LENGTH) }
       : {}),

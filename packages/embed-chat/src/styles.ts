@@ -4,7 +4,7 @@
  * Values map 1:1 to Tailwind utilities used in Tailwind UI Marketing
  * (marketing-v4 flyouts/forms) and the Next ChatFab:
  *   text-sm/6, px-3.5, py-2, gap-2, gap-3, p-4, rounded-md/xl/2xl/3xl,
- *   shadow-lg, outline-gray-900/5, size-14 launcher, bottom-6/right-6.
+ *   shadow-lg, outline-gray-900/5, square 56px launcher, bottom-6/right-6.
  */
 export function widgetStyles(accentColor = "#0e0f13"): string {
   return `
@@ -19,6 +19,8 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
   -webkit-font-smoothing: antialiased;
 
   --cr-accent: ${accentColor};
+  --cr-launcher-bg: #FF2B67;
+  --cr-launcher-fg: #FFFFFF;
   --cr-focus: var(--cr-theme-foreground, #0E0F13);
   --cr-accent-soft: color-mix(in srgb, var(--cr-accent) 9%, var(--cr-theme-background, #FAF9F6));
   --cr-border: color-mix(in srgb, var(--cr-theme-border, #E3E0D9) 65%, transparent);
@@ -62,10 +64,7 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
   --cr-panel-shadow:
     0 10px 15px -3px rgb(0 0 0 / 0.1),
     0 4px 6px -4px rgb(0 0 0 / 0.1);
-  /* ChatFab launcher shadow (size-14 FAB) */
-  --cr-fab-shadow:
-    0 4px 12px rgba(11, 11, 15, 0.15),
-    0 8px 24px rgba(11, 11, 15, 0.1);
+  --cr-fab-shadow: 0 10px 28px -10px rgba(14,15,19,.55);
 }
 
 *, *::before, *::after {
@@ -109,8 +108,9 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
   }
 
   .cr-root .cr-launcher {
-    width: 2.75rem;
-    height: 2.75rem;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.875rem;
   }
 }
 
@@ -122,14 +122,14 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
   display: none;
 }
 
-/* size-14 rounded-full */
+/* 56px rounded-square Rocket launcher */
 .cr-launcher {
   width: 3.5rem;
   height: 3.5rem;
   border: none;
-  border-radius: 9999px;
-  background: #0e0f13;
-  color: #ecedf1;
+  border-radius: 1rem;
+  background: var(--cr-launcher-bg);
+  color: var(--cr-launcher-fg);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -139,18 +139,18 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
   -webkit-appearance: none;
   outline: none;
   box-shadow: var(--cr-fab-shadow);
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
   pointer-events: auto;
 }
 
 .cr-launcher:hover {
-  transform: scale(1.05);
-  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px -10px rgba(14,15,19,.6);
 }
 
 .cr-launcher:focus-visible {
-  outline: 2px solid var(--cr-text);
-  outline-offset: 2px;
+  outline: 2px solid var(--cr-focus);
+  outline-offset: 3px;
 }
 
 /* size-6 icons */

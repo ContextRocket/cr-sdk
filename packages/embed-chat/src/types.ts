@@ -77,6 +77,10 @@ export interface WidgetConfig {
   /** Typed identity segment for the handle. Defaults to company. */
   subjectKind?: WidgetSubjectKind;
   accentColor?: string;
+  /** Launcher background: `pink` (default), `ink`, or a contrast-checked hex color. */
+  launcherColor?: string;
+  /** Resolved white or Ink icon color for the selected launcher background. */
+  launcherForeground?: string;
   greeting?: string;
   title?: string;
   ref?: string;

@@ -21,7 +21,8 @@ import rocketSpark from "./rocket-spark.svg";
 import logoInk from "./logo-h-spark-ink.svg";
 import logoWhite from "./logo-h-spark-white.svg";
 
-const rocketImage = `data:image/svg+xml,${encodeURIComponent(rocketSpark.replaceAll("currentColor", "#ECEDF1"))}`;
+const rocketImage = (color = "#FFFFFF") =>
+  `data:image/svg+xml,${encodeURIComponent(rocketSpark.replaceAll("currentColor", color))}`;
 const logoDataUri = (svg: string) => `data:image/svg+xml,${encodeURIComponent(svg)}`;
 const poweredByLogos = { ink: logoDataUri(logoInk), white: logoDataUri(logoWhite) };
 const CHAT_SCROLL_BOTTOM_THRESHOLD = 48;
@@ -77,6 +78,7 @@ export class ContextRocketChatElement extends HTMLElement {
       "data-contextrocket-mode",
       "data-contextrocket-api-base",
       "data-contextrocket-accent",
+      "data-contextrocket-launcher-color",
       "data-contextrocket-greeting",
       "data-contextrocket-title",
       "data-contextrocket-ref",
@@ -222,6 +224,8 @@ export class ContextRocketChatElement extends HTMLElement {
     this.#footerLink.setAttribute("aria-label", copy.poweredBy);
     this.#footerLink.querySelector(".powered-by-label")!.textContent = copy.poweredByLabel;
     this.#footerLogo.src = poweredByLogos[next.poweredByLogo ?? "ink"];
+    this.#shadow.querySelector<HTMLImageElement>(".cr-launcher-icon-open")!.src =
+      rocketImage(next.launcherForeground);
     this.#syncUi();
     this.#footerLink.href = buildPoweredByHref(next);
     this.style.setProperty("--cr-accent", next.accentColor ?? "#0e0f13");
@@ -272,8 +276,7 @@ export class ContextRocketChatElement extends HTMLElement {
         </footer>
       </div>
       <button type="button" class="cr-launcher" aria-label="${copy.open}" aria-expanded="false" aria-controls="contextrocket-chat-panel" part="launcher">
-        <img class="cr-launcher-icon-open" src="${rocketImage}" alt="" width="26" height="26" aria-hidden="true">
-        <svg class="cr-launcher-icon-close" hidden xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        <img class="cr-launcher-icon-open" src="${rocketImage(config.launcherForeground)}" alt="" width="28" height="28" aria-hidden="true">
       </button>
     `;
 
@@ -310,6 +313,8 @@ export class ContextRocketChatElement extends HTMLElement {
 
   #applyTheme(config: WidgetConfig): void {
     const tokens: Array<[string, string | undefined]> = [
+      ["--cr-launcher-bg", config.launcherColor ?? "#FF2B67"],
+      ["--cr-launcher-fg", config.launcherForeground ?? "#FFFFFF"],
       ["--cr-theme-background", config.backgroundColor],
       ["--cr-theme-foreground", config.foregroundColor],
       ["--cr-theme-surface", config.surfaceColor],
@@ -501,23 +506,6 @@ export class ContextRocketChatElement extends HTMLElement {
     if (!open) this.#setFullscreen(false);
     this.#panel.dataset.open = open ? "true" : "false";
     this.#panel.setAttribute("aria-hidden", String(!open));
-    const openIcon = this.#launcher.querySelector(
-      ".cr-launcher-icon-open",
-    ) as HTMLElement | null;
-    const closeIcon = this.#launcher.querySelector(
-      ".cr-launcher-icon-close",
-    ) as HTMLElement | null;
-    // SVG elements do not reliably reflect the `hidden` IDL property onto the
-    // attribute, and our CSS keys off [hidden]. Toggle the attribute explicitly.
-    if (openIcon && closeIcon) {
-      if (open) {
-        openIcon.setAttribute("hidden", "");
-        closeIcon.removeAttribute("hidden");
-      } else {
-        openIcon.removeAttribute("hidden");
-        closeIcon.setAttribute("hidden", "");
-      }
-    }
     const copy = copyFor(this.#config!);
     this.#launcher.setAttribute("aria-label", open ? copy.close : copy.open);
     if (open) {

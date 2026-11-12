@@ -39,6 +39,14 @@ chat should open automatically as the page loads. The header close control
 returns visitors to the website; Escape exits full screen to the drawer, then
 closes the drawer.
 
+The launcher defaults to the Rocket Pink rounded square (`#FF2B67`) with the
+white spark rocket. Set `data-contextrocket-launcher-color="ink"` for the Ink
+square, or pass a custom `#RGB` / `#RRGGBB` color. For custom colors the widget
+uses a white rocket when it meets 3:1 contrast, otherwise Ink when it meets
+3:1; if neither does, it falls back to the Ink square with a white rocket.
+The launcher remains a square at desktop and mobile sizes; the close control
+stays in the chat header.
+
 The widget source, tests, build, versioning, and release workflow are owned by
 this SDK repository. Build it locally as part of the starter; do not add a
 second widget implementation to a customer fork. Its source uses the SDK's
@@ -70,6 +78,7 @@ For a live site, configure the API base and organization handle:
   data-contextrocket-muted="#5E616B"
   data-contextrocket-border="#E3E0D9"
   data-contextrocket-accent="#0E0F13"
+  data-contextrocket-launcher-color="pink"
   data-contextrocket-suggestions='["What can you help me find?","Show an evidence card"]'
   data-contextrocket-position="bottom-right"
   data-contextrocket-fullscreen="true"
@@ -87,7 +96,7 @@ uses the platform `/a2a` endpoint. The widget does not try legacy organization
 routes.
 
 The widget is published at the versioned URL
-`https://contextrocket.cdn.contextrocket.com/embeds/chat/v0.1.5/widget.js`.
+`https://contextrocket.cdn.contextrocket.com/embeds/chat/v0.1.6/widget.js`.
 You can use that URL directly or copy the generated IIFE into a consuming
 site's `public/embed/widget.js` for offline demos. Publish each package version
 under a unique prefix.
@@ -96,8 +105,8 @@ again, so never reuse a published version path. The current CDN applies a
 five-minute public cache to these paths; one-year immutable caching is reserved
 for `/_next/static/` assets. Versioned widget URLs are therefore stable by
 release discipline, not by a server-enforced immutability guarantee. The
-version `0.1.5` URL was published and verified to return the bundle with a
-JavaScript content type on 2026-11-12.
+version `0.1.6` was published and verified to return the expected bundle with
+a JavaScript content type on 2026-11-12.
 
 Build and copy the browser artifact into the starter public directory:
 
