@@ -180,6 +180,13 @@ available at:
 https://contextrocket.cdn.contextrocket.com/embeds/site-behaviors/v0.1.1/site-behaviors.browser.js
 ```
 
+SDK `0.1.2` adds `mapCustomContactAnswers` to the contact-form bridge. Its
+contact-form and site-behaviors browser artifacts are staged under the new
+`v0.1.2` prefixes; those URLs are not public until the operator publish
+completes. The published `v0.1.1` contact-form bridge does not include the
+mapper. Keep existing releases intact and use the checked-in bundle for offline
+sites until `v0.1.2` is published.
+
 A site can pin these URLs with `PUBLIC_CONTEXTROCKET_CHAT_WIDGET_URL`,
 `PUBLIC_CONTEXTROCKET_CONTACT_FORM_SCRIPT_URL`, and
 `PUBLIC_CONTEXTROCKET_SITE_BEHAVIORS_URL`; keep the checked-in local artifacts
@@ -206,32 +213,34 @@ uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \
   --dry-run
 
 uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \
-  ../../cr-sdk/scratchpad/cdn/embeds/contact-form/v0.1.1 \
+  ../../cr-sdk/scratchpad/cdn/embeds/contact-form/v0.1.2 \
   --org contextrocket \
-  --prefix embeds/contact-form/v0.1.1 \
+  --prefix embeds/contact-form/v0.1.2 \
   --dry-run
 
 uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \
-  ../../cr-sdk/scratchpad/cdn/embeds/site-behaviors/v0.1.1 \
+  ../../cr-sdk/scratchpad/cdn/embeds/site-behaviors/v0.1.2 \
   --org contextrocket \
-  --prefix embeds/site-behaviors/v0.1.1 \
+  --prefix embeds/site-behaviors/v0.1.2 \
   --dry-run
 ```
 
-For a new release, review all three dry runs and confirm the versioned paths
-have not been released before publishing. Repeat the relevant command without
-`--dry-run` to upload. This is an operator task; customer sites only load the
-public URL and do not need an operator token. After publishing, run
+For a new release, dry-run each changed package. Publish only new, unreleased
+prefixes; do not republish chat `v0.0.2` or either SDK `v0.1.1` prefix. For the
+SDK `v0.1.2` release, publish only the two new SDK prefixes after confirming
+they are unused. Repeat the relevant command without `--dry-run` to upload.
+This is an operator task; customer sites only load the public URL and do not
+need an operator token. After publishing, run
 `pnpm verify:cdn` from the SDK checkout. It checks status, JavaScript content
 type, byte count, and SHA-256 against the local package builds. Do not publish
 a mutable `/latest` path. Version `0.0.1` remains available; version `0.0.2`
 adds the consent visibility fix and is the recommended release for new sites.
 The prior `0.1.x` chat routes and objects were removed before public npm
 adoption.
-The `v0.1.1` contact-form and site-behaviors URLs were published
-and verified on 2026-11-12. An immediate CDN request can briefly return a
-cached 403 while a new object propagates; verify the URL again after
-publication.
+The `v0.1.1` contact-form and site-behaviors URLs were published and verified
+on 2026-11-12. After publishing a new version, verify its exact URL and
+checksum; an immediate CDN request can briefly return a cached 403 while a new
+object propagates.
 
 
 ## License
