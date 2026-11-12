@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -89,6 +90,14 @@ describe("publishStaticSite", () => {
         expect(form.get("reviewed")).toBe("true");
         expect(form.get("tarball")).toBeInstanceOf(Blob);
         return Response.json({
+          publication: {
+            publication_id: publicationManifest.publication_id,
+            canonical_origin: publicationManifest.canonical_origin,
+            manifest_sha256: "a".repeat(64),
+            build_sha256: createHash("sha256").update(Buffer.from(await (form.get("tarball") as Blob).arrayBuffer())).digest("hex"),
+            visibility: publicationManifest.visibility,
+            reviewed: true,
+          },
           release_id: "release-1",
           status: "building",
           status_url: "/api/orgs/kleos/sites/releases/release-1",
@@ -129,8 +138,45 @@ describe("publishStaticSite", () => {
       fileCount: 1,
       byteCount: 17,
       queued: false,
+      publicationManifestSha256: "a".repeat(64),
     });
   });
+
+  it.each(["missing", "wrong-build", "unapproved"])(
+    "refuses %s publication acknowledgement instead of reporting private upload success",
+    async (failure) => {
+      const sourcePath = await siteDirectory();
+      const publicationManifest = {
+        publication_id: "example-site", kind: "site" as const,
+        canonical_origin: "https://example.test", renderer: { id: "static" },
+        routes: [{ public_path: "/", cdn_path: "", sitemap: "/sitemap.xml" }],
+        visibility: { indexable: true, sitemap: true, noindex: false },
+      };
+      const fetcher: typeof fetch = async (_input, init) => {
+        const form = init!.body as FormData;
+        const publication = {
+          publication_id: publicationManifest.publication_id,
+          canonical_origin: publicationManifest.canonical_origin,
+          manifest_sha256: "a".repeat(64),
+          build_sha256: failure === "wrong-build" ? "0".repeat(64) :
+            createHash("sha256").update(Buffer.from(await (form.get("tarball") as Blob).arrayBuffer())).digest("hex"),
+          visibility: publicationManifest.visibility,
+          reviewed: failure !== "unapproved",
+        };
+        return Response.json({
+          release_id: "private-release", status: "building",
+          status_url: "/api/orgs/example/sites/releases/private-release",
+          ...(failure === "missing" ? {} : { publication }),
+        }, { status: 202 });
+      };
+      await expect(publishStaticSite({
+        sourcePath, orgHandle: "example", token: "crk_test",
+        publicationManifest, reviewed: true, fetcher, noWait: true,
+      })).rejects.toMatchObject({
+        code: "ERROR_SITE_PUBLISH_PUBLICATION_NOT_ACKNOWLEDGED",
+      });
+    },
+  );
 
   it("returns a safe status URL without polling when noWait is enabled", async () => {
     const sourcePath = await siteDirectory();

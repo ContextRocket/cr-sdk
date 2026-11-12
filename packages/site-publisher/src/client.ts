@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { prepareSiteArchive } from "./archive.js";
 import type { PreparedSiteArchive } from "./archive.js";
 
@@ -57,6 +58,7 @@ export interface SitePublishReceipt {
   queued: boolean;
   statusUrl?: string;
   tarballBytes: number;
+  publicationManifestSha256?: string;
 }
 
 export class SitePublisherError extends Error {
@@ -64,6 +66,7 @@ export class SitePublisherError extends Error {
     message: string,
     readonly statusCode?: number,
     options?: ErrorOptions,
+    readonly code: string = "ERROR_SITE_PUBLISH_FAILED",
   ) {
     super(message, options);
     this.name = "SitePublisherError";
@@ -230,6 +233,39 @@ async function pollRelease(
   throw new SitePublisherError(`Timed out waiting for the site release. Check ${url.pathname}.`);
 }
 
+function acknowledgePublication(
+  payload: Record<string, unknown>,
+  options: Pick<SitePublishOptions, "publicationManifest" | "reviewed">,
+  archive: PreparedSiteArchive,
+): { publicationManifestSha256?: string } {
+  const manifest = options.publicationManifest;
+  if (manifest === undefined) return {};
+  const value = payload.publication;
+  const receipt = value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+  const visibility = receipt.visibility as Record<string, unknown> | undefined;
+  const expectedVisibility = manifest.visibility ?? { indexable: false, sitemap: false, noindex: true };
+  if (
+    receipt.publication_id !== manifest.publication_id ||
+    receipt.canonical_origin !== new URL(manifest.canonical_origin).origin ||
+    typeof receipt.manifest_sha256 !== "string" ||
+    !/^[a-f0-9]{64}$/.test(receipt.manifest_sha256) ||
+    receipt.build_sha256 !== createHash("sha256").update(archive.tarball).digest("hex") ||
+    receipt.reviewed !== (options.reviewed === true) ||
+    ["indexable", "sitemap", "noindex"].some((key) =>
+      visibility?.[key] !== expectedVisibility[key as keyof SitePublicationVisibility])
+  ) {
+    throw new SitePublisherError(
+      "The API did not acknowledge this exact publication manifest and approval. Check the release before retrying.",
+      undefined,
+      undefined,
+      "ERROR_SITE_PUBLISH_PUBLICATION_NOT_ACKNOWLEDGED",
+    );
+  }
+  return { publicationManifestSha256: receipt.manifest_sha256 };
+}
+
 export async function publishStaticSite(
   options: SitePublishOptions,
 ): Promise<SitePublishReceipt> {
@@ -287,6 +323,7 @@ export async function publishPreparedSiteArchive(
     throw new SitePublisherError(safeApiError(queued, token), response.status);
   }
 
+  const publicationReceipt = acknowledgePublication(queued, options, archive);
   const status = typeof queued.status === "string" ? queued.status : "";
   const releaseId = typeof queued.release_id === "string" ? queued.release_id : undefined;
   const target =
@@ -305,6 +342,7 @@ export async function publishPreparedSiteArchive(
       byteCount: typeof queued.bytes === "number" ? queued.bytes : archive.byteCount,
       queued: false,
       tarballBytes: archive.tarball.byteLength,
+      ...publicationReceipt,
     };
   }
 
@@ -320,6 +358,7 @@ export async function publishPreparedSiteArchive(
       queued: true,
       statusUrl: releaseStatusUrl.toString(),
       tarballBytes: archive.tarball.byteLength,
+      ...publicationReceipt,
     };
   }
 
@@ -343,5 +382,6 @@ export async function publishPreparedSiteArchive(
     queued: false,
     statusUrl: releaseStatusUrl.toString(),
     tarballBytes: archive.tarball.byteLength,
+    ...publicationReceipt,
   };
 }

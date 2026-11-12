@@ -221,6 +221,9 @@ async function main(): Promise<void> {
         console.log(`status: ${status}${typeof percent === "number" ? ` (${percent}%)` : ""}`);
       },
     });
+    if (receipt.publicationManifestSha256) {
+      console.log(`publication manifest: ${receipt.publicationManifestSha256}`);
+    }
     if (receipt.queued) {
       console.log(`queued: release=${receipt.releaseId ?? "unknown"}`);
       console.log(`public: ${receipt.publicUrl}`);

@@ -92,7 +92,12 @@ For a discoverable generic release, pass `publicationManifest` and `reviewed: tr
 The manifest declares canonical origin, routes, visibility and sitemap paths;
 `public_urls` is populated by the API from uploaded sitemap bytes. A call without
 a manifest keeps the private/noindex upload behavior. A supplied invalid manifest
-never falls back to a private upload.
+never falls back to a private upload. The API must acknowledge the persisted
+manifest digest, exact archive digest, visibility and approval. Missing or
+mismatched acknowledgement raises
+`ERROR_SITE_PUBLISH_PUBLICATION_NOT_ACKNOWLEDGED`, including when an older API
+ignores the new upload fields. The returned receipt includes
+`publicationManifestSha256`.
 
 The API accepts an injected `fetcher` for deterministic tests and supports
 `noWait`, `timeoutMs`, `pollIntervalMs`, `exclude`, and status callbacks. Keep
