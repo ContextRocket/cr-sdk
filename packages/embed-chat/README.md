@@ -47,9 +47,16 @@ uses a white rocket when it meets 3:1 contrast, otherwise Ink when it meets
 The launcher remains a square at desktop and mobile sizes; the close control
 stays in the chat header.
 To use a customer portrait in the launcher instead of the rocket, set
-`data-contextrocket-launcher-avatar` to an HTTP(S) image URL. The portrait is
-cropped into a circular inset; `data-contextrocket-agent-avatar` independently
-controls the assistant portrait inside the chat.
+`data-contextrocket-launcher-avatar` to an HTTP(S) image URL. The default
+`brand` appearance keeps the Rocket tile with a circular portrait inset. Set
+`data-contextrocket-launcher-appearance="portrait"` for a standalone circular
+portrait launcher with a soft glimmer; transparent PNGs work well. Its backing
+can be customized with `data-contextrocket-launcher-avatar-background` using a
+CSS color or `transparent`. `data-contextrocket-agent-avatar` independently
+controls the assistant portrait inside the chat. Set
+`data-contextrocket-agent-avatar-style="cutout"` to let transparent portrait
+art overlap a gradient header. `data-contextrocket-title` and
+`data-contextrocket-subtitle` customize its localized identity.
 
 The widget source, tests, build, versioning, and release workflow are owned by
 this SDK repository. Build it locally as part of the starter; do not add a
@@ -90,6 +97,11 @@ For a live site, configure the API base and organization handle:
   data-contextrocket-fullscreen-on-load="false"
   data-contextrocket-locale="auto"
   data-contextrocket-agent-avatar="/images/agent-avatar.webp"
+  data-contextrocket-launcher-avatar="/images/agent-avatar.png"
+  data-contextrocket-launcher-appearance="portrait"
+  data-contextrocket-agent-avatar-style="cutout"
+  data-contextrocket-title="Dr. Luna"
+  data-contextrocket-subtitle="Menopause specialist"
   defer
 ></script>
 ```

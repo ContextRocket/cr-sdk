@@ -88,6 +88,12 @@ export class ContextRocketChatElement extends HTMLElement {
       "data-contextrocket-launcher-color",
       "data-contextrocket-greeting",
       "data-contextrocket-title",
+      "data-contextrocket-subtitle",
+      "data-contextrocket-launcher-appearance",
+      "data-contextrocket-launcher-avatar-background",
+      "data-contextrocket-agent-avatar-style",
+      "data-contextrocket-agent-header-start",
+      "data-contextrocket-agent-header-end",
       "data-contextrocket-agent-avatar",
       "data-contextrocket-launcher-avatar",
       "data-contextrocket-ref",
@@ -258,6 +264,9 @@ export class ContextRocketChatElement extends HTMLElement {
     root.lang = this.lang;
     this.#shadow.querySelector<HTMLElement>(".cr-title-text")!.textContent =
       next.title ?? copy.defaultTitle;
+    const subtitle = this.#shadow.querySelector<HTMLElement>(".cr-title-subtitle")!;
+    subtitle.textContent = next.subtitle ?? "";
+    subtitle.hidden = !next.subtitle;
     this.#panel.setAttribute("aria-label", next.title ?? copy.defaultTitle);
     this.#shadow
       .querySelector(".cr-close")!
@@ -291,6 +300,8 @@ export class ContextRocketChatElement extends HTMLElement {
       launcherAvatar.hidden = !next.launcherAvatarUrl;
       if (next.launcherAvatarUrl) launcherAvatar.src = next.launcherAvatarUrl;
     }
+    root.dataset.launcherAppearance = next.launcherAppearance ?? "brand";
+    root.dataset.agentAvatarStyle = next.agentAvatarStyle ?? "circle";
     this.#syncUi();
     this.#footerLink.href = buildPoweredByHref(next);
     this.style.setProperty("--cr-accent", next.accentColor ?? "#0e0f13");
@@ -316,7 +327,7 @@ export class ContextRocketChatElement extends HTMLElement {
     root.innerHTML = `
       <div class="cr-panel" data-open="false" data-position="${escapeHtml(config.position ?? "bottom-right")}" part="panel" role="dialog" aria-modal="true" aria-hidden="true" aria-label="${escapeHtml(config.title ?? copy.defaultTitle)}" inert>
         <header class="cr-header">
-          <h2 class="cr-title"><span class="cr-title-probe"></span><span class="cr-title-text">${escapeHtml(config.title ?? copy.defaultTitle)}</span></h2>
+          <h2 class="cr-title"><span class="cr-title-probe"></span><span class="cr-title-copy"><span class="cr-title-text">${escapeHtml(config.title ?? copy.defaultTitle)}</span><span class="cr-title-subtitle"${config.subtitle ? "" : " hidden"}>${escapeHtml(config.subtitle ?? "")}</span></span></h2>
           <div class="cr-header-actions">
             <button type="button" class="cr-fullscreen-toggle" aria-label="${copy.expand}" aria-pressed="false"${config.fullscreen || config.fullscreenOnOpen || config.fullscreenOnLoad ? "" : " hidden"}>
               <svg class="cr-fullscreen-expand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="m21 3-7 7"/><path d="M9 21H3v-6"/><path d="m3 21 7-7"/></svg>
@@ -349,7 +360,14 @@ export class ContextRocketChatElement extends HTMLElement {
     this.#shadow.replaceChildren(style, root);
     this.#panel = this.#shadow.querySelector(".cr-panel") as HTMLDivElement;
     this.#panel.id = "contextrocket-chat-panel";
-    this.#shadow.querySelector(".cr-title-probe")?.replaceWith(this.#createProbe(false));
+    const titleProbePlaceholder = this.#shadow.querySelector(".cr-title-probe");
+    if (titleProbePlaceholder) {
+      const titleProbe = this.#createProbe(false);
+      titleProbe.classList.add("cr-title-probe");
+      titleProbePlaceholder.replaceWith(titleProbe);
+    }
+    root.dataset.launcherAppearance = config.launcherAppearance ?? "brand";
+    root.dataset.agentAvatarStyle = config.agentAvatarStyle ?? "circle";
     const titleLabel = this.#shadow.querySelector<HTMLElement>(".cr-title-text");
     if (titleLabel) titleLabel.textContent = config.title ?? copy.defaultTitle;
     this.#launcher = this.#shadow.querySelector(
@@ -392,6 +410,9 @@ export class ContextRocketChatElement extends HTMLElement {
     const tokens: Array<[string, string | undefined]> = [
       ["--cr-launcher-bg", config.launcherColor ?? "#FF2B67"],
       ["--cr-launcher-fg", config.launcherForeground ?? "#FFFFFF"],
+      ["--cr-launcher-avatar-bg", config.launcherAvatarBackground],
+      ["--cr-agent-header-start", config.agentHeaderStartColor],
+      ["--cr-agent-header-end", config.agentHeaderEndColor],
       ["--cr-theme-background", config.backgroundColor],
       ["--cr-theme-foreground", config.foregroundColor],
       ["--cr-theme-surface", config.surfaceColor],
@@ -738,6 +759,8 @@ export class ContextRocketChatElement extends HTMLElement {
     const shouldFollowOutput =
       this.#forceMessagesToBottom ||
       distanceFromBottom <= CHAT_SCROLL_BOTTOM_THRESHOLD;
+    const headerProbe = this.#shadow.querySelector<HTMLElement>(".cr-title-probe");
+    if (headerProbe) headerProbe.dataset.working = String(this.#state.status === "streaming");
     this.#forceMessagesToBottom = false;
     this.#messages.replaceChildren();
 

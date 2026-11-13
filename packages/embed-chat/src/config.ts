@@ -126,6 +126,12 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
   );
   const greeting = readAttr(source, `data-${DATA_PREFIX}-greeting`);
   const title = readAttr(source, `data-${DATA_PREFIX}-title`);
+  const subtitle = readAttr(source, `data-${DATA_PREFIX}-subtitle`);
+  const rawLauncherAppearance = readAttr(source, `data-${DATA_PREFIX}-launcher-appearance`);
+  const rawAgentAvatarStyle = readAttr(source, `data-${DATA_PREFIX}-agent-avatar-style`);
+  const agentHeaderStartColor = readAttr(source, `data-${DATA_PREFIX}-agent-header-start`);
+  const agentHeaderEndColor = readAttr(source, `data-${DATA_PREFIX}-agent-header-end`);
+  const launcherAvatarBackground = readAttr(source, `data-${DATA_PREFIX}-launcher-avatar-background`);
   const agentAvatarUrl = readAttr(source, `data-${DATA_PREFIX}-agent-avatar`);
   const launcherAvatarUrl = readAttr(source, `data-${DATA_PREFIX}-launcher-avatar`);
   const ref = readAttr(source, `data-${DATA_PREFIX}-ref`);
@@ -173,6 +179,16 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
     ...(boundedText(title, MAX_TITLE_LENGTH)
       ? { title: boundedText(title, MAX_TITLE_LENGTH) }
       : {}),
+    ...(boundedText(subtitle, MAX_TITLE_LENGTH)
+      ? { subtitle: boundedText(subtitle, MAX_TITLE_LENGTH) }
+      : {}),
+    ...(rawLauncherAppearance === "portrait" ? { launcherAppearance: "portrait" as const } : {}),
+    ...(safeAccent(launcherAvatarBackground) || launcherAvatarBackground?.toLowerCase() === "transparent"
+      ? { launcherAvatarBackground: launcherAvatarBackground!.toLowerCase() === "transparent" ? "transparent" : safeAccent(launcherAvatarBackground) }
+      : {}),
+    ...(rawAgentAvatarStyle === "cutout" ? { agentAvatarStyle: "cutout" as const } : {}),
+    ...(safeAccent(agentHeaderStartColor) ? { agentHeaderStartColor: safeAccent(agentHeaderStartColor) } : {}),
+    ...(safeAccent(agentHeaderEndColor) ? { agentHeaderEndColor: safeAccent(agentHeaderEndColor) } : {}),
     ...(safeAvatarUrl(agentAvatarUrl, source.ownerDocument.baseURI)
       ? { agentAvatarUrl: safeAvatarUrl(agentAvatarUrl, source.ownerDocument.baseURI) }
       : {}),

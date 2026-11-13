@@ -83,10 +83,20 @@ export interface WidgetConfig {
   launcherForeground?: string;
   /** Optional customer portrait displayed in the launcher instead of the rocket. */
   launcherAvatarUrl?: string;
+  /** Portrait launcher treatment; `brand` retains the standard Rocket tile. */
+  launcherAppearance?: "brand" | "portrait";
+  /** Optional CSS color behind a transparent launcher portrait. */
+  launcherAvatarBackground?: string;
   greeting?: string;
   title?: string;
+  subtitle?: string;
   /** Optional site-specific assistant portrait shown within the chat panel. */
   agentAvatarUrl?: string;
+  /** `cutout` lets transparent portrait art overlap a branded chat header. */
+  agentAvatarStyle?: "circle" | "cutout";
+  /** Optional CSS color endpoints for a cutout portrait header gradient. */
+  agentHeaderStartColor?: string;
+  agentHeaderEndColor?: string;
   ref?: string;
   backgroundColor?: string;
   foregroundColor?: string;
