@@ -95,10 +95,10 @@ version is not already in the registry:
 
 ```bash
 cd packages/sdk && pnpm pack --out /tmp/contextrocket-sdk-%v.tgz
-npm view @contextrocket/sdk@0.1.2 version
+npm view @contextrocket/sdk@0.0.1 version
 
 cd ../embed-chat && pnpm pack --out /tmp/contextrocket-embed-chat-%v.tgz
-npm view @contextrocket/embed-chat@0.0.2 version
+npm view @contextrocket/embed-chat@0.0.1 version
 
 cd ../site-publisher && pnpm pack --out /tmp/contextrocket-site-publisher-%v.tgz
 npm view @contextrocket/site-publisher@0.1.0 version
