@@ -33,6 +33,14 @@ NEXT_PUBLIC_CONTEXTROCKET_API_KEY=your-publishable-api-key
 The website API key is meant for browser use and must be publishable and
 origin-bound. Never put a server secret in a public variable.
 
+Customer integrations should set their organization's handle explicitly; the
+SDK does not silently route an unconfigured client to the `contextrocket`
+organization. With a handle, A2A uses the typed
+`/{company|person}/{handle}/a2a` endpoint. Omitting the handle selects the
+platform `/a2a` endpoint, which is useful for ContextRocket operator workflows
+that intentionally address the platform agent. Static callers can also use
+the typed company endpoint with `handle: "contextrocket"`.
+
 ### A2A identity and access tiers
 
 The handle selects an organization; it does not prove that the caller is a

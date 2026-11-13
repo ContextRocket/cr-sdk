@@ -6,6 +6,16 @@ afterEach(() => {
 });
 
 describe("resolveCRConfig", () => {
+  it("does not silently target ContextRocket when no organization is configured", () => {
+    expect(resolveCRConfig().handle).toBeUndefined();
+  });
+
+  it("lets callers explicitly select the handle-free platform endpoint", () => {
+    vi.stubEnv("NEXT_PUBLIC_CONTEXTROCKET_HANDLE", "customer-org");
+
+    expect(resolveCRConfig({ handle: undefined }).handle).toBeUndefined();
+  });
+
   it("reads statically exposed Next public variables", () => {
     vi.stubEnv("NEXT_PUBLIC_CONTEXTROCKET_HANDLE", "next-org");
     vi.stubEnv("NEXT_PUBLIC_CONTEXTROCKET_SUBJECT_KIND", "person");

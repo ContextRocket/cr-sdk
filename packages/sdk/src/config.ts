@@ -55,7 +55,7 @@ export function resolveCRConfig(overrides: Partial<CRConfig> = {}): CRConfig {
     publicEnv(
       "NEXT_PUBLIC_CONTEXTROCKET_HANDLE",
       "PUBLIC_CONTEXTROCKET_HANDLE",
-    ) || "contextrocket";
+    );
   const configuredSubjectKind = publicEnv(
     "NEXT_PUBLIC_CONTEXTROCKET_SUBJECT_KIND",
     "PUBLIC_CONTEXTROCKET_SUBJECT_KIND",
@@ -75,7 +75,9 @@ export function resolveCRConfig(overrides: Partial<CRConfig> = {}): CRConfig {
 
   return {
     agentUrl: (overrides.agentUrl ?? agentUrl).replace(/\/$/, ""),
-    handle: overrides.handle ?? (handle || undefined),
+    handle: Object.hasOwn(overrides, "handle")
+      ? overrides.handle
+      : handle || undefined,
     subjectKind: overrides.subjectKind ?? subjectKind,
     apiKey: overrides.apiKey ?? (apiKey || undefined),
     backendEnabled: overrides.backendEnabled ?? backendEnabled,
