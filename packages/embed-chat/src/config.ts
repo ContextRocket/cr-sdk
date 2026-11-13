@@ -130,6 +130,7 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
   const titleBadge = readAttr(source, `data-${DATA_PREFIX}-title-badge`);
   const rawLauncherAppearance = readAttr(source, `data-${DATA_PREFIX}-launcher-appearance`);
   const rawAgentAvatarStyle = readAttr(source, `data-${DATA_PREFIX}-agent-avatar-style`);
+  const rawAgentIdentity = readAttr(source, `data-${DATA_PREFIX}-agent-identity`);
   const agentHeaderStartColor = readAttr(source, `data-${DATA_PREFIX}-agent-header-start`);
   const agentHeaderEndColor = readAttr(source, `data-${DATA_PREFIX}-agent-header-end`);
   const launcherAvatarBackground = readAttr(source, `data-${DATA_PREFIX}-launcher-avatar-background`);
@@ -191,6 +192,7 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
       ? { launcherAvatarBackground: launcherAvatarBackground!.toLowerCase() === "transparent" ? "transparent" : safeAccent(launcherAvatarBackground) }
       : {}),
     ...(rawAgentAvatarStyle === "cutout" ? { agentAvatarStyle: "cutout" as const } : {}),
+    agentIdentity: rawAgentIdentity === "probe" ? "probe" : "contextrocket",
     ...(safeAccent(agentHeaderStartColor) ? { agentHeaderStartColor: safeAccent(agentHeaderStartColor) } : {}),
     ...(safeAccent(agentHeaderEndColor) ? { agentHeaderEndColor: safeAccent(agentHeaderEndColor) } : {}),
     ...(safeAvatarUrl(agentAvatarUrl, source.ownerDocument.baseURI)

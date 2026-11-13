@@ -270,6 +270,8 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
 }
 .cr-probe svg { position: relative; z-index: 1; width: 100%; height: 100%; overflow: visible; }
 .cr-probe .cr-agent-avatar { position: relative; z-index: 1; display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.cr-probe[data-identity="contextrocket"] { border-radius: 9999px; background: #0e0f13; color: #fff; }
+.cr-probe .cr-agent-mark { position: relative; z-index: 1; display: block; width: 68%; height: 68%; object-fit: contain; }
 .cr-probe[data-working="true"]::before {
   content: "";
   position: absolute;

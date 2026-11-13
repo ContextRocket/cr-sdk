@@ -93,6 +93,8 @@ export interface WidgetConfig {
   subtitle?: string;
   /** Optional site-specific assistant portrait shown within the chat panel. */
   agentAvatarUrl?: string;
+  /** Brand mark is the public-site default; Probe is available for ContextRocket product surfaces. */
+  agentIdentity?: "contextrocket" | "probe";
   /** `cutout` lets transparent portrait art overlap a branded chat header. */
   agentAvatarStyle?: "circle" | "cutout";
   /** Optional CSS color endpoints for a cutout portrait header gradient. */

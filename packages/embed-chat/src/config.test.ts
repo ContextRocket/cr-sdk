@@ -45,6 +45,16 @@ describe("parseWidgetConfig fullscreen options", () => {
 });
 
 describe("parseWidgetConfig agent avatar", () => {
+  it("defaults public widget surfaces to the ContextRocket identity", () => {
+    expect(parseWidgetConfig(widgetSource())).toMatchObject({ agentIdentity: "contextrocket" });
+  });
+
+  it("allows the Probe identity on product surfaces", () => {
+    expect(parseWidgetConfig(widgetSource({
+      "data-contextrocket-agent-identity": "probe",
+    }))).toMatchObject({ agentIdentity: "probe" });
+  });
+
   it("accepts a site-relative portrait URL", () => {
     expect(parseWidgetConfig(widgetSource({
       "data-contextrocket-agent-avatar": "/luna/avatar.webp",

@@ -334,8 +334,8 @@ export class ContextRocketChatElement extends HTMLElement {
           <h2 class="cr-title"><span class="cr-title-probe"></span><span class="cr-title-copy"><span class="cr-title-heading"><span class="cr-title-text">${escapeHtml(config.title ?? copy.defaultTitle)}</span><span class="cr-title-badge"${config.titleBadge ? "" : " hidden"}>${escapeHtml(config.titleBadge ?? "")}</span></span><span class="cr-title-subtitle"${config.subtitle ? "" : " hidden"}>${escapeHtml(config.subtitle ?? "")}</span></span></h2>
           <div class="cr-header-actions">
             <button type="button" class="cr-fullscreen-toggle" aria-label="${copy.expand}" aria-pressed="false"${config.fullscreen || config.fullscreenOnOpen || config.fullscreenOnLoad ? "" : " hidden"}>
-              <svg class="cr-fullscreen-expand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="m21 3-7 7"/><path d="M9 21H3v-6"/><path d="m3 21 7-7"/></svg>
-              <svg class="cr-fullscreen-collapse-icon" hidden xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v6H2"/><path d="m2 9 7-7"/><path d="M16 21v-6h6"/><path d="m22 15-7 7"/></svg>
+              <svg class="cr-fullscreen-expand-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M21 16v3a2 2 0 0 1-2 2h-3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/></svg>
+              <svg class="cr-fullscreen-collapse-icon" hidden xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 8V5"/><path d="M8 8H5"/><path d="M16 8h3"/><path d="M16 8V5"/><path d="M16 16v3"/><path d="M16 16h3"/><path d="M8 16H5"/><path d="M8 16v3"/></svg>
             </button>
             <button type="button" class="cr-close" aria-label="${copy.close}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
           </div>
@@ -433,6 +433,8 @@ export class ContextRocketChatElement extends HTMLElement {
     const avatar = document.createElement("span");
     avatar.className = "cr-probe";
     avatar.dataset.working = String(working);
+    const identity = this.#config?.agentIdentity ?? "contextrocket";
+    avatar.dataset.identity = this.#config?.agentAvatarUrl ? "custom" : identity;
     avatar.setAttribute("aria-hidden", "true");
     if (this.#config?.agentAvatarUrl) {
       const image = document.createElement("img");
@@ -442,8 +444,15 @@ export class ContextRocketChatElement extends HTMLElement {
       image.loading = "lazy";
       image.decoding = "async";
       avatar.appendChild(image);
-    } else {
+    } else if (identity === "probe") {
       avatar.innerHTML = '<svg viewBox="0 0 64 64" focusable="false"><path d="M32 6c11 0 18 7.5 18 18v17c0 7-5.5 12-12.5 12h-11C19.5 53 14 48 14 41V24C14 13.5 21 6 32 6z"/><rect x="17" y="21" width="30" height="10" rx="5" class="cr-probe-visor"/><rect x="34.5" y="23" width="4" height="6" rx=".8" class="cr-probe-eye"/><rect x="22" y="54.5" width="6" height="3.5" rx="1.75" class="cr-probe-foot"/><rect x="36" y="54.5" width="6" height="3.5" rx="1.75" class="cr-probe-foot"/></svg>';
+    } else {
+      const image = document.createElement("img");
+      image.className = "cr-agent-mark";
+      image.src = rocketImage("#FFFFFF");
+      image.alt = "";
+      image.decoding = "async";
+      avatar.appendChild(image);
     }
     return avatar;
   }
