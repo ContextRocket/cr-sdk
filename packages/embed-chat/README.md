@@ -49,7 +49,11 @@ uses a white rocket when it meets 3:1 contrast, otherwise Ink when it meets
 3:1; if neither does, it falls back to the Ink square with a white rocket.
 The launcher remains a square at desktop and mobile sizes; the close control
 stays in the chat header.
-The chat header and assistant messages use the ContextRocket spark mark by
+When a site title is not configured, the header uses the wide ContextRocket
+wordmark and the composer invites visitors to “Ask anything”. A configured
+site title keeps its existing assistant identity; a supplied header wordmark
+replaces the ContextRocket mark. This keeps the heading from repeating the
+composer prompt. Assistant messages use the ContextRocket spark mark by
 default. The empty welcome state stays uncluttered unless a site supplies an
 assistant portrait or opts into Probe. Set
 `data-contextrocket-agent-identity="probe"` only for a ContextRocket product

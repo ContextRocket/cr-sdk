@@ -320,17 +320,17 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
 }
 .cr-root[data-header-logo="true"] .cr-header {
   min-height: 4rem;
-  background: var(--cr-header-bg, #0E0F13);
-  color: var(--cr-header-fg, #FFFFFF);
-  border-bottom-color: color-mix(in srgb, var(--cr-header-fg, #FFFFFF) 14%, transparent);
+  background: var(--cr-header-bg, var(--cr-bg));
+  color: var(--cr-header-fg, var(--cr-text));
+  border-bottom-color: color-mix(in srgb, var(--cr-header-fg, var(--cr-text)) 14%, transparent);
 }
 .cr-title-brand-logo { display: block; width: auto; height: auto; max-width: 8rem; max-height: 2.5rem; object-fit: contain; }
 .cr-root[data-header-logo="true"] .cr-close,
-.cr-root[data-header-logo="true"] .cr-fullscreen-toggle { color: var(--cr-header-fg, #FFFFFF); }
+.cr-root[data-header-logo="true"] .cr-fullscreen-toggle { color: var(--cr-header-fg, var(--cr-text)); }
 .cr-root[data-header-logo="true"] .cr-close:hover,
-.cr-root[data-header-logo="true"] .cr-fullscreen-toggle:hover { background: rgb(255 255 255 / .12); color: var(--cr-header-fg, #FFFFFF); }
+.cr-root[data-header-logo="true"] .cr-fullscreen-toggle:hover { background: color-mix(in srgb, var(--cr-header-fg, var(--cr-text)) 10%, transparent); color: var(--cr-header-fg, var(--cr-text)); }
 .cr-root[data-header-logo="true"] .cr-close:focus-visible,
-.cr-root[data-header-logo="true"] .cr-fullscreen-toggle:focus-visible { outline-color: var(--cr-header-fg, #FFFFFF); }
+.cr-root[data-header-logo="true"] .cr-fullscreen-toggle:focus-visible { outline-color: var(--cr-header-fg, var(--cr-text)); }
 
 .cr-title-copy { display: grid; min-width: 0; }
 .cr-title-heading { display: flex; align-items: center; gap: .4rem; min-width: 0; }

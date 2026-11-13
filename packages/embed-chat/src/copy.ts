@@ -21,7 +21,7 @@ export function resolveWidgetLocale(
 
 export const COPY = {
   en: {
-    defaultTitle: "Ask ContextRocket",
+    defaultTitle: "ContextRocket",
     poweredBy: "Powered by ContextRocket",
     poweredByLabel: "Powered by",
     generic: "Something went wrong. Try again.",
@@ -43,7 +43,7 @@ export const COPY = {
     send: "Send",
     stop: "Stop response",
     retry: "Try again",
-    placeholder: "Ask a question…",
+    placeholder: "Ask anything…",
     working: "Thinking…",
     submitted: "Connecting…",
     inputRequired: "A response is needed to continue.",
@@ -79,7 +79,7 @@ export const COPY = {
     ],
   },
   es: {
-    defaultTitle: "Pregunta a ContextRocket",
+    defaultTitle: "ContextRocket",
     poweredBy: "Con tecnología de ContextRocket",
     poweredByLabel: "Con tecnología de",
     generic: "Algo salió mal. Inténtalo de nuevo.",
@@ -101,7 +101,7 @@ export const COPY = {
     send: "Enviar",
     stop: "Detener respuesta",
     retry: "Intentar de nuevo",
-    placeholder: "Haz una pregunta…",
+    placeholder: "Pregúntame lo que quieras…",
     working: "Pensando…",
     submitted: "Conectando…",
     inputRequired: "Se necesita una respuesta para continuar.",
@@ -137,7 +137,7 @@ export const COPY = {
     ],
   },
   de: {
-    defaultTitle: "Frag ContextRocket",
+    defaultTitle: "ContextRocket",
     poweredBy: "Mit ContextRocket",
     poweredByLabel: "Mit",
     generic: "Etwas ist schiefgelaufen. Versuch es erneut.",
@@ -159,7 +159,7 @@ export const COPY = {
     send: "Senden",
     stop: "Antwort stoppen",
     retry: "Erneut versuchen",
-    placeholder: "Frage stellen…",
+    placeholder: "Frag mich alles…",
     working: "Denkt nach…",
     submitted: "Verbindung wird hergestellt…",
     inputRequired: "Für die Fortsetzung ist eine Antwort erforderlich.",
@@ -195,12 +195,12 @@ export const COPY = {
     ],
   },
   zh: {
-    defaultTitle: "询问 ContextRocket", poweredBy: "由 ContextRocket 提供支持", poweredByLabel: "由以下提供支持",
+    defaultTitle: "ContextRocket", poweredBy: "由 ContextRocket 提供支持", poweredByLabel: "由以下提供支持",
     generic: "出了点问题，请重试。", demoResponse: "此预览使用示例内容展示聊天可呈现的结构化回复卡片。配置实时模式即可连接组织代理。",
     demoProgress: "预览 · 正在检查示例来源", demoEvidenceTitle: "示例来源", demoEvidenceExcerpt: "示例证据展示了回复如何引用来源。",
     demoEvidenceTitleTwo: "另一个来源", demoEvidenceExcerptTwo: "每张卡片都使用类型化的 JSON Render 组件。", demoQuestion: "接下来想了解哪个主题？",
     demoProposal: "示例方案展示了如何总结一个想法。", demoProposalTwo: "相关方案可以组合展示。", demoSuggestions: ["可以再详细介绍吗？", "接下来可以了解什么？", "给我看一个示例。"], open: "打开聊天", close: "关闭聊天",
-    expand: "展开聊天", collapse: "退出全屏", send: "发送", stop: "停止回复", retry: "重试", placeholder: "请输入问题…",
+    expand: "展开聊天", collapse: "退出全屏", send: "发送", stop: "停止回复", retry: "重试", placeholder: "想问什么都可以…",
     working: "正在思考…", submitted: "正在连接…", inputRequired: "请填写回复后继续。", canceled: "回复已停止，您可以重试。",
     interrupted: "连接在回复完成前中断，请重试。", unsupported: "此聊天暂不支持该内容，请重试。", sources: "来源",
     suggestions: "后续建议", unavailable: "此回复卡片暂不可用。", evidence: "依据", question: "问题", proposals: "方案",

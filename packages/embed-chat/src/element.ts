@@ -29,6 +29,9 @@ const rocketImage = (color = "#FFFFFF") =>
   `data:image/svg+xml,${encodeURIComponent(rocketSpark.replaceAll("currentColor", color))}`;
 const logoDataUri = (svg: string) => `data:image/svg+xml,${encodeURIComponent(svg)}`;
 const poweredByLogos = { ink: logoDataUri(logoInk), white: logoDataUri(logoWhite) };
+function headerLogoFor(config: WidgetConfig): string | undefined {
+  return config.headerLogoUrl ?? (!config.title ? poweredByLogos.ink : undefined);
+}
 const CHAT_SCROLL_BOTTOM_THRESHOLD = 48;
 const demoCards = new Set<WidgetDemoCard>([
   "Evidence",
@@ -331,11 +334,12 @@ export class ContextRocketChatElement extends HTMLElement {
     root.className = "cr-root";
     root.lang = this.lang;
     root.dataset.position = config.position ?? "bottom-right";
-    root.dataset.headerLogo = String(Boolean(config.headerLogoUrl));
+    const headerLogoUrl = headerLogoFor(config);
+    root.dataset.headerLogo = String(Boolean(headerLogoUrl));
     root.innerHTML = `
       <div class="cr-panel" data-open="false" data-position="${escapeHtml(config.position ?? "bottom-right")}" part="panel" role="dialog" aria-modal="true" aria-hidden="true" aria-label="${escapeHtml(config.title ?? copy.defaultTitle)}" inert>
         <header class="cr-header">
-          <h2 class="cr-title"${config.headerLogoUrl ? ` aria-label="${escapeHtml(config.title ?? copy.defaultTitle)}"` : ""}>${config.headerLogoUrl ? `<img class="cr-title-brand-logo" src="${escapeHtml(config.headerLogoUrl)}" alt="" aria-hidden="true">` : `<span class="cr-title-probe"></span><span class="cr-title-copy"><span class="cr-title-heading"><span class="cr-title-text">${escapeHtml(config.title ?? copy.defaultTitle)}</span><span class="cr-title-badge"${config.titleBadge ? "" : " hidden"}>${escapeHtml(config.titleBadge ?? "")}</span></span><span class="cr-title-subtitle"${config.subtitle ? "" : " hidden"}>${escapeHtml(config.subtitle ?? "")}</span></span>`}</h2>
+          <h2 class="cr-title"${headerLogoUrl ? ` aria-label="${escapeHtml(config.title ?? copy.defaultTitle)}"` : ""}>${headerLogoUrl ? `<img class="cr-title-brand-logo" src="${escapeHtml(headerLogoUrl)}" alt="" aria-hidden="true">` : `<span class="cr-title-probe"></span><span class="cr-title-copy"><span class="cr-title-heading"><span class="cr-title-text">${escapeHtml(config.title ?? copy.defaultTitle)}</span><span class="cr-title-badge"${config.titleBadge ? "" : " hidden"}>${escapeHtml(config.titleBadge ?? "")}</span></span><span class="cr-title-subtitle"${config.subtitle ? "" : " hidden"}>${escapeHtml(config.subtitle ?? "")}</span></span>`}</h2>
           <div class="cr-header-actions">
             <button type="button" class="cr-fullscreen-toggle" aria-label="${copy.expand}" aria-pressed="false"${config.fullscreen || config.fullscreenOnOpen || config.fullscreenOnLoad ? "" : " hidden"}>
               <svg class="cr-fullscreen-expand-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M21 16v3a2 2 0 0 1-2 2h-3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/></svg>
@@ -425,14 +429,15 @@ export class ContextRocketChatElement extends HTMLElement {
   }
 
   #applyTheme(config: WidgetConfig): void {
+    const usesDefaultWordmark = !config.title && !config.headerLogoUrl;
     const tokens: Array<[string, string | undefined]> = [
       ["--cr-launcher-bg", config.launcherColor ?? "#FF2B67"],
       ["--cr-launcher-fg", config.launcherForeground ?? "#FFFFFF"],
       ["--cr-launcher-avatar-bg", config.launcherAvatarBackground],
       ["--cr-agent-header-start", config.agentHeaderStartColor],
       ["--cr-agent-header-end", config.agentHeaderEndColor],
-      ["--cr-header-bg", config.headerBackgroundColor],
-      ["--cr-header-fg", config.headerForegroundColor],
+      ["--cr-header-bg", config.headerBackgroundColor ?? (usesDefaultWordmark ? "#FAF9F6" : undefined)],
+      ["--cr-header-fg", config.headerForegroundColor ?? (usesDefaultWordmark ? "#0E0F13" : undefined)],
       ["--cr-theme-background", config.backgroundColor],
       ["--cr-theme-foreground", config.foregroundColor],
       ["--cr-theme-surface", config.surfaceColor],
@@ -444,7 +449,7 @@ export class ContextRocketChatElement extends HTMLElement {
       else this.style.removeProperty(name);
     }
     const root = this.#shadow.querySelector<HTMLElement>(".cr-root");
-    if (root) root.dataset.headerLogo = String(Boolean(config.headerLogoUrl));
+    if (root) root.dataset.headerLogo = String(Boolean(headerLogoFor(config)));
   }
 
   #createProbe(working: boolean): HTMLSpanElement {
