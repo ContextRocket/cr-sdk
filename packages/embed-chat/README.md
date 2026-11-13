@@ -23,8 +23,9 @@ discovers `skills[].examples` from the typed public Agent Card at
 Discovery follows changes to the organization or API base and discards a late
 response from an earlier configuration; a failed lookup can be retried when a
 visitor reopens the chat. After a turn, context-sensitive follow-up suggestions
-are read from the A2A response `metadata.suggestions`. Both entry prompts and
-follow-ups use the same suggestions terminology in the UI.
+are read from the A2A response `metadata.suggestions`. The follow-up chips are
+visibly labeled “Suggested follow-ups” (localized with the widget), and canned
+demo answers include sample follow-ups so the design can be reviewed offline.
 
 In demo mode, the “Preview response cards” tab lets visitors inspect the full
 five-component catalog or choose a focused Evidence, Progress, Question,
@@ -55,6 +56,11 @@ assistant portrait or opts into Probe. Set
 surface that should use the Probe avatar. A configured
 `data-contextrocket-agent-avatar` portrait takes precedence, so customer sites
 can use their own assistant identity without inheriting Probe.
+For a customer-branded header, set `data-contextrocket-header-logo` to an
+HTTP(S) or site-relative wordmark URL. It replaces the ContextRocket mark in
+the header while keeping the configured title as its accessible name. Set
+`data-contextrocket-header-background` and
+`data-contextrocket-header-foreground` to choose a contrasting header palette.
 To use a customer portrait in the launcher instead of the rocket, set
 `data-contextrocket-launcher-avatar` to an HTTP(S) image URL. The default
 `brand` appearance keeps the Rocket tile with a circular portrait inset. Set

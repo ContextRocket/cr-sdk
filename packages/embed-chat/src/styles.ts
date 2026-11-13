@@ -318,6 +318,19 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
   border-bottom: 1px solid var(--cr-border);
   background: var(--cr-bg);
 }
+.cr-root[data-header-logo="true"] .cr-header {
+  min-height: 4rem;
+  background: var(--cr-header-bg, #0E0F13);
+  color: var(--cr-header-fg, #FFFFFF);
+  border-bottom-color: color-mix(in srgb, var(--cr-header-fg, #FFFFFF) 14%, transparent);
+}
+.cr-title-brand-logo { display: block; width: auto; height: auto; max-width: 8rem; max-height: 2.5rem; object-fit: contain; }
+.cr-root[data-header-logo="true"] .cr-close,
+.cr-root[data-header-logo="true"] .cr-fullscreen-toggle { color: var(--cr-header-fg, #FFFFFF); }
+.cr-root[data-header-logo="true"] .cr-close:hover,
+.cr-root[data-header-logo="true"] .cr-fullscreen-toggle:hover { background: rgb(255 255 255 / .12); color: var(--cr-header-fg, #FFFFFF); }
+.cr-root[data-header-logo="true"] .cr-close:focus-visible,
+.cr-root[data-header-logo="true"] .cr-fullscreen-toggle:focus-visible { outline-color: var(--cr-header-fg, #FFFFFF); }
 
 .cr-title-copy { display: grid; min-width: 0; }
 .cr-title-heading { display: flex; align-items: center; gap: .4rem; min-width: 0; }
@@ -707,6 +720,7 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
   gap: var(--tw-space-1_5);
   margin-top: var(--tw-space-2);
 }
+.cr-suggestions-label { flex: 0 0 100%; color: var(--cr-muted); font-size: .6875rem; font-weight: 700; letter-spacing: .06em; line-height: 1rem; text-transform: uppercase; }
 
 .cr-opening-suggestions {
   display: grid;

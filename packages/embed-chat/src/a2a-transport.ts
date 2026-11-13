@@ -343,6 +343,7 @@ async function* streamDemoEvents(
     type: "meta",
     state: "working",
     responseSpec: demoResponseSpec(config, request.demoCard),
+    suggestions: [...copyFor(config).demoSuggestions],
   };
   if (signal?.aborted) {
     return;

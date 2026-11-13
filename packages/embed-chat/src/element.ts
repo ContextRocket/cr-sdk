@@ -88,6 +88,9 @@ export class ContextRocketChatElement extends HTMLElement {
       "data-contextrocket-launcher-color",
       "data-contextrocket-greeting",
       "data-contextrocket-title",
+      "data-contextrocket-header-logo",
+      "data-contextrocket-header-background",
+      "data-contextrocket-header-foreground",
       "data-contextrocket-subtitle",
       "data-contextrocket-title-badge",
       "data-contextrocket-launcher-appearance",
@@ -328,10 +331,11 @@ export class ContextRocketChatElement extends HTMLElement {
     root.className = "cr-root";
     root.lang = this.lang;
     root.dataset.position = config.position ?? "bottom-right";
+    root.dataset.headerLogo = String(Boolean(config.headerLogoUrl));
     root.innerHTML = `
       <div class="cr-panel" data-open="false" data-position="${escapeHtml(config.position ?? "bottom-right")}" part="panel" role="dialog" aria-modal="true" aria-hidden="true" aria-label="${escapeHtml(config.title ?? copy.defaultTitle)}" inert>
         <header class="cr-header">
-          <h2 class="cr-title"><span class="cr-title-probe"></span><span class="cr-title-copy"><span class="cr-title-heading"><span class="cr-title-text">${escapeHtml(config.title ?? copy.defaultTitle)}</span><span class="cr-title-badge"${config.titleBadge ? "" : " hidden"}>${escapeHtml(config.titleBadge ?? "")}</span></span><span class="cr-title-subtitle"${config.subtitle ? "" : " hidden"}>${escapeHtml(config.subtitle ?? "")}</span></span></h2>
+          <h2 class="cr-title"${config.headerLogoUrl ? ` aria-label="${escapeHtml(config.title ?? copy.defaultTitle)}"` : ""}>${config.headerLogoUrl ? `<img class="cr-title-brand-logo" src="${escapeHtml(config.headerLogoUrl)}" alt="" aria-hidden="true">` : `<span class="cr-title-probe"></span><span class="cr-title-copy"><span class="cr-title-heading"><span class="cr-title-text">${escapeHtml(config.title ?? copy.defaultTitle)}</span><span class="cr-title-badge"${config.titleBadge ? "" : " hidden"}>${escapeHtml(config.titleBadge ?? "")}</span></span><span class="cr-title-subtitle"${config.subtitle ? "" : " hidden"}>${escapeHtml(config.subtitle ?? "")}</span></span>`}</h2>
           <div class="cr-header-actions">
             <button type="button" class="cr-fullscreen-toggle" aria-label="${copy.expand}" aria-pressed="false"${config.fullscreen || config.fullscreenOnOpen || config.fullscreenOnLoad ? "" : " hidden"}>
               <svg class="cr-fullscreen-expand-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M21 16v3a2 2 0 0 1-2 2h-3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/></svg>
@@ -370,6 +374,16 @@ export class ContextRocketChatElement extends HTMLElement {
       titleProbe.classList.add("cr-title-probe");
       titleProbePlaceholder.replaceWith(titleProbe);
     }
+    this.#shadow.querySelector<HTMLImageElement>(".cr-title-brand-logo")?.addEventListener("error", (event) => {
+      const image = event.currentTarget as HTMLImageElement;
+      const probe = this.#createProbe(false);
+      probe.classList.add("cr-title-probe");
+      const fallbackTitle = document.createElement("span");
+      fallbackTitle.className = "cr-title-text";
+      fallbackTitle.textContent = config.title ?? copy.defaultTitle;
+      image.replaceWith(probe, fallbackTitle);
+      root.dataset.headerLogo = "false";
+    });
     root.dataset.launcherAppearance = config.launcherAppearance ?? "brand";
     root.dataset.agentAvatarStyle = config.agentAvatarStyle ?? "circle";
     const titleLabel = this.#shadow.querySelector<HTMLElement>(".cr-title-text");
@@ -417,6 +431,8 @@ export class ContextRocketChatElement extends HTMLElement {
       ["--cr-launcher-avatar-bg", config.launcherAvatarBackground],
       ["--cr-agent-header-start", config.agentHeaderStartColor],
       ["--cr-agent-header-end", config.agentHeaderEndColor],
+      ["--cr-header-bg", config.headerBackgroundColor],
+      ["--cr-header-fg", config.headerForegroundColor],
       ["--cr-theme-background", config.backgroundColor],
       ["--cr-theme-foreground", config.foregroundColor],
       ["--cr-theme-surface", config.surfaceColor],
@@ -427,6 +443,8 @@ export class ContextRocketChatElement extends HTMLElement {
       if (value) this.style.setProperty(name, value);
       else this.style.removeProperty(name);
     }
+    const root = this.#shadow.querySelector<HTMLElement>(".cr-root");
+    if (root) root.dataset.headerLogo = String(Boolean(config.headerLogoUrl));
   }
 
   #createProbe(working: boolean): HTMLSpanElement {
@@ -1004,6 +1022,11 @@ export class ContextRocketChatElement extends HTMLElement {
     const region = document.createElement("div");
     region.className = "cr-suggestions";
     region.setAttribute("aria-label", copy.suggestions);
+    const label = document.createElement("span");
+    label.className = "cr-suggestions-label";
+    label.setAttribute("aria-hidden", "true");
+    label.textContent = copy.suggestions;
+    region.appendChild(label);
     for (const suggestion of suggestions) {
       const button = document.createElement("button");
       button.type = "button";

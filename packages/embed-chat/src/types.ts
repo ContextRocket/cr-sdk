@@ -89,6 +89,11 @@ export interface WidgetConfig {
   launcherAvatarBackground?: string;
   greeting?: string;
   title?: string;
+  /** Optional site wordmark shown in place of the ContextRocket mark in the panel header. */
+  headerLogoUrl?: string;
+  /** Header palette used with a site wordmark. */
+  headerBackgroundColor?: string;
+  headerForegroundColor?: string;
   titleBadge?: string;
   subtitle?: string;
   /** Optional site-specific assistant portrait shown within the chat panel. */

@@ -126,6 +126,9 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
   );
   const greeting = readAttr(source, `data-${DATA_PREFIX}-greeting`);
   const title = readAttr(source, `data-${DATA_PREFIX}-title`);
+  const headerLogoUrl = readAttr(source, `data-${DATA_PREFIX}-header-logo`);
+  const headerBackgroundColor = readAttr(source, `data-${DATA_PREFIX}-header-background`);
+  const headerForegroundColor = readAttr(source, `data-${DATA_PREFIX}-header-foreground`);
   const subtitle = readAttr(source, `data-${DATA_PREFIX}-subtitle`);
   const titleBadge = readAttr(source, `data-${DATA_PREFIX}-title-badge`);
   const rawLauncherAppearance = readAttr(source, `data-${DATA_PREFIX}-launcher-appearance`);
@@ -181,6 +184,11 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
     ...(boundedText(title, MAX_TITLE_LENGTH)
       ? { title: boundedText(title, MAX_TITLE_LENGTH) }
       : {}),
+    ...(safeAvatarUrl(headerLogoUrl, source.ownerDocument.baseURI)
+      ? { headerLogoUrl: safeAvatarUrl(headerLogoUrl, source.ownerDocument.baseURI) }
+      : {}),
+    ...(safeAccent(headerBackgroundColor) ? { headerBackgroundColor: safeAccent(headerBackgroundColor) } : {}),
+    ...(safeAccent(headerForegroundColor) ? { headerForegroundColor: safeAccent(headerForegroundColor) } : {}),
     ...(boundedText(subtitle, MAX_TITLE_LENGTH)
       ? { subtitle: boundedText(subtitle, MAX_TITLE_LENGTH) }
       : {}),
