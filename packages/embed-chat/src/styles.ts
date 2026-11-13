@@ -440,6 +440,116 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
   min-height: 3.5rem;
 }
 
+/* Full-screen chat uses the viewport as a composed experience, not a stretched drawer. */
+.cr-panel[data-fullscreen="true"] {
+  background: var(--cr-card);
+}
+.cr-panel[data-fullscreen="true"] .cr-header {
+  min-height: 4.25rem;
+  padding: max(1rem, env(safe-area-inset-top, 0px)) clamp(1.25rem, 4vw, 4rem) 1rem;
+  border-radius: 0;
+}
+.cr-panel[data-fullscreen="true"] .cr-messages {
+  width: 100%;
+  max-width: 60rem;
+  margin-inline: auto;
+  padding: clamp(1.5rem, 5vh, 4rem) clamp(1rem, 4vw, 3rem);
+}
+.cr-panel[data-fullscreen="true"] .cr-messages[data-welcome="true"] {
+  justify-content: center;
+  gap: clamp(1.25rem, 3vh, 2rem);
+}
+.cr-panel[data-fullscreen="true"] .cr-message[data-welcome="true"] {
+  width: 100%;
+  max-width: 48rem;
+  padding: 0;
+  font-size: clamp(1.5rem, 2.5vw, 2.25rem);
+  line-height: 1.4;
+  letter-spacing: -.02em;
+}
+.cr-panel[data-fullscreen="true"] .cr-opening-suggestions {
+  width: 100%;
+  max-width: 48rem;
+  margin: .5rem auto 0;
+  gap: 1rem;
+}
+.cr-panel[data-fullscreen="true"] .cr-suggestion-tabs { gap: .75rem; }
+.cr-panel[data-fullscreen="true"] .cr-suggestion-tab {
+  min-height: 3rem;
+  padding: .65rem 1.15rem;
+  font-size: .875rem;
+}
+.cr-panel[data-fullscreen="true"] .cr-suggestion-items { gap: .75rem; }
+.cr-panel[data-fullscreen="true"] .cr-suggestion-items:not([data-view="cards"]) {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+}
+.cr-panel[data-fullscreen="true"] .cr-suggestion-items[data-view="cards"] {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1rem;
+}
+.cr-panel[data-fullscreen="true"] .cr-suggestion {
+  min-height: 3.5rem;
+  padding: .8rem 1rem;
+  border-radius: 1rem;
+  font-size: .9375rem;
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+  box-shadow: 0 1px 2px rgb(14 15 19 / .04);
+}
+.cr-panel[data-fullscreen="true"] .cr-composer {
+  width: min(60rem, calc(100% - 2.5rem));
+  margin: 0 auto .75rem;
+  padding: 1rem 1.25rem;
+}
+.cr-panel[data-fullscreen="true"] .cr-input { min-height: 3rem; font-size: 1rem; }
+.cr-panel[data-fullscreen="true"] .cr-send { width: 3.25rem; height: 3.25rem; }
+.cr-panel[data-fullscreen="true"] .cr-footer {
+  padding-bottom: max(.625rem, env(safe-area-inset-bottom, 0px));
+}
+.cr-panel[data-fullscreen="true"] .cr-empty { width: 100%; max-width: 48rem; margin-inline: auto; }
+
+.cr-root[data-agent-avatar-style="cutout"] .cr-panel[data-fullscreen="true"] .cr-header {
+  min-height: 7.5rem;
+  padding: 1rem clamp(1.25rem, 4vw, 4rem) 1rem clamp(9rem, 12vw, 12rem);
+}
+.cr-root[data-agent-avatar-style="cutout"] .cr-panel[data-fullscreen="true"] .cr-title {
+  font-size: clamp(1.35rem, 1.8vw, 1.75rem);
+}
+.cr-root[data-agent-avatar-style="cutout"] .cr-panel[data-fullscreen="true"] .cr-title-subtitle {
+  font-size: clamp(.9rem, 1.2vw, 1.1rem);
+}
+.cr-root[data-agent-avatar-style="cutout"] .cr-panel[data-fullscreen="true"] .cr-title-probe {
+  left: clamp(1.25rem, 4vw, 3rem);
+  width: 6.25rem;
+  height: 7.1rem;
+}
+
+@media (max-width: 30rem) {
+  .cr-panel[data-fullscreen="true"] .cr-header { min-height: 4rem; padding-inline: .75rem; }
+  .cr-panel[data-fullscreen="true"] .cr-messages { max-width: none; padding: 1.25rem; }
+  .cr-panel[data-fullscreen="true"] .cr-messages[data-welcome="true"] { justify-content: center; }
+  .cr-panel[data-fullscreen="true"] .cr-message[data-welcome="true"] { font-size: 1.4rem; }
+  .cr-panel[data-fullscreen="true"] .cr-opening-suggestions { margin-top: 0; }
+  .cr-panel[data-fullscreen="true"] .cr-suggestion-items:not([data-view="cards"]),
+  .cr-panel[data-fullscreen="true"] .cr-suggestion-items[data-view="cards"] { grid-template-columns: 1fr; }
+  .cr-panel[data-fullscreen="true"] .cr-composer { width: calc(100% - 1.5rem); padding: .75rem; }
+  .cr-panel[data-fullscreen="true"] .cr-footer { padding-inline: .75rem; }
+  .cr-root[data-agent-avatar-style="cutout"] .cr-panel[data-fullscreen="true"] .cr-header {
+    min-height: 6.5rem;
+    padding: .75rem .75rem .75rem 6.25rem;
+  }
+  .cr-root[data-agent-avatar-style="cutout"] .cr-panel[data-fullscreen="true"] .cr-title { font-size: 1.1rem; }
+  .cr-root[data-agent-avatar-style="cutout"] .cr-panel[data-fullscreen="true"] .cr-title-subtitle { font-size: .78rem; }
+  .cr-root[data-agent-avatar-style="cutout"] .cr-panel[data-fullscreen="true"] .cr-title-probe {
+    left: .75rem; width: 4.75rem; height: 6.25rem;
+  }
+  .cr-root[data-agent-avatar-style="cutout"] .cr-panel[data-fullscreen="true"] .cr-close {
+    width: 2.75rem; height: 2.75rem; min-width: 2.75rem; min-height: 2.75rem;
+  }
+}
+
 /* Messages: p-4 gap-3 text-sm/6 */
 .cr-messages {
   flex: 1;

@@ -769,6 +769,7 @@ export class ContextRocketChatElement extends HTMLElement {
     this.#messages.replaceChildren();
 
     const hasUserMessage = this.#hasUserMessage();
+    this.#messages.dataset.welcome = String(!hasUserMessage);
     if (this.#state.messages.length === 0) {
       const empty = document.createElement("div");
       empty.className = "cr-empty";

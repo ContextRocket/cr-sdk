@@ -37,7 +37,9 @@ The chat may optionally expose a full-screen toggle. Set
 full screen. Use `data-contextrocket-fullscreen-on-load="true"` only when the
 chat should open automatically as the page loads. The header close control
 returns visitors to the website; Escape exits full screen to the drawer, then
-closes the drawer.
+closes the drawer. Full-screen mode centers and widens the opening greeting and
+suggestions, constrains the conversation and composer to a readable column on
+wide screens, and respects device safe areas on phones.
 
 The launcher defaults to the Rocket Pink rounded square (`#FF2B67`) with the
 white spark rocket. Set `data-contextrocket-launcher-color="ink"` for the Ink
