@@ -48,9 +48,11 @@ uses a white rocket when it meets 3:1 contrast, otherwise Ink when it meets
 3:1; if neither does, it falls back to the Ink square with a white rocket.
 The launcher remains a square at desktop and mobile sizes; the close control
 stays in the chat header.
-The chat header and welcome state default to the ContextRocket spark mark as
-well. Set `data-contextrocket-agent-identity="probe"` only for a ContextRocket
-product surface that should use the Probe avatar. A configured
+The chat header and assistant messages use the ContextRocket spark mark by
+default. The empty welcome state stays uncluttered unless a site supplies an
+assistant portrait or opts into Probe. Set
+`data-contextrocket-agent-identity="probe"` only for a ContextRocket product
+surface that should use the Probe avatar. A configured
 `data-contextrocket-agent-avatar` portrait takes precedence, so customer sites
 can use their own assistant identity without inheriting Probe.
 To use a customer portrait in the launcher instead of the rocket, set

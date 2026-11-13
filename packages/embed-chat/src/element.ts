@@ -789,7 +789,10 @@ export class ContextRocketChatElement extends HTMLElement {
       title.textContent = copy.emptyTitle;
       const description = document.createElement("p");
       description.textContent = copy.emptyDescription;
-      empty.append(probe, title, description, this.#renderOpeningSuggestions(copy));
+      if (this.#config.agentAvatarUrl || this.#config.agentIdentity === "probe") {
+        empty.appendChild(probe);
+      }
+      empty.append(title, description, this.#renderOpeningSuggestions(copy));
       this.#messages.appendChild(empty);
     }
 
