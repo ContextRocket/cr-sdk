@@ -388,6 +388,10 @@ export async function* streamEmbedA2aSubscribe(
   if (config.handle) {
     metadata.handle = config.handle;
   }
+  const locale = config.locale?.trim().toLowerCase().split(/[-_]/, 1)[0];
+  if (locale === "en" || locale === "es" || locale === "de") {
+    metadata.scope = { answer_locale: locale };
+  }
 
   const body = {
     jsonrpc: "2.0",
@@ -410,6 +414,7 @@ export async function* streamEmbedA2aSubscribe(
     accept: "text/event-stream",
     "a2a-version": A2A_PROTOCOL_VERSION,
   };
+  if (config.locale) headers["accept-language"] = config.locale;
   if (config.apiKey) {
     headers["x-api-key"] = config.apiKey;
   }

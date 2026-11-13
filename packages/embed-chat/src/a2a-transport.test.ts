@@ -912,7 +912,11 @@ it("keeps host-resolved recovery UI localized without changing caller or partial
       let attempts = 0;
       const sent: {
         id: string;
-        params: { message: { messageId?: string } };
+        params: {
+          message: { messageId?: string };
+          metadata: { scope?: { answer_locale?: string } };
+        };
+        headers: Record<string, string>;
       }[] = [];
       const unexpected: string[] = [];
       await page.route("**/*", async (route) => {
@@ -928,7 +932,7 @@ it("keeps host-resolved recovery UI localized without changing caller or partial
           route.request().method() === "POST"
         ) {
           attempts += 1;
-          sent.push(route.request().postDataJSON());
+          sent.push({ ...route.request().postDataJSON(), headers: route.request().headers() });
           await route.fulfill(
             attempts === 1
               ? {
@@ -987,6 +991,10 @@ it("keeps host-resolved recovery UI localized without changing caller or partial
       ).toEqual(["Caller greeting", "Hello, "]);
       expect(await host.locator(".cr-error").textContent()).toBe(item.error);
       expect(sent[0]?.params.message.messageId).toMatch(/^[0-9a-f-]{36}$/);
+      if (item.lang === "es") {
+        expect(sent[0]?.params.metadata.scope?.answer_locale).toBe("es");
+        expect(sent[0]?.headers["accept-language"]).toBe("es");
+      }
       expect(sent[1]?.params.message.messageId).toBe(
         sent[0]?.params.message.messageId,
       );

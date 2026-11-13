@@ -480,6 +480,17 @@ describe("sendTask", () => {
     expect(body.params.metadata.handle).toBe("acme");
   });
 
+  it("sends the selected language in the header and CR answer_locale scope", async () => {
+    await sendTask(
+      { baseUrl: "https://api.example.com", locale: "es-MX" },
+      buildTextTurnParams("hola", { handle: "acme" }),
+    );
+    const headers = new Headers(captured.init?.headers);
+    expect(headers.get("Accept-Language")).toBe("es");
+    const body = JSON.parse(String(captured.init?.body));
+    expect(body.params.metadata.scope.answer_locale).toBe("es");
+  });
+
   it("unwraps the {task} sync result", async () => {
     const task = await sendTask(
       { baseUrl: "https://api.example.com" },
@@ -661,6 +672,22 @@ describe("streamTask", () => {
     expect(body.method).toBe("SendStreamingMessage");
     expect(body.params.message.role).toBe("ROLE_USER");
     expect(body.params.message.parts).toEqual([{ text: "go" }]);
+  });
+
+  it("preserves caller scope and adds the selected response language", async () => {
+    for await (const _ of streamTask(
+      { baseUrl: "https://api.example.com", locale: "es" },
+      buildTextTurnParams("hola", { scope: { purpose: "support" } }),
+    )) {
+      // drain
+    }
+    const headers = new Headers(captured.init?.headers);
+    expect(headers.get("Accept-Language")).toBe("es");
+    const body = JSON.parse(String(captured.init?.body));
+    expect(body.params.metadata.scope).toEqual({
+      purpose: "support",
+      answer_locale: "es",
+    });
   });
 
   it("yields normalized events in order and stops at the terminal event", async () => {

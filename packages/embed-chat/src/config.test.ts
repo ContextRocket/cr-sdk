@@ -8,7 +8,7 @@ import {
 function widgetSource(attributes: Record<string, string> = {}): Element {
   return {
     getAttribute: (name: string) => attributes[name] ?? null,
-    ownerDocument: { documentElement: { lang: "en" } },
+    ownerDocument: { baseURI: "https://site.example/", documentElement: { lang: "en" } },
   } as unknown as Element;
 }
 
@@ -41,6 +41,20 @@ describe("parseWidgetConfig fullscreen options", () => {
         }),
       ),
     ).not.toHaveProperty("fullscreen");
+  });
+});
+
+describe("parseWidgetConfig agent avatar", () => {
+  it("accepts a site-relative portrait URL", () => {
+    expect(parseWidgetConfig(widgetSource({
+      "data-contextrocket-agent-avatar": "/luna/avatar.webp",
+    }))).toMatchObject({ agentAvatarUrl: "/luna/avatar.webp" });
+  });
+
+  it("rejects non-web image URL schemes", () => {
+    expect(parseWidgetConfig(widgetSource({
+      "data-contextrocket-agent-avatar": "javascript:alert(1)",
+    }))).not.toHaveProperty("agentAvatarUrl");
   });
 });
 

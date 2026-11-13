@@ -512,6 +512,8 @@ export interface A2AClientOptions {
   handle?: string;
   /** Typed identity path segment for the configured handle. Defaults to company. */
   subjectKind?: CRSubjectKind;
+  /** Visitor language. Sends Accept-Language and the CR answer_locale scope. */
+  locale?: string;
   /** JWT bearer token for authenticated requests. */
   bearerToken?: string;
   /**
@@ -585,7 +587,28 @@ function buildHeaders(
   if (opts.apiKey) {
     headers["X-Api-Key"] = opts.apiKey;
   }
+  const locale = resolveAnswerLocale(opts.locale);
+  if (locale) headers["Accept-Language"] = locale;
   return headers;
+}
+
+/** Resolve supported visitor language without guessing from an organization. */
+function resolveAnswerLocale(locale?: string): "en" | "es" | "de" | undefined {
+  const value = locale ?? (typeof document !== "undefined" ? document.documentElement.lang : undefined);
+  const primary = value?.trim().toLowerCase().split(/[-_]/, 1)[0];
+  return primary === "en" || primary === "es" || primary === "de" ? primary : undefined;
+}
+
+function withAnswerLocale(params: A2ATaskParams, opts: A2AClientOptions): A2ATaskParams {
+  const answerLocale = resolveAnswerLocale(opts.locale);
+  if (!answerLocale || params.metadata?.scope?.answer_locale) return params;
+  return {
+    ...params,
+    metadata: {
+      ...params.metadata,
+      scope: { ...params.metadata?.scope, answer_locale: answerLocale },
+    },
+  };
 }
 
 /**
@@ -623,7 +646,7 @@ export async function sendTask(
 ): Promise<Record<string, unknown>> {
   if (opts.guestSessionId) warnGuestSessionIdIgnored();
   const url = `${opts.baseUrl.replace(/\/$/, "")}${a2aEndpoint(opts, params)}`;
-  const body = buildJSONRPCRequest("SendMessage", params);
+  const body = buildJSONRPCRequest("SendMessage", withAnswerLocale(params, opts));
 
   const resp = await fetch(url, {
     method: "POST",
@@ -665,7 +688,7 @@ export async function* streamTask(
 ): AsyncGenerator<A2AEvent> {
   if (opts.guestSessionId) warnGuestSessionIdIgnored();
   const url = `${opts.baseUrl.replace(/\/$/, "")}${a2aEndpoint(opts, params)}`;
-  const body = buildJSONRPCRequest("SendStreamingMessage", params);
+  const body = buildJSONRPCRequest("SendStreamingMessage", withAnswerLocale(params, opts));
 
   const resp = await fetch(url, {
     method: "POST",
