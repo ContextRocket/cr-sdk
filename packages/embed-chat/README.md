@@ -106,9 +106,10 @@ again, so never reuse a published version path. The current CDN applies a
 five-minute public cache to these paths; one-year immutable caching is reserved
 for `/_next/static/` assets. Versioned widget URLs are therefore stable by
 release discipline, not by a server-enforced immutability guarantee. The
-version `0.0.2` is the current public release line. Versioned CDN paths are
-managed by release discipline; the publishing backend can replace a path if it
-is published again.
+version `0.0.2` is the current public release line. Version `0.0.3` is under
+development on the SDK branch and must not be loaded from the CDN until it has
+been published. Versioned CDN paths are managed by release discipline; the
+publishing backend can replace a path if it is published again.
 
 Build and copy the browser artifact into the starter public directory:
 

@@ -95,10 +95,10 @@ version is not already in the registry:
 
 ```bash
 cd packages/sdk && pnpm pack --out /tmp/contextrocket-sdk-%v.tgz
-npm view @contextrocket/sdk@0.1.2 version
+npm view @contextrocket/sdk@0.1.3 version
 
 cd ../embed-chat && pnpm pack --out /tmp/contextrocket-embed-chat-%v.tgz
-npm view @contextrocket/embed-chat@0.0.2 version
+npm view @contextrocket/embed-chat@0.0.3 version
 
 cd ../site-publisher && pnpm pack --out /tmp/contextrocket-site-publisher-%v.tgz
 npm view @contextrocket/site-publisher@0.1.0 version
@@ -179,6 +179,11 @@ available at:
 https://contextrocket.cdn.contextrocket.com/embeds/chat/v0.0.2/widget.js
 ```
 
+The source branch builds `@contextrocket/embed-chat@0.0.3` with selected-
+language A2A scope and configurable in-panel agent portraits. This version is
+not yet published to npm or the CDN. Publish it only after the release workflow
+and exact version checks succeed.
+
 The published contact-form browser bridge version `0.1.1` is available at:
 
 ```text
@@ -198,6 +203,9 @@ contact-form and site-behaviors browser artifacts are staged under the new
 completes. The published `v0.1.1` contact-form bridge does not include the
 mapper. Keep existing releases intact and use the checked-in bundle for offline
 sites until `v0.1.2` is published.
+
+SDK `0.1.3` includes A2A response-locale handling. The SDK and embed-chat
+source changes in this branch are not published yet.
 
 A site can pin these URLs with `PUBLIC_CONTEXTROCKET_CHAT_WIDGET_URL`,
 `PUBLIC_CONTEXTROCKET_CONTACT_FORM_SCRIPT_URL`, and
@@ -219,28 +227,27 @@ validate each staged artifact without uploading it:
 
 ```bash
 uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \
-  ../../cr-sdk/scratchpad/cdn/embeds/chat/v0.0.2 \
+  ../../cr-sdk/scratchpad/cdn/embeds/chat/v0.0.3 \
   --org contextrocket \
-  --prefix embeds/chat/v0.0.2 \
+  --prefix embeds/chat/v0.0.3 \
   --dry-run
 
 uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \
-  ../../cr-sdk/scratchpad/cdn/embeds/contact-form/v0.1.2 \
+  ../../cr-sdk/scratchpad/cdn/embeds/contact-form/v0.1.3 \
   --org contextrocket \
-  --prefix embeds/contact-form/v0.1.2 \
+  --prefix embeds/contact-form/v0.1.3 \
   --dry-run
 
 uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \
-  ../../cr-sdk/scratchpad/cdn/embeds/site-behaviors/v0.1.2 \
+  ../../cr-sdk/scratchpad/cdn/embeds/site-behaviors/v0.1.3 \
   --org contextrocket \
-  --prefix embeds/site-behaviors/v0.1.2 \
+  --prefix embeds/site-behaviors/v0.1.3 \
   --dry-run
 ```
 
 For a new release, dry-run each changed package. Publish only new, unreleased
-prefixes; do not republish chat `v0.0.2` or either SDK `v0.1.1` prefix. For the
-SDK `v0.1.2` release, publish only the two new SDK prefixes after confirming
-they are unused. Repeat the relevant command without `--dry-run` to upload.
+prefixes; do not republish chat `v0.0.2` or either SDK `v0.1.1` prefix. Repeat
+the relevant command without `--dry-run` to upload.
 This is an operator task; customer sites only load the public URL and do not
 need an operator token. After publishing, run
 `pnpm verify:cdn` from the SDK checkout. It checks status, JavaScript content
