@@ -89,6 +89,7 @@ export class ContextRocketChatElement extends HTMLElement {
       "data-contextrocket-greeting",
       "data-contextrocket-title",
       "data-contextrocket-agent-avatar",
+      "data-contextrocket-launcher-avatar",
       "data-contextrocket-ref",
       "data-contextrocket-background",
       "data-contextrocket-foreground",
@@ -283,6 +284,13 @@ export class ContextRocketChatElement extends HTMLElement {
     this.#footerLogo.src = poweredByLogos[next.poweredByLogo ?? "ink"];
     this.#shadow.querySelector<HTMLImageElement>(".cr-launcher-icon-open")!.src =
       rocketImage(next.launcherForeground);
+    const launcherRocket = this.#shadow.querySelector<HTMLImageElement>(".cr-launcher-icon-open")!;
+    const launcherAvatar = this.#shadow.querySelector<HTMLImageElement>(".cr-launcher-avatar");
+    launcherRocket.hidden = Boolean(next.launcherAvatarUrl);
+    if (launcherAvatar) {
+      launcherAvatar.hidden = !next.launcherAvatarUrl;
+      if (next.launcherAvatarUrl) launcherAvatar.src = next.launcherAvatarUrl;
+    }
     this.#syncUi();
     this.#footerLink.href = buildPoweredByHref(next);
     this.style.setProperty("--cr-accent", next.accentColor ?? "#0e0f13");
@@ -333,7 +341,8 @@ export class ContextRocketChatElement extends HTMLElement {
         </footer>
       </div>
       <button type="button" class="cr-launcher" aria-label="${copy.open}" aria-expanded="false" aria-controls="contextrocket-chat-panel" part="launcher">
-        <img class="cr-launcher-icon-open" src="${rocketImage(config.launcherForeground)}" alt="" width="28" height="28" aria-hidden="true">
+        <img class="cr-launcher-icon-open" src="${rocketImage(config.launcherForeground)}" alt="" width="28" height="28" aria-hidden="true"${config.launcherAvatarUrl ? " hidden" : ""}>
+        <img class="cr-launcher-avatar"${config.launcherAvatarUrl ? ` src="${escapeHtml(config.launcherAvatarUrl)}"` : ""} alt="" width="44" height="44" aria-hidden="true"${config.launcherAvatarUrl ? "" : " hidden"}>
       </button>
     `;
 
@@ -346,6 +355,17 @@ export class ContextRocketChatElement extends HTMLElement {
     this.#launcher = this.#shadow.querySelector(
       ".cr-launcher",
     ) as HTMLButtonElement;
+    const launcherAvatar = this.#shadow.querySelector<HTMLImageElement>(
+      ".cr-launcher-avatar",
+    );
+    launcherAvatar?.addEventListener("error", () => {
+      if (launcherAvatar.getAttribute("src") !== this.#config?.launcherAvatarUrl)
+        return;
+      launcherAvatar.hidden = true;
+      this.#shadow.querySelector<HTMLImageElement>(
+        ".cr-launcher-icon-open",
+      )!.hidden = false;
+    });
     this.#fullscreenButton = this.#shadow.querySelector(
       ".cr-fullscreen-toggle",
     ) as HTMLButtonElement;

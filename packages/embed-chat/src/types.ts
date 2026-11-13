@@ -81,6 +81,8 @@ export interface WidgetConfig {
   launcherColor?: string;
   /** Resolved white or Ink icon color for the selected launcher background. */
   launcherForeground?: string;
+  /** Optional customer portrait displayed in the launcher instead of the rocket. */
+  launcherAvatarUrl?: string;
   greeting?: string;
   title?: string;
   /** Optional site-specific assistant portrait shown within the chat panel. */

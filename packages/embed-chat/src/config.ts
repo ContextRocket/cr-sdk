@@ -127,6 +127,7 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
   const greeting = readAttr(source, `data-${DATA_PREFIX}-greeting`);
   const title = readAttr(source, `data-${DATA_PREFIX}-title`);
   const agentAvatarUrl = readAttr(source, `data-${DATA_PREFIX}-agent-avatar`);
+  const launcherAvatarUrl = readAttr(source, `data-${DATA_PREFIX}-launcher-avatar`);
   const ref = readAttr(source, `data-${DATA_PREFIX}-ref`);
   const rawPosition = readAttr(source, `data-${DATA_PREFIX}-position`);
   const rawLocale = readAttr(source, `data-${DATA_PREFIX}-locale`);
@@ -174,6 +175,9 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
       : {}),
     ...(safeAvatarUrl(agentAvatarUrl, source.ownerDocument.baseURI)
       ? { agentAvatarUrl: safeAvatarUrl(agentAvatarUrl, source.ownerDocument.baseURI) }
+      : {}),
+    ...(safeAvatarUrl(launcherAvatarUrl, source.ownerDocument.baseURI)
+      ? { launcherAvatarUrl: safeAvatarUrl(launcherAvatarUrl, source.ownerDocument.baseURI) }
       : {}),
     ...(boundedText(ref, MAX_REF_LENGTH)
       ? { ref: boundedText(ref, MAX_REF_LENGTH) }

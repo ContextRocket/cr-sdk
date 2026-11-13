@@ -168,6 +168,15 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
   object-fit: contain;
 }
 
+.cr-launcher .cr-launcher-avatar {
+  width: calc(100% - .5rem);
+  height: calc(100% - .5rem);
+  border: 2px solid rgba(255,255,255,.96);
+  border-radius: 9999px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(14,15,19,.24);
+}
+
 .cr-launcher [hidden] {
   display: none !important;
 }

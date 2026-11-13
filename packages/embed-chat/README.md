@@ -46,6 +46,10 @@ uses a white rocket when it meets 3:1 contrast, otherwise Ink when it meets
 3:1; if neither does, it falls back to the Ink square with a white rocket.
 The launcher remains a square at desktop and mobile sizes; the close control
 stays in the chat header.
+To use a customer portrait in the launcher instead of the rocket, set
+`data-contextrocket-launcher-avatar` to an HTTP(S) image URL. The portrait is
+cropped into a circular inset; `data-contextrocket-agent-avatar` independently
+controls the assistant portrait inside the chat.
 
 The widget source, tests, build, versioning, and release workflow are owned by
 this SDK repository. Build it locally as part of the starter; do not add a
