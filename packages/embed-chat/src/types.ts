@@ -83,6 +83,8 @@ export interface WidgetConfig {
   launcherForeground?: string;
   greeting?: string;
   title?: string;
+  /** Optional site-specific assistant portrait shown within the chat panel. */
+  agentAvatarUrl?: string;
   ref?: string;
   backgroundColor?: string;
   foregroundColor?: string;

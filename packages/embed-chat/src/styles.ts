@@ -231,6 +231,7 @@ export function widgetStyles(accentColor = "#0e0f13"): string {
   color: var(--cr-text);
 }
 .cr-probe svg { position: relative; z-index: 1; width: 100%; height: 100%; overflow: visible; }
+.cr-probe .cr-agent-avatar { position: relative; z-index: 1; display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .cr-probe[data-working="true"]::before {
   content: "";
   position: absolute;

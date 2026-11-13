@@ -85,6 +85,7 @@ For a live site, configure the API base and organization handle:
   data-contextrocket-fullscreen-on-open="false"
   data-contextrocket-fullscreen-on-load="false"
   data-contextrocket-locale="auto"
+  data-contextrocket-agent-avatar="/images/agent-avatar.webp"
   defer
 ></script>
 ```
@@ -133,4 +134,8 @@ ContextRocket `sites publish` CLI; see the SDK repository README for the dry-run
 command. Customers only load the public URL. The widget uses a single
 site-defined palette. Set bounded CSS color values for the background,
 foreground, surface, muted text, border, and accent; title, greeting, position,
-and locale are also configurable.
+and locale are also configurable. The optional `data-contextrocket-agent-avatar`
+uses a site-hosted portrait inside the chat panel; the branded rocket launcher
+is unchanged. In live mode, supported `en`, `es`, and `de` locales are sent as
+both `Accept-Language` and the ContextRocket `metadata.scope.answer_locale`
+extension so the agent can answer in the selected language.

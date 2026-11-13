@@ -88,6 +88,7 @@ export class ContextRocketChatElement extends HTMLElement {
       "data-contextrocket-launcher-color",
       "data-contextrocket-greeting",
       "data-contextrocket-title",
+      "data-contextrocket-agent-avatar",
       "data-contextrocket-ref",
       "data-contextrocket-background",
       "data-contextrocket-foreground",
@@ -388,7 +389,17 @@ export class ContextRocketChatElement extends HTMLElement {
     avatar.className = "cr-probe";
     avatar.dataset.working = String(working);
     avatar.setAttribute("aria-hidden", "true");
-    avatar.innerHTML = '<svg viewBox="0 0 64 64" focusable="false"><path d="M32 6c11 0 18 7.5 18 18v17c0 7-5.5 12-12.5 12h-11C19.5 53 14 48 14 41V24C14 13.5 21 6 32 6z"/><rect x="17" y="21" width="30" height="10" rx="5" class="cr-probe-visor"/><rect x="34.5" y="23" width="4" height="6" rx=".8" class="cr-probe-eye"/><rect x="22" y="54.5" width="6" height="3.5" rx="1.75" class="cr-probe-foot"/><rect x="36" y="54.5" width="6" height="3.5" rx="1.75" class="cr-probe-foot"/></svg>';
+    if (this.#config?.agentAvatarUrl) {
+      const image = document.createElement("img");
+      image.className = "cr-agent-avatar";
+      image.src = this.#config.agentAvatarUrl;
+      image.alt = "";
+      image.loading = "lazy";
+      image.decoding = "async";
+      avatar.appendChild(image);
+    } else {
+      avatar.innerHTML = '<svg viewBox="0 0 64 64" focusable="false"><path d="M32 6c11 0 18 7.5 18 18v17c0 7-5.5 12-12.5 12h-11C19.5 53 14 48 14 41V24C14 13.5 21 6 32 6z"/><rect x="17" y="21" width="30" height="10" rx="5" class="cr-probe-visor"/><rect x="34.5" y="23" width="4" height="6" rx=".8" class="cr-probe-eye"/><rect x="22" y="54.5" width="6" height="3.5" rx="1.75" class="cr-probe-foot"/><rect x="36" y="54.5" width="6" height="3.5" rx="1.75" class="cr-probe-foot"/></svg>';
+    }
     return avatar;
   }
 

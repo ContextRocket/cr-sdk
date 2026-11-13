@@ -8,6 +8,7 @@ const MAX_REF_LENGTH = 100;
 const ROCKET_PINK = "#FF2B67";
 const INK = "#0E0F13";
 const WHITE = "#FFFFFF";
+const MAX_AVATAR_URL_LENGTH = 2048;
 
 function readAttr(element: Element, ...names: string[]): string | undefined {
   for (const name of names) {
@@ -32,6 +33,17 @@ function boundedText(
   if (!value) return undefined;
   const normalized = value.replace(/[\u0000-\u001f\u007f]/g, "").trim();
   return normalized ? normalized.slice(0, maxLength) : undefined;
+}
+
+function safeAvatarUrl(value: string | undefined, baseUri: string): string | undefined {
+  if (!value || value.length > MAX_AVATAR_URL_LENGTH) return undefined;
+  try {
+    const url = new URL(value, baseUri);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return undefined;
+    return value;
+  } catch {
+    return undefined;
+  }
 }
 
 function safeAccent(value: string | undefined): string | undefined {
@@ -114,6 +126,7 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
   );
   const greeting = readAttr(source, `data-${DATA_PREFIX}-greeting`);
   const title = readAttr(source, `data-${DATA_PREFIX}-title`);
+  const agentAvatarUrl = readAttr(source, `data-${DATA_PREFIX}-agent-avatar`);
   const ref = readAttr(source, `data-${DATA_PREFIX}-ref`);
   const rawPosition = readAttr(source, `data-${DATA_PREFIX}-position`);
   const rawLocale = readAttr(source, `data-${DATA_PREFIX}-locale`);
@@ -158,6 +171,9 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
       : {}),
     ...(boundedText(title, MAX_TITLE_LENGTH)
       ? { title: boundedText(title, MAX_TITLE_LENGTH) }
+      : {}),
+    ...(safeAvatarUrl(agentAvatarUrl, source.ownerDocument.baseURI)
+      ? { agentAvatarUrl: safeAvatarUrl(agentAvatarUrl, source.ownerDocument.baseURI) }
       : {}),
     ...(boundedText(ref, MAX_REF_LENGTH)
       ? { ref: boundedText(ref, MAX_REF_LENGTH) }
