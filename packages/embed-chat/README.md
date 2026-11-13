@@ -55,8 +55,10 @@ can be customized with `data-contextrocket-launcher-avatar-background` using a
 CSS color or `transparent`. `data-contextrocket-agent-avatar` independently
 controls the assistant portrait inside the chat. Set
 `data-contextrocket-agent-avatar-style="cutout"` to let transparent portrait
-art overlap a gradient header. `data-contextrocket-title` and
-`data-contextrocket-subtitle` customize its localized identity.
+art overlap a gradient header. Set `data-contextrocket-agent-header-start` and
+`data-contextrocket-agent-header-end` to customize its colors. The title,
+optional badge, and subtitle use `data-contextrocket-title`,
+`data-contextrocket-title-badge`, and `data-contextrocket-subtitle`.
 
 The widget source, tests, build, versioning, and release workflow are owned by
 this SDK repository. Build it locally as part of the starter; do not add a

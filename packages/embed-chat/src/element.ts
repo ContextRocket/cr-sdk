@@ -89,6 +89,7 @@ export class ContextRocketChatElement extends HTMLElement {
       "data-contextrocket-greeting",
       "data-contextrocket-title",
       "data-contextrocket-subtitle",
+      "data-contextrocket-title-badge",
       "data-contextrocket-launcher-appearance",
       "data-contextrocket-launcher-avatar-background",
       "data-contextrocket-agent-avatar-style",
@@ -267,6 +268,9 @@ export class ContextRocketChatElement extends HTMLElement {
     const subtitle = this.#shadow.querySelector<HTMLElement>(".cr-title-subtitle")!;
     subtitle.textContent = next.subtitle ?? "";
     subtitle.hidden = !next.subtitle;
+    const titleBadge = this.#shadow.querySelector<HTMLElement>(".cr-title-badge")!;
+    titleBadge.textContent = next.titleBadge ?? "";
+    titleBadge.hidden = !next.titleBadge;
     this.#panel.setAttribute("aria-label", next.title ?? copy.defaultTitle);
     this.#shadow
       .querySelector(".cr-close")!
@@ -327,13 +331,13 @@ export class ContextRocketChatElement extends HTMLElement {
     root.innerHTML = `
       <div class="cr-panel" data-open="false" data-position="${escapeHtml(config.position ?? "bottom-right")}" part="panel" role="dialog" aria-modal="true" aria-hidden="true" aria-label="${escapeHtml(config.title ?? copy.defaultTitle)}" inert>
         <header class="cr-header">
-          <h2 class="cr-title"><span class="cr-title-probe"></span><span class="cr-title-copy"><span class="cr-title-text">${escapeHtml(config.title ?? copy.defaultTitle)}</span><span class="cr-title-subtitle"${config.subtitle ? "" : " hidden"}>${escapeHtml(config.subtitle ?? "")}</span></span></h2>
+          <h2 class="cr-title"><span class="cr-title-probe"></span><span class="cr-title-copy"><span class="cr-title-heading"><span class="cr-title-text">${escapeHtml(config.title ?? copy.defaultTitle)}</span><span class="cr-title-badge"${config.titleBadge ? "" : " hidden"}>${escapeHtml(config.titleBadge ?? "")}</span></span><span class="cr-title-subtitle"${config.subtitle ? "" : " hidden"}>${escapeHtml(config.subtitle ?? "")}</span></span></h2>
           <div class="cr-header-actions">
             <button type="button" class="cr-fullscreen-toggle" aria-label="${copy.expand}" aria-pressed="false"${config.fullscreen || config.fullscreenOnOpen || config.fullscreenOnLoad ? "" : " hidden"}>
               <svg class="cr-fullscreen-expand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="m21 3-7 7"/><path d="M9 21H3v-6"/><path d="m3 21 7-7"/></svg>
               <svg class="cr-fullscreen-collapse-icon" hidden xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v6H2"/><path d="m2 9 7-7"/><path d="M16 21v-6h6"/><path d="m22 15-7 7"/></svg>
             </button>
-            <button type="button" class="cr-close" aria-label="${copy.close}">×</button>
+            <button type="button" class="cr-close" aria-label="${copy.close}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
           </div>
         </header>
         <div class="cr-messages" part="messages" role="log" aria-live="polite"></div>
@@ -779,6 +783,9 @@ export class ContextRocketChatElement extends HTMLElement {
       this.#messages.appendChild(empty);
     }
 
+    const firstWelcomeMessageId = !hasUserMessage
+      ? this.#state.messages.find((message) => message.role === "assistant" && message.content.trim())?.id
+      : undefined;
     for (const message of this.#state.messages) {
       if (
         message.role === "assistant" &&
@@ -796,8 +803,10 @@ export class ContextRocketChatElement extends HTMLElement {
       const bubble = document.createElement("div");
       bubble.className = "cr-message";
       bubble.dataset.role = message.role;
+      const isOpeningAssistant = message.role === "assistant" && message.id === firstWelcomeMessageId;
+      if (isOpeningAssistant) bubble.dataset.welcome = "true";
       if (message.role === "assistant") {
-        bubble.appendChild(this.#createProbe(this.#state.status === "streaming" && message.id === this.#assistantMessageId));
+        if (!isOpeningAssistant) bubble.appendChild(this.#createProbe(this.#state.status === "streaming" && message.id === this.#assistantMessageId));
         renderMarkdown(bubble, message.content);
         if (message.responseSpec) this.#renderAgentResponse(bubble, message.responseSpec);
         if (message.responseUnavailable) {

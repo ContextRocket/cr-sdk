@@ -127,6 +127,7 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
   const greeting = readAttr(source, `data-${DATA_PREFIX}-greeting`);
   const title = readAttr(source, `data-${DATA_PREFIX}-title`);
   const subtitle = readAttr(source, `data-${DATA_PREFIX}-subtitle`);
+  const titleBadge = readAttr(source, `data-${DATA_PREFIX}-title-badge`);
   const rawLauncherAppearance = readAttr(source, `data-${DATA_PREFIX}-launcher-appearance`);
   const rawAgentAvatarStyle = readAttr(source, `data-${DATA_PREFIX}-agent-avatar-style`);
   const agentHeaderStartColor = readAttr(source, `data-${DATA_PREFIX}-agent-header-start`);
@@ -181,6 +182,9 @@ export function parseWidgetConfig(source: Element): WidgetConfig | null {
       : {}),
     ...(boundedText(subtitle, MAX_TITLE_LENGTH)
       ? { subtitle: boundedText(subtitle, MAX_TITLE_LENGTH) }
+      : {}),
+    ...(boundedText(titleBadge, 24)
+      ? { titleBadge: boundedText(titleBadge, 24) }
       : {}),
     ...(rawLauncherAppearance === "portrait" ? { launcherAppearance: "portrait" as const } : {}),
     ...(safeAccent(launcherAvatarBackground) || launcherAvatarBackground?.toLowerCase() === "transparent"
