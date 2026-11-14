@@ -332,9 +332,9 @@ function isContactFormReceipt(payload: unknown): payload is ContactFormReceipt {
 }
 
 /**
- * Submit one consented contact form to the org-scoped public capture endpoint.
- * This endpoint does not use a browser API key; the server binds the handle to
- * that organization's lead record and checks the request origin.
+ * Submit one consented contact form to the organization-scoped leads endpoint.
+ * This endpoint does not use a browser API key; the path identifies the
+ * organization and the server checks the request origin.
  */
 export async function submitContactForm({
   apiBaseUrl,
@@ -349,8 +349,7 @@ export async function submitContactForm({
   if (!form.consent) throw new TypeError("Explicit consent is required.");
   const customAnswers = validateCustomAnswers(form.custom_answers);
 
-  const endpoint = new URL("/api/apps/leads/capture", apiBaseUrl);
-  endpoint.searchParams.set("org_handle", handle);
+  const endpoint = new URL(`/api/orgs/${encodeURIComponent(handle)}/leads`, apiBaseUrl);
   const headers = new Headers({
     accept: "application/json",
     "content-type": "application/json",
@@ -368,7 +367,6 @@ export async function submitContactForm({
       body: JSON.stringify({
         ...form,
         ...(customAnswers ? { custom_answers: customAnswers } : {}),
-        org_handle: handle,
       }),
       signal,
     });

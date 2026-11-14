@@ -42,6 +42,6 @@ describe("static browser contact-form bridge", () => {
     });
 
     expect(receipt.lead_id).toBe("lead-bridge-1");
-    expect(String(fetcher.mock.calls[0]?.[0])).toContain("org_handle=kleos");
+    expect(String(fetcher.mock.calls[0]?.[0])).toBe("https://api.contextrocket.com/api/orgs/kleos/leads");
   });
 });

@@ -26,16 +26,16 @@ describe("submitContactForm", () => {
 
     expect(receipt.lead_id).toBe("lead-1");
     const [request, init] = fetcher.mock.calls[0]!;
-    expect(String(request)).toBe("https://api.contextrocket.com/api/apps/leads/capture?org_handle=kleos");
+    expect(String(request)).toBe("https://api.contextrocket.com/api/orgs/kleos/leads");
     expect(init?.method).toBe("POST");
     expect(init?.mode).toBe("cors");
     expect(init?.credentials).toBe("omit");
     expect(new Headers(init?.headers).get("idempotency-key")).toBe("request-1");
     expect(JSON.parse(String(init?.body))).toMatchObject({
-      org_handle: "kleos",
       intent: "appointment",
       consent: true,
     });
+    expect(JSON.parse(String(init?.body))).not.toHaveProperty("org_handle");
   });
 
   it("surfaces stable API error codes without exposing server detail text", async () => {
