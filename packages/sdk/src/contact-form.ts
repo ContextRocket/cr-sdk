@@ -18,7 +18,7 @@ export interface ContactFormData {
   intent?: ContactIntent;
   source_channel?: string;
   consent: true;
-  /** Answers keyed by configured, non-system fields in the org's Leads table. */
+  /** Answers keyed by configured, non-system fields in the org's Contacts schema. */
   custom_answers?: Record<string, ContactFormJsonValue>;
   source_url?: string;
   referrer_origin?: string;
@@ -61,12 +61,12 @@ export interface MapContactFormDataOptions {
   defaultIntent?: ContactIntent;
   /** Site-specific attribution channel, for example "website" or "form". */
   sourceChannel?: string;
-  /** Explicitly mapped values keyed by the org's configured Leads field keys. */
+  /** Explicitly mapped values keyed by the org's configured Contacts field keys. */
   customAnswers?: Record<string, ContactFormJsonValue>;
 }
 
 export interface ContactFormReceipt {
-  lead_id: string;
+  contact_id: string;
   status: "captured";
   delivery_state: "queued" | "duplicate";
   follow_up_state: "human_follow_up";
@@ -152,7 +152,7 @@ function formText(values: FormData, fieldName: string): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-/** Map explicitly configured HTML fields to organization Leads field keys. */
+/** Map explicitly configured HTML fields to organization Contact field keys. */
 export function mapCustomContactAnswers(
   values: FormData,
   fields: Record<string, ContactFormCustomAnswerField>,
@@ -324,8 +324,8 @@ function isContactFormReceipt(payload: unknown): payload is ContactFormReceipt {
   if (!payload || typeof payload !== "object") return false;
   const receipt = payload as Record<string, unknown>;
   return (
-    typeof receipt.lead_id === "string" &&
-    receipt.lead_id.trim().length > 0 &&
+    typeof receipt.contact_id === "string" &&
+    receipt.contact_id.trim().length > 0 &&
     receipt.status === "captured" &&
     (receipt.delivery_state === "queued" || receipt.delivery_state === "duplicate") &&
     receipt.follow_up_state === "human_follow_up"
@@ -333,7 +333,7 @@ function isContactFormReceipt(payload: unknown): payload is ContactFormReceipt {
 }
 
 /**
- * Submit one consented contact form to the organization-scoped leads endpoint.
+ * Submit one consented contact form to the organization-scoped contacts endpoint.
  * This endpoint does not use a browser API key; the path identifies the
  * organization and the server checks the request origin.
  */
@@ -350,7 +350,7 @@ export async function submitContactForm({
   if (!form.consent) throw new TypeError("Explicit consent is required.");
   const customAnswers = validateCustomAnswers(form.custom_answers);
 
-  const endpoint = new URL(`/api/orgs/${encodeURIComponent(handle)}/leads`, apiBaseUrl);
+  const endpoint = new URL(`/api/orgs/${encodeURIComponent(handle)}/contacts`, apiBaseUrl);
   const headers = new Headers({
     accept: "application/json",
     "content-type": "application/json",
@@ -385,7 +385,7 @@ export async function submitContactForm({
       ? detail
       : detail && typeof detail === "object" && typeof (detail as Record<string, unknown>).code === "string"
         ? String((detail as Record<string, unknown>).code)
-        : "LEAD_CAPTURE_FAILED";
+        : "CONTACT_CAPTURE_FAILED";
     throw new ContactFormError("The contact form could not be submitted.", response.status, code);
   }
 

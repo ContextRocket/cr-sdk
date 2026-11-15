@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import {
   createContactFormController,
@@ -8,10 +9,17 @@ import {
   submitContactFormWithAttribution,
 } from "./contact-form.js";
 
+const consumerContract = JSON.parse(
+  readFileSync(new URL("../../../contracts/contact-form.json", import.meta.url), "utf8"),
+) as {
+  request: { method: string; path: string };
+  response: { status: number; fields: string[] };
+};
+
 describe("submitContactForm", () => {
-  it("sends a consented lead to the org-scoped endpoint with a retry identity", async () => {
+  it("sends a consented contact to the org-scoped endpoint with a retry identity", async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
-      lead_id: "lead-1",
+      contact_id: "contact-1",
       status: "captured",
       delivery_state: "queued",
       follow_up_state: "human_follow_up",
@@ -25,10 +33,10 @@ describe("submitContactForm", () => {
       fetcher,
     });
 
-    expect(receipt.lead_id).toBe("lead-1");
+    expect(receipt.contact_id).toBe("contact-1");
     const [request, init] = fetcher.mock.calls[0]!;
-    expect(String(request)).toBe("https://api.contextrocket.com/api/orgs/kleos/leads");
-    expect(init?.method).toBe("POST");
+    expect(String(request)).toBe(`https://api.contextrocket.com${consumerContract.request.path.replace("{org_handle}", "kleos")}`);
+    expect(init?.method).toBe(consumerContract.request.method);
     expect(init?.mode).toBe("cors");
     expect(init?.credentials).toBe("omit");
     expect(new Headers(init?.headers).get("idempotency-key")).toBe("request-1");
@@ -37,6 +45,7 @@ describe("submitContactForm", () => {
       consent: true,
     });
     expect(JSON.parse(String(init?.body))).not.toHaveProperty("org_handle");
+    expect(consumerContract.response.fields).toContain("contact_id");
   });
 
   it("surfaces stable API error codes without exposing server detail text", async () => {
@@ -58,7 +67,7 @@ describe("submitContactForm", () => {
 
   it("rejects a success response that does not satisfy the receipt contract", async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
-      lead_id: "lead-1",
+      contact_id: "contact-1",
       status: "captured",
       delivery_state: "sent",
       follow_up_state: "human_follow_up",
@@ -160,7 +169,7 @@ describe("mapContactFormData", () => {
 describe("submitContactFormWithAttribution", () => {
   it("attaches safe page and referrer attribution before submission", async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
-      lead_id: "lead-2",
+      contact_id: "contact-2",
       status: "captured",
       delivery_state: "queued",
       follow_up_state: "human_follow_up",
@@ -194,7 +203,7 @@ describe("createContactFormController", () => {
     form: { name: "Ada", email: "ada@example.com", consent: true as const },
   };
   const receipt = {
-    lead_id: "lead-1",
+    contact_id: "contact-1",
     status: "captured" as const,
     delivery_state: "queued" as const,
     follow_up_state: "human_follow_up" as const,

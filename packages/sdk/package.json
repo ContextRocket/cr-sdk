@@ -1,7 +1,7 @@
 {
   "name": "@contextrocket/sdk",
-  "version": "0.0.1",
-  "browserArtifactVersion": "0.1.2",
+  "version": "1.0.0",
+  "browserArtifactVersion": "1.0.0",
   "description": "ContextRocket browser SDK (A2A client + createCRClient)",
   "type": "module",
   "license": "MIT",

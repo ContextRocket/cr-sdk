@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "boundary": "organization contact form",
+  "request": {
+    "method": "POST",
+    "path": "/api/orgs/{org_handle}/contacts",
+    "headers": ["content-type: application/json", "idempotency-key (optional)"],
+    "fields": ["name", "email", "phone", "message", "intent", "source_channel", "consent", "custom_answers", "source_url", "referrer_origin", "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]
+  },
+  "response": {
+    "status": 201,
+    "fields": ["contact_id", "status", "delivery_state", "follow_up_state"]
+  }
+}

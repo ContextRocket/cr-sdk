@@ -203,8 +203,8 @@ General → Contact form websites**. Add each hostname visitors may use, such as
 both the apex and `www` origins. Origins are managed independently of chat API
 keys, so a contact-only site does not need a chat credential and rotating a
 chat key does not remove contact access.
-ContextRocket records these submissions as leads, so the SDK keeps that term
-only in backend receipts and protocol fields.
+ContextRocket records these as Contacts. The public API uses the same `/contacts`
+resource and `contact_id` receipt as the product.
 
 ```ts
 import { createContactFormController } from "@contextrocket/sdk/contact-form";
@@ -234,7 +234,7 @@ in the site; do not use this helper to flatten sensitive uploads into a message.
 
 Organization-configured extra answers can be passed as typed JSON under
 `custom_answers`. Keys must match active, non-system, non-computed fields in
-that organization's Leads table; the API validates the key and value against
+that organization's Contacts schema; the API validates the key and value against
 the organization's field schema. Unknown keys, absent schemas, unsupported
 value shapes, and oversized answers are rejected instead of being dropped.
 Map browser field names to the configured organization field keys with

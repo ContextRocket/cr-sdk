@@ -28,7 +28,7 @@ describe("static browser contact-form bridge", () => {
     });
 
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
-      lead_id: "lead-bridge-1",
+      contact_id: "contact-bridge-1",
       status: "captured",
       delivery_state: "queued",
       follow_up_state: "human_follow_up",
@@ -46,10 +46,10 @@ describe("static browser contact-form bridge", () => {
       fetcher,
     });
 
-    expect(receipt.lead_id).toBe("lead-bridge-1");
+    expect(receipt.contact_id).toBe("contact-bridge-1");
     expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body)).custom_answers).toEqual({
       profile_url: "https://example.com/in/visitor?view=full#bio",
     });
-    expect(String(fetcher.mock.calls[0]?.[0])).toBe("https://api.contextrocket.com/api/orgs/kleos/leads");
+    expect(String(fetcher.mock.calls[0]?.[0])).toBe("https://api.contextrocket.com/api/orgs/kleos/contacts");
   });
 });
