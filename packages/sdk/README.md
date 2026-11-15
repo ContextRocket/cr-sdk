@@ -252,11 +252,18 @@ const form = mapContactFormData(new FormData(htmlForm), {
   defaultIntent: "contact",
   customAnswers: mapCustomContactAnswers(new FormData(htmlForm), {
     residence_type: { name: "residence-type" },
+    profile_url: { name: "linkedin-url", type: "url" },
     monthly_income: { name: "monthly-income", type: "number" },
     contact_preferences: { name: "contact-preferences", type: "multi_select" },
   }),
 });
 ```
+
+For the URL example, configure the Organization field as
+`{ key: "profile_url", label: "LinkedIn URL", field_type: "url" }` and use
+`<input type="url" name="linkedin-url">` in the form. The helper maps the URL
+as a string; the API enforces an absolute HTTP(S) URL against the Organization
+field definition.
 
 The helper bounds the payload to 50 answer keys, 64 characters per key, 4,096
 serialized characters per answer, and 16,384 serialized characters total.

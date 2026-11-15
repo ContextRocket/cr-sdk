@@ -3,6 +3,7 @@ import {
   createContactFormController,
   ContactFormError,
   mapContactFormData,
+  mapCustomContactAnswers,
   submitContactForm,
   submitContactFormWithAttribution,
 } from "./contact-form.js";
@@ -240,4 +241,28 @@ describe("createContactFormController", () => {
       "key-1", "key-2",
     ]);
   });
+});
+
+
+describe("mapCustomContactAnswers", () => {
+  it.each(["https://example.com/in/person?view=full#bio", "http://example.com/profile"])(
+    "maps a URL string to its configured field key: %s",
+    (profileUrl) => {
+      const values = new FormData();
+      values.set("linkedin-url", profileUrl);
+      values.set("visitor-notes", "Text without a URL");
+      values.set("empty-url", "");
+
+      expect(mapCustomContactAnswers(values, {
+        profile_url: { name: "linkedin-url", type: "url" },
+        notes: { name: "visitor-notes", type: "text" },
+        optional_url: { name: "empty-url", type: "url" },
+      })).toEqual({ profile_url: profileUrl, notes: "Text without a URL" });
+
+      values.append("linkedin-url", "https://example.com/another");
+      expect(() => mapCustomContactAnswers(values, {
+        profile_url: { name: "linkedin-url", type: "url" },
+      })).toThrow(/multiple values/);
+    },
+  );
 });

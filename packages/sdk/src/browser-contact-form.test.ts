@@ -34,14 +34,22 @@ describe("static browser contact-form bridge", () => {
       follow_up_state: "human_follow_up",
     }), { status: 201, headers: { "content-type": "application/json" } }));
 
+    const values = new FormData();
+    values.set("linkedin-url", "https://example.com/in/visitor?view=full#bio");
+    const customAnswers = api!.mapCustomContactAnswers(values, {
+      profile_url: { name: "linkedin-url", type: "url" },
+    });
     const receipt = await api!.submitContactForm({
       apiBaseUrl: "https://api.contextrocket.com",
       orgHandle: "Kleos",
-      form: { name: "Ada Lovelace", consent: true },
+      form: { name: "Ada Lovelace", consent: true, custom_answers: customAnswers },
       fetcher,
     });
 
     expect(receipt.lead_id).toBe("lead-bridge-1");
+    expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body)).custom_answers).toEqual({
+      profile_url: "https://example.com/in/visitor?view=full#bio",
+    });
     expect(String(fetcher.mock.calls[0]?.[0])).toBe("https://api.contextrocket.com/api/orgs/kleos/leads");
   });
 });

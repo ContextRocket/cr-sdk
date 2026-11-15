@@ -42,6 +42,7 @@ export interface ContactFormFieldNames {
 
 export type ContactFormCustomAnswerType =
   | "text"
+  | "url"
   | "number"
   | "boolean"
   | "multi_select";
@@ -185,7 +186,7 @@ export function mapCustomContactAnswers(
       answers[key] = Number(selected[0]);
     } else if (type === "multi_select") {
       if (selected.length) answers[key] = selected;
-    } else if (type === "text") {
+    } else if (type === "text" || type === "url") {
       if (!selected.length) continue;
       if (selected.length !== 1) {
         throw new TypeError(`Text contact answer ${key} has multiple values.`);
