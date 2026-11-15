@@ -3,6 +3,9 @@
 Public browser SDK and embeddable widgets for ContextRocket.
 
 Agent-oriented rules and day-to-day commands live in [AGENTS.md](./AGENTS.md).
+That is the shared source for Claude, Gemini, Cursor, Codex, OpenCode, and
+GitHub Copilot; the agent entry files point to it instead of repeating package
+policy.
 
 ## Packages
 

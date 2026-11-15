@@ -1,5 +1,12 @@
 # ContextRocket SDK (`cr-sdk`) -- Agent Guide
 
+This file is the canonical instruction source for the SDK repository. Read
+[`README.md`](README.md) for the public package overview and install/publish
+guidance. If an `AGENTS.project.md` exists, read it for local repository
+constraints. More specific nested `AGENTS.md` files also apply. Keep Claude,
+Gemini, Cursor, Codex, OpenCode, and GitHub Copilot launchers pointed here
+rather than copying the rules into each launcher.
+
 Public browser SDK and embeddable widgets for ContextRocket. This repo is the
 **only** place browser A2A clients and embed scripts are authored. Starters
 and product apps consume packages from here; they must not copy SDK or widget
@@ -92,4 +99,5 @@ pnpm --dir packages/embed-chat build
 ## Docs
 
 - `README.md` — human overview and install snippets
+- `AGENTS.md` — shared coding-agent rules and package ownership boundaries
 - Package READMEs under `packages/*/README.md` when present

@@ -1,0 +1,6 @@
+---
+description: Canonical project instructions
+alwaysApply: true
+---
+
+Read and follow the repository root AGENTS.md before making changes. It points to any project-specific AGENTS.project.md and narrower instructions that apply to the files being changed.
