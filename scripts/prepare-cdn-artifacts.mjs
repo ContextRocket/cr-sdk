@@ -2,19 +2,17 @@
 
 /** Stage only the standalone browser artifacts for operator CDN publishing. */
 
-import { copyFile, mkdir, readFile, stat } from "node:fs/promises";
+import { copyFile, mkdir, readFile, rm, stat } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { browserArtifactVersion } from "./browser-artifact-version.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const scratch = resolve(root, "scratchpad/cdn/embeds");
 
-async function packageVersion(packageJsonPath) {
+async function artifactVersion(packageJsonPath) {
   const pkg = JSON.parse(await readFile(resolve(root, packageJsonPath), "utf8"));
-  if (typeof pkg.version !== "string" || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(pkg.version)) {
-    throw new Error(`Invalid package version in ${packageJsonPath}`);
-  }
-  return pkg.version;
+  return browserArtifactVersion(pkg, packageJsonPath);
 }
 
 const artifacts = [
@@ -41,8 +39,10 @@ const artifacts = [
   },
 ];
 
+await rm(scratch, { recursive: true, force: true });
+
 for (const artifact of artifacts) {
-  const version = await packageVersion(artifact.packageJson);
+  const version = await artifactVersion(artifact.packageJson);
   const sourcePath = resolve(root, artifact.source);
   const sourceStat = await stat(sourcePath).catch(() => null);
   if (!sourceStat?.isFile() || sourceStat.size === 0) {

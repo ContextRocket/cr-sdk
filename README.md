@@ -200,6 +200,11 @@ completes. The published `v0.1.1` contact-form bridge does not include the
 mapper. Keep existing releases intact and use the checked-in bundle for offline
 sites until `v0.1.2` is published.
 
+Each browser package tracks its CDN artifact version separately from the npm
+package version in `browserArtifactVersion`. Bump that field when publishing a
+changed IIFE; both `pnpm prepare:cdn` and `pnpm verify:cdn` use it to choose the
+versioned CDN prefix.
+
 A site can pin these URLs with `PUBLIC_CONTEXTROCKET_CHAT_WIDGET_URL`,
 `PUBLIC_CONTEXTROCKET_CONTACT_FORM_SCRIPT_URL`, and
 `PUBLIC_CONTEXTROCKET_SITE_BEHAVIORS_URL`; keep the checked-in local artifacts
@@ -214,9 +219,10 @@ pnpm prepare:cdn
 ```
 
 This stages one file per prefix under `scratchpad/cdn/embeds/`, using each
-source package's version. The existing operator CLI publishes a directory
-under an organization prefix. From the ContextRocket `backend/` checkout,
-validate each staged artifact without uploading it:
+browser artifact's configured version, and clears stale staged paths first. The
+existing operator CLI publishes a directory under an organization prefix. From
+the ContextRocket `backend/` checkout, validate each staged artifact without
+uploading it:
 
 ```bash
 uv run --env-file ../../cr-vault/.env.prod contextrocket sites publish \

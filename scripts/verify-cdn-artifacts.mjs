@@ -6,6 +6,7 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { browserArtifactVersion } from "./browser-artifact-version.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const origin = "https://contextrocket.cdn.contextrocket.com";
@@ -39,10 +40,7 @@ for (const artifact of artifacts) {
   const packageJson = JSON.parse(
     await readFile(resolve(root, artifact.packageJson), "utf8"),
   );
-  const version = packageJson.version;
-  if (typeof version !== "string" || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
-    throw new Error(`Invalid version in ${artifact.packageJson}`);
-  }
+  const version = browserArtifactVersion(packageJson, artifact.packageJson);
 
   const local = await readFile(resolve(root, artifact.output));
   const url = `${origin}/embeds/${artifact.prefix}/v${version}/${artifact.filename}`;
