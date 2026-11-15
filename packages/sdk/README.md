@@ -203,8 +203,12 @@ General → Contact form websites**. Add each hostname visitors may use, such as
 both the apex and `www` origins. Origins are managed independently of chat API
 keys, so a contact-only site does not need a chat credential and rotating a
 chat key does not remove contact access.
-ContextRocket records these as Contacts. The public API uses the same `/contacts`
-resource and `contact_id` receipt as the product.
+ContextRocket records these as Contacts. Public capture uses
+`POST /api/orgs/{org_ref}/contacts`; authenticated Contacts management uses the
+same resource family for reads and actions. The public request can include
+company, organization-configured `custom_answers`, bounded page attribution,
+and campaign/release/consent metadata. The `contact_id` receipt is stable while
+`delivery_state` reports the current delivery outcome.
 
 ```ts
 import { createContactFormController } from "@contextrocket/sdk/contact-form";
@@ -217,6 +221,7 @@ const receipt = await submission.submit({
   referrerUrl: document.referrer,
   form: {
     name: "Alex Example",
+    company: "Example Ltd",
     email: "alex@example.com",
     message: "I'd like to learn more.",
     intent: "contact",
@@ -226,7 +231,8 @@ const receipt = await submission.submit({
 ```
 
 For native HTML forms, `mapContactFormData(new FormData(form), options)` maps
-site-selected field names to the shared payload, trims common values, and only
+site-selected field names to the shared payload, including company, trims
+common values, and only
 sets `consent: true` when the configured consent control was submitted with an
 affirmative value. It supports split first/last name fields and a site-provided
 default intent. Keep labels, validation, custom answers, and form presentation
@@ -279,7 +285,11 @@ artifact exposes the same controller on `window.ContextRocketSDK`; form layout,
 validation, and status UI remain under the site's control.
 
 Attribution omits fragments and arbitrary query parameters, and keeps only
-bounded `utm_*` values. The `contact-form.browser.js` artifact is also built for
+bounded `utm_*` values. Campaign, release, variant, and consent-version fields
+are passed explicitly through `MapContactFormDataOptions.attribution` or the
+typed form payload; they are never inferred from arbitrary URL parameters. The
+`delivery_state` receipt accepts `accepted`, `queued`, `sent`, `unavailable`,
+`duplicate`, or `error`. The `contact-form.browser.js` artifact is also built for
 static sites that load a script rather than bundle npm modules; it is emitted
 to `dist/contact-form.browser.js` by the package build.
 TypeScript consumers of the static bridge can import the

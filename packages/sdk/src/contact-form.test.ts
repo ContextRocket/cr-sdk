@@ -12,8 +12,8 @@ import {
 const consumerContract = JSON.parse(
   readFileSync(new URL("../../../contracts/contact-form.json", import.meta.url), "utf8"),
 ) as {
-  request: { method: string; path: string };
-  response: { status: number; fields: string[] };
+  request: { method: string; path: string; fields: string[] };
+  response: { status: number; fields: string[]; delivery_states: string[] };
 };
 
 describe("submitContactForm", () => {
@@ -21,7 +21,7 @@ describe("submitContactForm", () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
       contact_id: "contact-1",
       status: "captured",
-      delivery_state: "queued",
+      delivery_state: "sent",
       follow_up_state: "human_follow_up",
     }), { status: 201, headers: { "content-type": "application/json" } }));
 
@@ -29,7 +29,11 @@ describe("submitContactForm", () => {
       apiBaseUrl: "https://api.contextrocket.com/",
       orgHandle: "@Kleos",
       idempotencyKey: "request-1",
-      form: { name: "Ada Lovelace", email: "ada@example.com", intent: "appointment", consent: true },
+      form: {
+        name: "Ada Lovelace", company: "Analytical Engines Ltd", email: "ada@example.com",
+        intent: "appointment", consent: true, campaign_ref: "launch-2026",
+        landing_page_ref: "pricing", consent_policy_version: "2026-01",
+      },
       fetcher,
     });
 
@@ -43,9 +47,14 @@ describe("submitContactForm", () => {
     expect(JSON.parse(String(init?.body))).toMatchObject({
       intent: "appointment",
       consent: true,
+      company: "Analytical Engines Ltd",
+      campaign_ref: "launch-2026",
+      landing_page_ref: "pricing",
+      consent_policy_version: "2026-01",
     });
     expect(JSON.parse(String(init?.body))).not.toHaveProperty("org_handle");
     expect(consumerContract.response.fields).toContain("contact_id");
+    expect(consumerContract.response.delivery_states).toContain("sent");
   });
 
   it("surfaces stable API error codes without exposing server detail text", async () => {
@@ -69,7 +78,7 @@ describe("submitContactForm", () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
       contact_id: "contact-1",
       status: "captured",
-      delivery_state: "sent",
+      delivery_state: "not-a-state",
       follow_up_state: "human_follow_up",
     }), { status: 201, headers: { "content-type": "application/json" } }));
 
@@ -106,19 +115,26 @@ describe("mapContactFormData", () => {
   it("maps and trims standard fields while preserving selected consent", () => {
     const values = new FormData();
     values.set("name", " Ada Lovelace ");
+    values.set("company", " Analytical Engines Ltd ");
     values.set("email", " ada@example.com ");
     values.set("phone", " +44 20 0000 0000 ");
     values.set("intent", "appointment");
     values.set("message", " Please call me. ");
     values.set("consent", "on");
 
-    expect(mapContactFormData(values, { sourceChannel: " website " })).toEqual({
+    expect(mapContactFormData(values, {
+      sourceChannel: " website ",
+      attribution: { campaign_ref: " launch-2026 ", controller_mode: "website" },
+    })).toEqual({
       name: "Ada Lovelace",
+      company: "Analytical Engines Ltd",
       email: "ada@example.com",
       phone: "+44 20 0000 0000",
       intent: "appointment",
       message: "Please call me.",
       source_channel: "website",
+      campaign_ref: " launch-2026 ",
+      controller_mode: "website",
       consent: true,
     });
   });
@@ -134,6 +150,7 @@ describe("mapContactFormData", () => {
       mapContactFormData(values, {
         fields: {
           name: "",
+          company: "",
           firstName: "first-name",
           lastName: "last-name",
           email: "your-email",

@@ -11,7 +11,10 @@ export type ContactFormJsonValue =
   | { [key: string]: ContactFormJsonValue };
 
 export interface ContactFormData {
+  /** Optional canonical Lead Capture App binding; the server checks org ownership. */
+  app_id?: string;
   name: string;
+  company?: string;
   email?: string;
   phone?: string;
   message?: string;
@@ -20,6 +23,10 @@ export interface ContactFormData {
   consent: true;
   /** Answers keyed by configured, non-system fields in the org's Contacts schema. */
   custom_answers?: Record<string, ContactFormJsonValue>;
+  campaign_ref?: string;
+  landing_page_ref?: string;
+  site_release_ref?: string;
+  variant_ref?: string;
   source_url?: string;
   referrer_origin?: string;
   utm_source?: string;
@@ -27,10 +34,14 @@ export interface ContactFormData {
   utm_campaign?: string;
   utm_content?: string;
   utm_term?: string;
+  consent_policy_version?: string;
+  consent_copy_version?: string;
+  controller_mode?: string;
 }
 
 export interface ContactFormFieldNames {
   name: string;
+  company?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -61,6 +72,17 @@ export interface MapContactFormDataOptions {
   defaultIntent?: ContactIntent;
   /** Site-specific attribution channel, for example "website" or "form". */
   sourceChannel?: string;
+  /** Explicit campaign, release, and consent metadata accepted by public capture. */
+  attribution?: Pick<
+    ContactFormData,
+    | "campaign_ref"
+    | "landing_page_ref"
+    | "site_release_ref"
+    | "variant_ref"
+    | "consent_policy_version"
+    | "consent_copy_version"
+    | "controller_mode"
+  >;
   /** Explicitly mapped values keyed by the org's configured Contacts field keys. */
   customAnswers?: Record<string, ContactFormJsonValue>;
 }
@@ -68,11 +90,15 @@ export interface MapContactFormDataOptions {
 export interface ContactFormReceipt {
   contact_id: string;
   status: "captured";
-  delivery_state: "queued" | "duplicate";
+  delivery_state: "accepted" | "queued" | "sent" | "unavailable" | "duplicate" | "error";
   follow_up_state: "human_follow_up";
 }
 
 export interface ContactAttribution {
+  campaign_ref?: string;
+  landing_page_ref?: string;
+  site_release_ref?: string;
+  variant_ref?: string;
   source_url?: string;
   referrer_origin?: string;
   utm_source?: string;
@@ -80,6 +106,9 @@ export interface ContactAttribution {
   utm_campaign?: string;
   utm_content?: string;
   utm_term?: string;
+  consent_policy_version?: string;
+  consent_copy_version?: string;
+  controller_mode?: string;
 }
 
 /**
@@ -114,6 +143,7 @@ const CONTACT_INTENTS: readonly ContactIntent[] = [
 
 const DEFAULT_CONTACT_FIELDS: ContactFormFieldNames = {
   name: "name",
+  company: "company",
   firstName: "",
   lastName: "",
   email: "email",
@@ -146,7 +176,7 @@ function validateCustomAnswers(
   return answers;
 }
 
-function formText(values: FormData, fieldName: string): string {
+function formText(values: FormData, fieldName: string | undefined): string {
   if (!fieldName) return "";
   const value = values.get(fieldName);
   return typeof value === "string" ? value.trim() : "";
@@ -233,6 +263,7 @@ export function mapContactFormData(
 
   return {
     name,
+    company: formText(values, fields.company) || undefined,
     email: formText(values, fields.email) || undefined,
     phone: formText(values, fields.phone) || undefined,
     message: formText(values, fields.message) || undefined,
@@ -240,6 +271,7 @@ export function mapContactFormData(
     ...(options.sourceChannel?.trim()
       ? { source_channel: options.sourceChannel.trim() }
       : {}),
+    ...(options.attribution ?? {}),
     ...(customAnswers ? { custom_answers: customAnswers } : {}),
     consent: true,
   };
@@ -327,7 +359,9 @@ function isContactFormReceipt(payload: unknown): payload is ContactFormReceipt {
     typeof receipt.contact_id === "string" &&
     receipt.contact_id.trim().length > 0 &&
     receipt.status === "captured" &&
-    (receipt.delivery_state === "queued" || receipt.delivery_state === "duplicate") &&
+    ["accepted", "queued", "sent", "unavailable", "duplicate", "error"].includes(
+      String(receipt.delivery_state),
+    ) &&
     receipt.follow_up_state === "human_follow_up"
   );
 }
