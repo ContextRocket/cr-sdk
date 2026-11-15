@@ -32,11 +32,37 @@ const artifacts = [
   },
 ];
 
+const artifactArgument = process.argv.find((argument) =>
+  argument.startsWith("--artifacts="),
+);
+const selectedPrefixes = artifactArgument
+  ? artifactArgument
+      .slice("--artifacts=".length)
+      .split(",")
+      .filter(Boolean)
+  : null;
+if (selectedPrefixes?.length === 0) {
+  throw new Error("--artifacts requires a comma-separated prefix list");
+}
+const knownPrefixes = new Set(artifacts.map(({ prefix }) => prefix));
+const unknownPrefixes = selectedPrefixes?.filter(
+  (prefix) => !knownPrefixes.has(prefix),
+);
+if (unknownPrefixes?.length) {
+  const expectedPrefixes = [...knownPrefixes].join(", ");
+  throw new Error(
+    `Unknown artifact prefix(es): ${unknownPrefixes.join(", ")}; expected ${expectedPrefixes}`,
+  );
+}
+const selectedArtifacts = selectedPrefixes
+  ? artifacts.filter(({ prefix }) => selectedPrefixes.includes(prefix))
+  : artifacts;
+
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
-for (const artifact of artifacts) {
+for (const artifact of selectedArtifacts) {
   const packageJson = JSON.parse(
     await readFile(resolve(root, artifact.packageJson), "utf8"),
   );

@@ -251,8 +251,17 @@ they are unused. Repeat the relevant command without `--dry-run` to upload.
 This is an operator task; customer sites only load the public URL and do not
 need an operator token. After publishing, run
 `pnpm verify:cdn` from the SDK checkout. It checks status, JavaScript content
-type, byte count, and SHA-256 against the local package builds. Do not publish
-a mutable `/latest` path. Version `0.0.1` remains available; version `0.0.2`
+type, byte count, and SHA-256 against the local package builds. To check only
+the two SDK artifacts for the `v0.1.2` release, excluding the independently
+versioned chat widget, run:
+
+```bash
+pnpm run verify:cdn -- --artifacts=contact-form,site-behaviors
+```
+
+The default `pnpm verify:cdn` continues to check every configured CDN artifact.
+Do not publish a mutable `/latest` path. Version `0.0.1` remains available;
+version `0.0.2`
 adds the consent visibility fix and is the recommended release for new sites.
 The prior `0.1.x` chat routes and objects were removed before public npm
 adoption.
