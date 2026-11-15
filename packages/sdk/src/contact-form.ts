@@ -11,7 +11,7 @@ export type ContactFormJsonValue =
   | { [key: string]: ContactFormJsonValue };
 
 export interface ContactFormData {
-  /** Optional canonical Lead Capture App binding; the server checks org ownership. */
+  /** Optional Contact Capture App binding; server checks Organization ownership. */
   app_id?: string;
   name: string;
   company?: string;
