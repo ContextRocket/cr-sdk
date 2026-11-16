@@ -45,7 +45,10 @@ for (const [name, paths] of Object.entries({
 const sdkClient = await readFile(new URL("../packages/sdk/src/a2a-client.ts", import.meta.url), "utf8");
 const embedCardReader = await readFile(new URL("../packages/embed-chat/src/element.ts", import.meta.url), "utf8");
 for (const method of contract.requestMethods) {
-  requireContract(sdkClient.includes(`"${method}"`), `SDK no longer emits ${method}`);
+  requireContract(
+    new RegExp(`buildJSONRPCRequest\\(\\s*["']${method}["']`).test(sdkClient),
+    `SDK no longer emits ${method}`,
+  );
 }
 requireContract(embedCardReader.includes("(skill as Record<string, unknown>).examples"), "widget no longer reads skill examples");
 console.log("A2A consumer contract is valid and matches the SDK entry points.");
