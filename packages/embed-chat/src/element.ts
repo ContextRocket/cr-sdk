@@ -269,15 +269,28 @@ export class ContextRocketChatElement extends HTMLElement {
     const copy = copyFor(next);
     const root = this.#shadow.querySelector<HTMLElement>(".cr-root")!;
     root.lang = this.lang;
-    this.#shadow.querySelector<HTMLElement>(".cr-title-text")!.textContent =
-      next.title ?? copy.defaultTitle;
-    const subtitle = this.#shadow.querySelector<HTMLElement>(".cr-title-subtitle")!;
-    subtitle.textContent = next.subtitle ?? "";
-    subtitle.hidden = !next.subtitle;
-    const titleBadge = this.#shadow.querySelector<HTMLElement>(".cr-title-badge")!;
-    titleBadge.textContent = next.titleBadge ?? "";
-    titleBadge.hidden = !next.titleBadge;
-    this.#panel.setAttribute("aria-label", next.title ?? copy.defaultTitle);
+    const title = next.title ?? copy.defaultTitle;
+    const titleLabel = this.#shadow.querySelector<HTMLElement>(".cr-title-text");
+    if (titleLabel) titleLabel.textContent = title;
+    const heading = this.#shadow.querySelector<HTMLElement>(".cr-title");
+    if (heading) {
+      if (heading.querySelector(".cr-title-brand-logo")) {
+        heading.setAttribute("aria-label", title);
+      } else {
+        heading.removeAttribute("aria-label");
+      }
+    }
+    const subtitle = this.#shadow.querySelector<HTMLElement>(".cr-title-subtitle");
+    if (subtitle) {
+      subtitle.textContent = next.subtitle ?? "";
+      subtitle.hidden = !next.subtitle;
+    }
+    const titleBadge = this.#shadow.querySelector<HTMLElement>(".cr-title-badge");
+    if (titleBadge) {
+      titleBadge.textContent = next.titleBadge ?? "";
+      titleBadge.hidden = !next.titleBadge;
+    }
+    this.#panel.setAttribute("aria-label", title);
     this.#shadow
       .querySelector(".cr-close")!
       .setAttribute("aria-label", copy.close);

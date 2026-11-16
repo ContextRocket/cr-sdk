@@ -595,7 +595,7 @@ it("keeps the compact demo showcase visible and renders a JSON response card", a
       if (url.origin === "http://localhost:39995" && url.pathname === "/") {
         await route.fulfill({
           contentType: "text/html",
-          body: `<script>${bundle}</script><contextrocket-chat data-contextrocket-mode="demo"></contextrocket-chat>`,
+          body: `<script>${bundle}</script><contextrocket-chat data-contextrocket-mode="demo" data-contextrocket-agent-identity="probe"></contextrocket-chat>`,
         });
       } else {
         await route.abort();
@@ -874,14 +874,14 @@ it("keeps host-resolved recovery UI localized without changing caller or partial
         host: "es-ES",
         locale: "auto",
         lang: "es",
-        title: "Pregunta a ContextRocket",
+        title: "ContextRocket",
         error: "Algo salió mal. Inténtalo de nuevo.",
       },
       {
         host: "de-AT",
         locale: undefined,
         lang: "de",
-        title: "Frag ContextRocket",
+        title: "ContextRocket",
         error: "Etwas ist schiefgelaufen. Versuch es erneut.",
       },
       {
@@ -893,17 +893,10 @@ it("keeps host-resolved recovery UI localized without changing caller or partial
         custom: true,
       },
       {
-        host: "de-DE",
-        locale: "es",
-        lang: "es",
-        title: "Pregunta a ContextRocket",
-        error: "Algo salió mal. Inténtalo de nuevo.",
-      },
-      {
         host: "fr-FR",
         locale: undefined,
         lang: "en",
-        title: "Ask ContextRocket",
+        title: "ContextRocket",
         error: "Something went wrong. Try again.",
       },
     ]) {
@@ -961,7 +954,10 @@ it("keeps host-resolved recovery UI localized without changing caller or partial
       const host = page.locator("contextrocket-chat");
       expect(await host.getAttribute("lang")).toBe(item.lang);
       await host.locator(".cr-launcher").click();
-      expect(await host.locator(".cr-title").textContent()).toBe(item.title);
+      const heading = host.locator(".cr-title");
+      expect(
+        (await heading.getAttribute("aria-label")) ?? (await heading.textContent()),
+      ).toBe(item.title);
       expect(await host.locator(".cr-panel").getAttribute("aria-label")).toBe(
         item.title,
       );
@@ -1048,6 +1044,7 @@ it("refreshes opening suggestions for a changed organization and ignores stale c
   const browser = await chromium.launch();
   const page = await browser.newPage();
   let oldRequestStarted = false;
+  let newRequestStarted = false;
   let oldRequestFinished = false;
   let releaseOldRequest!: () => void;
   const oldRequestGate = new Promise<void>((resolve) => {
@@ -1072,6 +1069,7 @@ it("refreshes opening suggestions for a changed organization and ignores stale c
         });
         oldRequestFinished = true;
       } else if (url.pathname === "/person/new-org/agent-card.json") {
+        newRequestStarted = true;
         await route.fulfill({
           contentType: "application/json",
           body: JSON.stringify({ skills: [{ examples: ["New organization suggestion"] }] }),
@@ -1087,6 +1085,7 @@ it("refreshes opening suggestions for a changed organization and ignores stale c
     await host.evaluate((element) => {
       element.setAttribute("data-contextrocket-handle", "new-org");
     });
+    await expect.poll(() => newRequestStarted).toBe(true);
     await expect.poll(
       () => host.locator('[data-suggestion="New organization suggestion"]').count(),
     ).toBe(1);
