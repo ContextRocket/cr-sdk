@@ -1,0 +1,111 @@
+{
+  "contract": "contextrocket.a2a.consumer.v1",
+  "consumer": "cr-sdk/packages/sdk + cr-sdk/packages/embed-chat",
+  "protocolVersion": "1.0",
+  "requestHeaders": {
+    "A2A-Version": "1.0"
+  },
+  "discovery": {
+    "typedCardPaths": [
+      "/company/{handle}/agent-card.json",
+      "/person/{handle}/agent-card.json"
+    ],
+    "cardReads": [],
+    "cardConsumes": [
+      "skills[].examples[]"
+    ]
+  },
+  "requestMethods": [
+    "SendMessage",
+    "SendStreamingMessage"
+  ],
+  "requestReads": [
+    "jsonrpc",
+    "id",
+    "method",
+    "params.message.messageId",
+    "params.message.role",
+    "params.message.parts[0].text",
+    "params.message.contextId",
+    "params.metadata.handle",
+    "params.metadata.thread_id",
+    "params.metadata.org_id",
+    "params.metadata.scope.answer_locale"
+  ],
+  "taskReads": [
+    "jsonrpc",
+    "id",
+    "result.task.id",
+    "result.task.contextId",
+    "result.task.status.state",
+    "result.task.status.message.parts[0].text",
+    "result.task.metadata.thread_id"
+  ],
+  "streamReads": {
+    "status": [
+      "jsonrpc",
+      "id",
+      "result.statusUpdate.taskId",
+      "result.statusUpdate.contextId",
+      "result.statusUpdate.status.state",
+      "result.statusUpdate.status.message.parts[0].text",
+      "result.statusUpdate.metadata.suggestions[0]"
+    ],
+    "artifact": [
+      "jsonrpc",
+      "id",
+      "result.artifactUpdate.taskId",
+      "result.artifactUpdate.contextId",
+      "result.artifactUpdate.artifact.parts[0].text",
+      "result.artifactUpdate.artifact.metadata.index",
+      "result.artifactUpdate.append",
+      "result.artifactUpdate.lastChunk"
+    ]
+  },
+  "values": {
+    "card": {},
+    "request": {
+      "jsonrpc": "2.0",
+      "id": "sdk-request-1",
+      "method": "SendStreamingMessage",
+      "params.message.messageId": "sdk-message-1",
+      "params.message.role": "ROLE_USER",
+      "params.message.parts[0].text": "What do you do?",
+      "params.message.contextId": "thread-1",
+      "params.metadata.handle": "acme",
+      "params.metadata.thread_id": "thread-1",
+      "params.metadata.org_id": "org-1",
+      "params.metadata.scope.answer_locale": "en"
+    },
+    "task": {
+      "jsonrpc": "2.0",
+      "id": "sdk-request-2",
+      "result.task.id": "task-1",
+      "result.task.contextId": "thread-1",
+      "result.task.status.state": "TASK_STATE_COMPLETED",
+      "result.task.status.message.parts[0].text": "We help teams plan launches.",
+      "result.task.metadata.thread_id": "thread-1"
+    },
+    "stream": {
+      "status": {
+        "jsonrpc": "2.0",
+        "id": "sdk-stream-1",
+        "result.statusUpdate.taskId": "task-1",
+        "result.statusUpdate.contextId": "thread-1",
+        "result.statusUpdate.status.state": "TASK_STATE_COMPLETED",
+        "result.statusUpdate.status.message.parts[0].text": "We help teams plan launches.",
+        "result.statusUpdate.metadata.suggestions[0]": "See our launch services"
+      },
+      "artifact": {
+        "jsonrpc": "2.0",
+        "id": "sdk-stream-1",
+        "result.artifactUpdate.taskId": "task-1",
+        "result.artifactUpdate.contextId": "thread-1",
+        "result.artifactUpdate.artifact.parts[0].text": "We help teams",
+        "result.artifactUpdate.artifact.metadata.index": 2,
+        "result.artifactUpdate.append": false,
+        "result.artifactUpdate.lastChunk": false
+      }
+    }
+  }
+}
