@@ -1,4 +1,7 @@
 import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const contractPath = new URL("../contracts/a2a.json", import.meta.url);
 const contract = JSON.parse(await readFile(contractPath, "utf8"));
@@ -51,4 +54,21 @@ for (const method of contract.requestMethods) {
   );
 }
 requireContract(embedCardReader.includes("(skill as Record<string, unknown>).examples"), "widget no longer reads skill examples");
+
+const root = new URL("../", import.meta.url);
+for (const sibling of ["cr-starter", "cr-kleos"]) {
+  const siblingRoot = new URL(`../${sibling}/`, root);
+  if (!existsSync(new URL("contracts/embed-chat.json", siblingRoot))) {
+    console.log(`Skipping ${sibling} embed contract; sibling checkout is absent.`);
+    continue;
+  }
+  const check = spawnSync(
+    process.execPath,
+    ["scripts/check-embed-consumer-contract.mjs"],
+    { cwd: fileURLToPath(siblingRoot), encoding: "utf8" },
+  );
+  if (check.stdout) process.stdout.write(check.stdout);
+  if (check.stderr) process.stderr.write(check.stderr);
+  requireContract(check.status === 0, `${sibling} embed contract check failed`);
+}
 console.log("A2A consumer contract is valid and matches the SDK entry points.");
