@@ -3,31 +3,90 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ContextRocket embed widget — local smoke</title>
+    <title>ContextRocket Chat Widget — Demo</title>
+    <meta name="description" content="Local demo of the ContextRocket embed chat widget in canned demo mode. No credentials required." />
     <style>
+      /* Ink & Paper demo shell. This page is the default surface every widget
+         customization starts from: brand fonts, brand ink, one pink accent. */
+      :root {
+        --ink: #0E0F13;
+        --card: #16171D;
+        --line: #2A2C35;
+        --pink: #FF2B67;
+        --mist: #A5A7B0;
+        --text: #ECEDF1;
+        --paper: #FAF9F6;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
       body {
-        font-family: system-ui, sans-serif;
-        margin: 2rem;
+        font-family: "Inter Tight", system-ui, sans-serif;
+        background: var(--ink);
+        color: var(--text);
         line-height: 1.5;
+        min-height: 100vh;
+        background-image: radial-gradient(55% 70% at 72% 20%, rgba(236, 237, 241, 0.06), transparent 74%);
       }
+      .shell { max-width: 46rem; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
+      header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2.5rem; }
+      header img { height: 26px; width: auto; }
+      .eyebrow {
+        font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+        text-transform: uppercase; color: var(--pink);
+      }
+      h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 700; letter-spacing: -0.03em; margin-top: 0.75rem; }
+      .lede { margin-top: 1rem; color: var(--mist); max-width: 40rem; }
+      .panel {
+        margin-top: 2rem; border: 1px solid var(--line); border-radius: 14px;
+        background: var(--card); padding: 1.25rem 1.5rem;
+      }
+      .panel h2 { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+      .panel p { margin-top: 0.5rem; color: var(--mist); font-size: 14px; }
       code {
-        background: #f3f4f6;
-        padding: 0.1rem 0.35rem;
+        font-family: ui-monospace, monospace; font-size: 13px;
+        background: rgba(255, 255, 255, 0.06); border: 1px solid var(--line);
+        border-radius: 6px; padding: 0.1rem 0.4rem; color: var(--text);
       }
+      ul { margin: 0.5rem 0 0 1.1rem; color: var(--mist); font-size: 14px; }
+      ul li + li { margin-top: 0.35rem; }
+      ul b { color: var(--text); font-weight: 700; }
+      .note { margin-top: 2rem; font-size: 13px; color: var(--mist); }
+      .note b { color: var(--text); }
     </style>
   </head>
   <body>
-    <h1>ContextRocket embed widget smoke page</h1>
-    <p>
-      This static page loads the built bundle from
-      <code>/embed/widget.js</code>. Serve the frontend public folder (or run
-      <code>pnpm run dev</code>) and open this file via the dev server.
-    </p>
-    <p>
-      The widget opens in demo mode and needs no credentials. To connect a live
-      organization, use its handle and publishable key:
-      <code>?mode=live&amp;handle=your-org&amp;apiKey=crk_...</code>
-    </p>
+    <div class="shell">
+      <header>
+        <img src="https://contextrocket.com/brand/logo-h-spark-white.svg" alt="ContextRocket" onerror="this.style.display='none'" />
+      </header>
+      <p class="eyebrow">Embed widget</p>
+      <h1>Chat widget demo</h1>
+      <p class="lede">
+        This page loads the built widget bundle from <code>/embed/widget.js</code> and opens
+        the chat in canned demo mode. No credentials are needed; every response is sample
+        content so the full response-card design can be reviewed offline.
+      </p>
+
+      <div class="panel">
+        <h2>Try it</h2>
+        <p>Use the chat launcher at the edge of this page. The preview shows structured
+        response cards: cited evidence, follow-up suggestions, progress, and proposals.</p>
+      </div>
+
+      <div class="panel">
+        <h2>Connect a live organization</h2>
+        <p>Append query parameters to switch from demo mode:</p>
+        <ul>
+          <li><b>Live mode:</b> <code>?mode=live&amp;handle=your-org&amp;apiKey=crk_…</code></li>
+          <li><b>API base override:</b> <code>&amp;apiBase=https://…</code></li>
+        </ul>
+      </div>
+
+      <p class="note">
+        <b>Local workflow:</b> serve this page and <code>/embed/widget.js</code> with
+        <code>npm run demo</code> in <code>packages/embed-chat</code>, or copy the bundle to a
+        frontend's <code>public/embed/</code> and open the page through that dev server.
+      </p>
+    </div>
 
     <script>
       (function () {
@@ -48,7 +107,7 @@
         if (apiKey) script.setAttribute("data-contextrocket-api-key", apiKey);
         script.setAttribute(
           "data-contextrocket-greeting",
-          "Hi — ask anything about this brand.",
+          "Hi. Ask anything about this brand.",
         );
         document.body.appendChild(script);
       })();
