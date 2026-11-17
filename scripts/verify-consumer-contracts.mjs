@@ -55,6 +55,68 @@ for (const method of contract.requestMethods) {
 }
 requireContract(embedCardReader.includes("(skill as Record<string, unknown>).examples"), "widget no longer reads skill examples");
 
+// --- Credentials and handle resolution (contracts/publishable-key.json) ------
+const credentialsContract = JSON.parse(
+  await readFile(new URL("../contracts/publishable-key.json", import.meta.url), "utf8"),
+);
+
+function requireCredentials(condition, message) {
+  if (!condition) throw new Error(`Invalid credentials contract: ${message}`);
+}
+
+const publishToken = credentialsContract.credentials.publish_token;
+const websiteKey = credentialsContract.credentials.publishable_website_key;
+requireCredentials(
+  credentialsContract.schema_version === "cr.sdk-credentials-contract.v1",
+  "unexpected contract identifier",
+);
+requireCredentials(publishToken.env === "CR_API_TOKEN", "publish token env moved");
+requireCredentials(
+  publishToken.header === `authorization: Bearer <token>`,
+  "publish token transport or header moved",
+);
+requireCredentials(
+  websiteKey.kind === "api_key (or demo)" &&
+    websiteKey.scope_token === "chat" &&
+    websiteKey.origin_bound === true &&
+    websiteKey.grants_org_membership === false,
+  "the publishable website key must stay origin-bound, chat-scoped and non-authorizing",
+);
+requireCredentials(
+  publishToken.kind_today === "standard" &&
+    publishToken.kind_future === "site_publish",
+  "the publish credential kinds drifted from the ContextRocket registry",
+);
+requireCredentials(
+  credentialsContract.handle_resolution.order.join(">") ===
+    "explicit --org>CR_ORG_HANDLE>PUBLIC_CONTEXTROCKET_HANDLE>config/site.json -> contextrocket.handle",
+  "handle resolution order moved",
+);
+
+const publisherConfig = await readFile(
+  new URL("../packages/site-publisher/src/config.ts", import.meta.url),
+  "utf8",
+);
+const publisherClient = await readFile(
+  new URL("../packages/site-publisher/src/client.ts", import.meta.url),
+  "utf8",
+);
+requireCredentials(
+  /if \(explicit\?\.trim\(\)\) return explicit/.test(publisherConfig) &&
+    publisherConfig.includes("env.CR_ORG_HANDLE ?? env.PUBLIC_CONTEXTROCKET_HANDLE") &&
+    publisherConfig.includes("config/site.json"),
+  "the publisher no longer resolves the handle in the contracted order",
+);
+requireCredentials(
+  /authorization: `Bearer \$\{/.test(publisherClient),
+  "the publisher no longer sends the contracted Bearer authorization header",
+);
+requireCredentials(
+  publisherClient.includes("/crk_[A-Za-z0-9_-]+/g"),
+  "the publisher no longer redacts crk_ values",
+);
+console.log("Credentials contract is valid and matches the site publisher.");
+
 const root = new URL("../", import.meta.url);
 for (const sibling of ["cr-starter", "cr-kleos"]) {
   const siblingRoot = new URL(`../${sibling}/`, root);

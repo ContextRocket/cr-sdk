@@ -1,0 +1,52 @@
+{
+  "schema_version": "cr.sdk-credentials-contract.v1",
+  "owner": "cr-sdk",
+  "provider": "ContextRocket",
+  "subject": "Who may publish, who may chat, and how a site selects its Organization",
+  "note": "Two different credentials publish and chat. The site publisher is Node-only and uses an org machine token; browser chat uses a publishable origin-bound website API key, which authenticates its origin and never an Organization membership. Treating one as the other is the failure this contract exists to prevent: a publishable key can never publish, and an org machine token must never reach a browser, a static file, a PUBLIC_* variable or a chat embed.",
+  "credentials": {
+    "publish_token": {
+      "env": "CR_API_TOKEN",
+      "scheme": "Bearer",
+      "header": "authorization: Bearer <token>",
+      "prefix": "crk_",
+      "kind_today": "standard",
+      "kind_future": "site_publish",
+      "transport": "Node only (CLI or build tooling); never browser code, a static file, a PUBLIC_* variable or a chat embed",
+      "scope": "site publish (admin-scoped org machine credential today; a narrower site_publish-only credential is the product follow-up)",
+      "redaction": "the publisher redacts any crk_ value from output"
+    },
+    "publishable_website_key": {
+      "kind": "api_key (or demo)",
+      "scope_token": "chat",
+      "origin_bound": true,
+      "browser_safe": true,
+      "capability_tier": "guest",
+      "grants_org_membership": false,
+      "used_by": "browser chat and embedded chat, against the organization's public surfaces",
+      "never_used_by": "the site publisher"
+    }
+  },
+  "credential_kinds": [
+    "standard",
+    "demo",
+    "api_key",
+    "site_publish"
+  ],
+  "capability_tiers": {
+    "standard": "machine",
+    "api_key": "guest",
+    "demo": "guest",
+    "site_publish": "site publish scope only; not a capability-battery principal"
+  },
+  "handle_resolution": {
+    "order": [
+      "explicit --org",
+      "CR_ORG_HANDLE",
+      "PUBLIC_CONTEXTROCKET_HANDLE",
+      "config/site.json -> contextrocket.handle"
+    ],
+    "rule": "the resolved handle selects the target Organization; it is not an authorization credential",
+    "missing": "an unresolved handle is a usage error, never a fallback to another Organization"
+  }
+}
